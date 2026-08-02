@@ -1,0 +1,202 @@
+/**
+ * Custom slider with editable value display and unit label.
+ * Combines a range slider with a number input for precise control.
+ * Snaps values to the nearest step to eliminate floating-point drift.
+ */
+
+import { useCallback, useEffect, useRef, useState } from "react";
+
+interface SliderProps {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  unit: string;
+  /** Optional choices for controls that support switching display units. */
+  unitOptions?: ReadonlyArray<{ value: string; label: string }>;
+  /** Called when a display unit is selected. */
+  onUnitChange?: (unit: string) => void;
+  decimals?: number;
+  description?: string;
+  onChange: (value: number) => void;
+}
+
+/** Snap a value to the nearest step multiple and clamp to [min, max]. */
+function snapToStep(raw: number, min: number, max: number, step: number): number {
+  const snapped = Math.round((raw - min) / step) * step + min;
+  // Kill floating-point noise (e.g. 14.099999999998 -> 14.1)
+  const clean = parseFloat(snapped.toFixed(10));
+  return Math.min(max, Math.max(min, clean));
+}
+
+/** Clamp a value to [min, max] without step snapping (for typed input). */
+function clamp(raw: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, raw));
+}
+
+/** Debounce delay for slider drag updates (ms). */
+const DEBOUNCE_MS = 32;
+
+export function Slider({
+  label,
+  value,
+  min,
+  max,
+  step,
+  unit,
+  unitOptions,
+  onUnitChange,
+  decimals = 1,
+  description,
+  onChange,
+}: SliderProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editText, setEditText] = useState("");
+  const [localValue, setLocalValue] = useState(value);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Sync local value when the prop changes externally (e.g. template switch)
+  useEffect(() => {
+    setLocalValue(value);
+  }, [value]);
+
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current !== null) clearTimeout(timerRef.current);
+    };
+  }, []);
+
+  const handleSliderChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const raw = parseFloat(e.target.value);
+      const snapped = snapToStep(raw, min, max, step);
+      // Update local value immediately for responsive slider
+      setLocalValue(snapped);
+      // Debounce the upstream onChange to avoid recomputing geometry on every pixel
+      if (timerRef.current !== null) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => onChange(snapped), DEBOUNCE_MS);
+    },
+    [onChange, min, max, step]
+  );
+
+  const handleEditStart = useCallback(() => {
+    setEditText(value.toFixed(decimals));
+    setIsEditing(true);
+  }, [value, decimals]);
+
+  const handleEditCommit = useCallback(() => {
+    setIsEditing(false);
+    const parsed = parseFloat(editText);
+    if (!isNaN(parsed)) {
+      onChange(clamp(parsed, min, max));
+    }
+  }, [editText, onChange, min, max]);
+
+  const handleEditKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") {
+        handleEditCommit();
+      } else if (e.key === "Escape") {
+        setIsEditing(false);
+      }
+    },
+    [handleEditCommit]
+  );
+
+  const displayValue = localValue.toFixed(decimals);
+
+  return (
+    <div className="space-y-1">
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+        <label
+          className="min-w-0 flex-1 truncate text-xs text-text-secondary"
+          title={description}
+        >
+          {label}
+        </label>
+        <div className="ml-auto flex max-w-full items-center gap-1">
+          {isEditing ? (
+            <input
+              type="number"
+              value={editText}
+              min={min}
+              max={max}
+              step={step}
+              onChange={(e) => setEditText(e.target.value)}
+              onBlur={handleEditCommit}
+              onKeyDown={handleEditKeyDown}
+              autoFocus
+              className="w-20 text-xs font-mono text-text-primary text-right
+                bg-background border border-border rounded px-1 py-0.5
+                focus:outline-none focus:border-accent/50"
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={handleEditStart}
+              className="text-xs font-mono text-text-primary whitespace-nowrap
+                hover:text-accent cursor-text transition-colors"
+              title="Click to type a value"
+            >
+              {displayValue}
+              {!unitOptions && unit && (
+                <span className="text-text-secondary ml-0.5">{unit}</span>
+              )}
+            </button>
+          )}
+          {unitOptions && onUnitChange && (
+            <label className="flex min-w-0 items-center gap-1 text-[10px] text-text-secondary">
+              <span className="hidden sm:inline">Unit:</span>
+              <select
+                aria-label={`${label} display unit`}
+                title={`Choose the unit used to display and edit ${label.toLowerCase()}`}
+                value={unit}
+                onChange={(event) => onUnitChange(event.target.value)}
+                className="w-24 max-w-full sm:w-28 bg-background border border-accent/40 rounded px-1 py-0.5
+                  text-[10px] font-mono text-text-primary cursor-pointer focus:outline-none
+                  focus:border-accent"
+              >
+                {unitOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+        </div>
+      </div>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={localValue}
+        onChange={handleSliderChange}
+        className="w-full h-2 bg-border rounded-full appearance-none cursor-pointer
+           touch-pan-y
+           [&::-webkit-slider-thumb]:appearance-none
+           [&::-webkit-slider-thumb]:w-5
+           [&::-webkit-slider-thumb]:h-5
+           [&::-webkit-slider-thumb]:rounded-full
+           [&::-webkit-slider-thumb]:bg-accent
+           [&::-webkit-slider-thumb]:hover:bg-accent-hover
+           [&::-webkit-slider-thumb]:transition-colors
+           [&::-webkit-slider-thumb]:cursor-pointer
+           [&::-webkit-slider-thumb]:shadow-md
+           [&::-moz-range-thumb]:w-5
+           [&::-moz-range-thumb]:h-5
+           [&::-moz-range-thumb]:rounded-full
+           [&::-moz-range-thumb]:bg-accent
+           [&::-moz-range-thumb]:border-0
+           [&::-moz-range-thumb]:hover:bg-accent-hover
+           [&::-moz-range-thumb]:cursor-pointer
+           [&::-moz-range-track]:bg-border
+           [&::-moz-range-track]:rounded-full
+           [&::-moz-range-track]:h-2"
+      />
+    </div>
+  );
+}

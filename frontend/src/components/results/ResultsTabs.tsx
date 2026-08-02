@@ -1,0 +1,392 @@
+/**
+ * Results tabs container — wraps all result views (SWR, Impedance, Pattern, Gain).
+ * Used in the right panel on desktop and results sheet on mobile.
+ */
+
+import { useCallback, useRef } from "react";
+import { Tabs } from "../ui/Tabs";
+import { SWRChart } from "./SWRChart";
+import { ImpedanceChart } from "./ImpedanceChart";
+import { GainTable } from "./GainTable";
+import { PatternPolar } from "./PatternPolar";
+import { SmithChart } from "./SmithChart";
+import { BandAnalysis } from "./BandAnalysis";
+import { MatchingPanel } from "./MatchingPanel";
+import { ChartExpandable } from "../ui/ChartPopup";
+import { useSimulationStore } from "../../stores/simulationStore";
+import { useUIStore, type ResultsTab } from "../../stores/uiStore";
+import { formatSwr, formatImpedance, formatGain, swrColorClass, applyMatching } from "../../utils/units";
+import { parseS1P } from "../../utils/s1p-parser";
+import { downloadResultsS1P } from "../../utils/s1p-export";
+
+const TABS = [
+  { key: "swr", label: "SWR" },
+  { key: "impedance", label: "Z" },
+  { key: "smith", label: "Smith" },
+  { key: "pattern", label: "Pattern" },
+  { key: "gain", label: "Gain" },
+  { key: "bands", label: "Bands" },
+  { key: "match", label: "Match" },
+];
+
+export function ResultsPanel() {
+  const status = useSimulationStore((s) => s.status);
+  const result = useSimulationStore((s) => s.result);
+  const error = useSimulationStore((s) => s.error);
+  const selectedFreqIndex = useSimulationStore((s) => s.selectedFreqIndex);
+  const setSelectedFreqIndex = useSimulationStore((s) => s.setSelectedFreqIndex);
+  const selectedFreqResult = useSimulationStore((s) =>
+    s.getSelectedFrequencyResult()
+  );
+
+  const resultsTab = useUIStore((s) => s.resultsTab);
+  const setResultsTab = useUIStore((s) => s.setResultsTab);
+  const s1pFile = useUIStore((s) => s.s1pFile);
+  const setS1PFile = useUIStore((s) => s.setS1PFile);
+  const matching = useUIStore((s) => s.matching);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleTabChange = useCallback(
+    (key: string) => setResultsTab(key as ResultsTab),
+    [setResultsTab]
+  );
+
+  const handleFreqClick = useCallback(
+    (index: number) => setSelectedFreqIndex(index),
+    [setSelectedFreqIndex]
+  );
+
+  const handleS1PImport = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const handleS1PFileChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const parsed = parseS1P(reader.result as string, file.name);
+          setS1PFile(parsed);
+        } catch {
+          // Silently fail — could add toast later
+        }
+      };
+      reader.readAsText(file);
+      // Reset input so re-importing the same file triggers change
+      e.target.value = "";
+    },
+    [setS1PFile]
+  );
+
+  const handleS1PClear = useCallback(() => {
+    setS1PFile(null);
+  }, [setS1PFile]);
+
+  const handleS1PExport = useCallback(() => {
+    if (!result) return;
+    downloadResultsS1P(result.frequency_data, matching);
+  }, [result, matching]);
+
+  return (
+    <div className="flex flex-col h-full overflow-hidden">
+      {/* Hidden file input for .s1p import */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".s1p,.S1P"
+        className="hidden"
+        onChange={handleS1PFileChange}
+      />
+
+      <Tabs tabs={TABS} activeKey={resultsTab} onChange={handleTabChange} />
+
+      <div className="flex-1 overflow-y-auto p-3">
+        {/* Idle state */}
+        {status === "idle" && (
+          <div className="flex flex-col items-center justify-center h-full gap-3">
+            <p className="text-sm text-text-secondary text-center px-4">
+              Run a simulation to see results here.
+            </p>
+            {resultsTab === "swr" && (
+              <button
+                onClick={handleS1PImport}
+                className="text-xs px-3 py-1.5 rounded border border-border text-text-secondary hover:text-text-primary hover:border-accent/50 transition-colors"
+              >
+                Import .s1p
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Loading state */}
+        {status === "loading" && (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center space-y-2">
+              <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto" />
+              <p className="text-xs text-text-secondary">
+                Running NEC2 simulation...
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Error state */}
+        {status === "error" && (
+          <div className="flex items-center justify-center h-full">
+            <p className="text-sm text-swr-bad text-center px-4">{error}</p>
+          </div>
+        )}
+
+        {/* Success state */}
+        {status === "success" && result && (
+          <div className="space-y-3">
+            {/* Quick summary — always visible */}
+            {selectedFreqResult && (() => {
+              const m = applyMatching(
+                selectedFreqResult.impedance.real,
+                selectedFreqResult.impedance.imag,
+                matching
+              );
+              const hasMatching = matching.ratio !== 1 || matching.feedlineZ0 !== 50;
+              return (
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="bg-background rounded-md p-2">
+                    <div className="text-[10px] text-text-secondary">
+                      SWR{hasMatching ? ` (${matching.feedlineZ0}\u03A9)` : ""}
+                    </div>
+                    <div
+                      className={`text-lg font-mono font-bold ${swrColorClass(m.swr)}`}
+                    >
+                      {formatSwr(m.swr)}
+                    </div>
+                  </div>
+                  <div className="bg-background rounded-md p-2">
+                    <div className="text-[10px] text-text-secondary">Gain</div>
+                    <div className="text-lg font-mono font-bold text-text-primary">
+                      {formatGain(selectedFreqResult.gain_max_dbi)}
+                    </div>
+                  </div>
+                  <div className="bg-background rounded-md p-2 col-span-2">
+                    <div className="text-[10px] text-text-secondary">
+                      Impedance{hasMatching ? ` (after ${matching.ratio}:1)` : ""}
+                    </div>
+                    <div className="text-sm font-mono text-text-primary">
+                      {formatImpedance(m.real, m.imag)}
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleS1PExport}
+                    className="col-span-2 text-[10px] px-1.5 py-1 rounded border border-border text-text-secondary hover:text-text-primary hover:border-accent/50 transition-colors"
+                    title="Export sweep as Touchstone .s1p"
+                  >
+                    Export .s1p
+                  </button>
+                </div>
+              );
+            })()}
+
+            {/* Tab content */}
+            <div className="border-t border-border pt-3">
+              {resultsTab === "swr" && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-medium text-text-secondary">
+                      SWR vs Frequency
+                    </h4>
+                    <div className="flex items-center gap-1.5">
+                      {s1pFile && (
+                        <button
+                          onClick={handleS1PClear}
+                          className="text-[10px] text-text-secondary hover:text-swr-bad transition-colors"
+                          title="Remove .s1p overlay"
+                        >
+                          {s1pFile.filename} x
+                        </button>
+                      )}
+                      <button
+                        onClick={handleS1PImport}
+                        className="text-[10px] px-1.5 py-0.5 rounded border border-border text-text-secondary hover:text-text-primary hover:border-accent/50 transition-colors"
+                        title="Import .s1p file from NanoVNA"
+                      >
+                        .s1p
+                      </button>
+                    </div>
+                  </div>
+                  <ChartExpandable
+                    title="SWR vs Frequency"
+                    expandedChildren={
+                      <div className="w-full h-full">
+                        <SWRChart
+                          data={result.frequency_data}
+                          onFrequencyClick={handleFreqClick}
+                          selectedIndex={selectedFreqIndex}
+                          s1pData={s1pFile?.data}
+                          matching={matching}
+                          heightClass="h-full"
+                        />
+                      </div>
+                    }
+                  >
+                    <SWRChart
+                      data={result.frequency_data}
+                      onFrequencyClick={handleFreqClick}
+                      selectedIndex={selectedFreqIndex}
+                      s1pData={s1pFile?.data}
+                      matching={matching}
+                    />
+                  </ChartExpandable>
+                </div>
+              )}
+
+              {resultsTab === "impedance" && (
+                <div className="space-y-2">
+                  <h4 className="text-xs font-medium text-text-secondary">
+                    Impedance vs Frequency
+                  </h4>
+                  <ChartExpandable
+                    title="Impedance vs Frequency"
+                    expandedChildren={
+                      <div className="w-full h-full">
+                        <ImpedanceChart data={result.frequency_data} matching={matching} heightClass="h-full" />
+                      </div>
+                    }
+                  >
+                    <ImpedanceChart data={result.frequency_data} matching={matching} />
+                  </ChartExpandable>
+                </div>
+              )}
+
+              {resultsTab === "smith" && (
+                <div className="space-y-2">
+                  <h4 className="text-xs font-medium text-text-secondary">
+                    Smith Chart
+                  </h4>
+                  <ChartExpandable
+                    title="Smith Chart"
+                    expandedChildren={
+                      <div className="w-full h-full flex items-center justify-center">
+                        <SmithChart
+                          data={result.frequency_data}
+                          selectedIndex={selectedFreqIndex}
+                          onFrequencyClick={handleFreqClick}
+                          matching={matching}
+                          size={600}
+                          responsive
+                        />
+                      </div>
+                    }
+                  >
+                    <SmithChart
+                      data={result.frequency_data}
+                      selectedIndex={selectedFreqIndex}
+                      onFrequencyClick={handleFreqClick}
+                      matching={matching}
+                    />
+                  </ChartExpandable>
+                </div>
+              )}
+
+              {resultsTab === "pattern" && selectedFreqResult && (
+                <div className="space-y-3">
+                  <h4 className="text-xs font-medium text-text-secondary">
+                    Radiation Pattern
+                  </h4>
+                  {selectedFreqResult.pattern ? (
+                    <div className="space-y-3">
+                      <ChartExpandable
+                        title="Azimuth Pattern (H-plane)"
+                        expandedChildren={
+                          <div className="w-full h-full flex items-center justify-center">
+                            <PatternPolar
+                              pattern={selectedFreqResult.pattern}
+                              mode="azimuth"
+                              size={500}
+                              responsive
+                            />
+                          </div>
+                        }
+                      >
+                        <PatternPolar
+                          pattern={selectedFreqResult.pattern}
+                          mode="azimuth"
+                          size={180}
+                        />
+                      </ChartExpandable>
+                      <ChartExpandable
+                        title="Elevation Pattern (E-plane)"
+                        expandedChildren={
+                          <div className="w-full h-full flex items-center justify-center">
+                            <PatternPolar
+                              pattern={selectedFreqResult.pattern}
+                              mode="elevation"
+                              size={500}
+                              responsive
+                            />
+                          </div>
+                        }
+                      >
+                        <PatternPolar
+                          pattern={selectedFreqResult.pattern}
+                          mode="elevation"
+                          size={180}
+                        />
+                      </ChartExpandable>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-text-secondary text-center py-4">
+                      No pattern data available for this frequency.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {resultsTab === "gain" && selectedFreqResult && (
+                <div className="space-y-2">
+                  <h4 className="text-xs font-medium text-text-secondary">
+                    Performance Summary
+                  </h4>
+                  <GainTable data={selectedFreqResult} />
+                </div>
+              )}
+
+              {resultsTab === "bands" && (
+                <div className="space-y-2">
+                  <h4 className="text-xs font-medium text-text-secondary">
+                    Multi-Band Analysis
+                  </h4>
+                  <BandAnalysis data={result.frequency_data} matching={matching} />
+                </div>
+              )}
+
+              {resultsTab === "match" && selectedFreqResult && (
+                <div className="space-y-2">
+                  <h4 className="text-xs font-medium text-text-secondary">
+                    Matching Network
+                  </h4>
+                  <MatchingPanel data={selectedFreqResult} />
+                </div>
+              )}
+            </div>
+
+            {/* Warnings */}
+            {result.warnings.length > 0 && (
+              <div className="border-t border-border pt-2 space-y-1">
+                {result.warnings.map((w, i) => (
+                  <p
+                    key={i}
+                    className="text-[10px] text-swr-warning leading-relaxed"
+                  >
+                    {w}
+                  </p>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
