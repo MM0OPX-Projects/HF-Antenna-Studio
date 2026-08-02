@@ -9,6 +9,12 @@ Build a new GPL-3.0-or-later desktop repository with a bundled React/TypeScript 
 
 This is a proposal, not an implementation report. Neither candidate solver has yet passed HF Antenna Studio's validation suite.
 
+## Experimental vertical-slice status
+
+The `feature/verified-dipole-model` branch implements a deliberately narrow vertical slice inside the inherited AntennaSim browser/Wasm baseline. Its typed SI model, dedicated NEC adapter, exact-deck worker request, result validator, and `/verified-dipole` page test the contract shape proposed here. It does not reverse the native-solver/Tauri proposal or select Wasm for the product.
+
+The key architectural evidence is that the displayed deterministic deck can cross a narrow solver boundary without rebuilding it from a second application model. That pattern should be retained when the slice moves to the proposed `domain`, `nec-compiler`, `result-parser`, and native `solver-runner` packages. See [`VERIFIED_DIPOLE.md`](VERIFIED_DIPOLE.md) for implementation and validation boundaries.
+
 ## Why a desktop web architecture
 
 The product requires an HTML/JavaScript interface, offline operation, private local files, and dependable local native calculation on Windows 11. A desktop webview provides the desired UI technology without introducing a loopback web server, browser-origin file workarounds, Docker, Redis, or a permanently listening port.
@@ -263,7 +269,7 @@ HF-Antenna-Studio/
 └── README.md
 ```
 
-Only the planning documents exist at this milestone. The tree is a proposed destination, not a statement that these components have been created.
+The tree remains a proposed destination. The experimental verified-dipole components currently live under the inherited `frontend/src/features/verified-dipole/` structure and provide migration evidence; they are not the proposed package tree.
 
 ## Reuse assessment from AntennaSim
 
@@ -299,10 +305,10 @@ The following findings affect reuse decisions; they are observations of the audi
 - Backend and browser paths independently build decks and parse results, making drift possible.
 - The Docker backend installs the distribution `nec2c` package, while the Wasm path builds a pinned KJ7LNW source commit; equivalence is not established.
 - Frontend unit tests do not invoke an NEC solver. A pattern fixture labelled as a free-space half-wave dipole expects 6.76 dBi, so it cannot serve as a trusted physical oracle.
-- The browser Wasm path returns an empty application-warning list even though the solver output may contain diagnostics.
+- The audited baseline browser Wasm path returned an empty application-warning list. The verified-dipole descendant branch now extracts warning/error lines, but a complete diagnostic corpus and raw-output retention remain open.
 - Import can silently discard or mutate information, including unsupported cards; one frontend path parses but does not retain LD/TL data in its import result.
 - Multiple frequency and pattern blocks are not represented losslessly by the project/import model.
-- Real-ground decks use `GE 0` with `GN 2`; ground-connected geometry and GE interpolation semantics require reference testing.
+- The inherited generic real-ground builder uses `GE 0` with `GN 2`; ground-connected geometry and GE interpolation semantics require reference testing. The dedicated verified-dipole adapter instead uses manual-defined `GE -1` for its always-elevated grounded wire.
 - Requested theta domains include negative theta and, for ground, negative elevation-like values. NEC's canonical theta is measured from +Z, so duplication and below-ground sampling must be resolved.
 - An “azimuth” plot is selected from the theta row containing the global maximum rather than necessarily the conventional horizontal plane.
 - The 3D pattern radius linearly normalizes dB values, which is useful visually but is not a calibrated field/power radial mapping.
@@ -333,7 +339,7 @@ These are reasons for selective reuse and early validation, not for discarding a
 
 ### Browser-only WebAssembly
 
-Attractive for portability and isolation, but the available NEC2++ Wasm entry point is currently a stub and AntennaSim's `nec2c` Wasm path has not demonstrated warning/parity validation. It remains an optional future adapter after exact-binary validation.
+Attractive for portability and isolation, but the available NEC2++ Wasm entry point is currently a stub. The inherited `nec2c` Wasm path now has one warning-aware, published-reference vertical slice, not parity against an accepted native binary or the full corpus. It remains an optional future product adapter after exact-binary validation.
 
 ### Docker-hosted FastAPI service
 

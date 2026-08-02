@@ -13,6 +13,7 @@ import { useUIStore } from "../../stores/uiStore";
 const NAV_LINKS = [
   { to: "/", label: "Simulator", featured: false },
   { to: "/editor", label: "Wire Editor", featured: true },
+  { to: "/verified-dipole", label: "Verified Dipole", featured: false },
   { to: "/library", label: "Library", featured: false },
   { to: "/learn", label: "Learn", featured: false },
   { to: "/about", label: "About", featured: false },
@@ -78,7 +79,7 @@ export function Navbar() {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2" onClick={() => setMenuOpen(false)}>
             <span className="text-accent font-bold text-lg tracking-tight">
-              AntennaSim
+              HF Antenna Studio
             </span>
             <span className="text-text-secondary text-[10px] font-mono">
               v{__APP_VERSION__}

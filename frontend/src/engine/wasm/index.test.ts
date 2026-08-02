@@ -17,12 +17,44 @@ class SilentWorker {
     this.listeners.set(type, listeners);
   }
 
-  postMessage(): void {
+  postMessage(_message?: unknown): void {
     // Deliberately silent to exercise the timeout path.
   }
 
   terminate(): void {
     this.terminated = true;
+  }
+}
+
+class AnsweringWorker extends SilentWorker {
+  posted: unknown = null;
+
+  override postMessage(message: unknown): void {
+    this.posted = message;
+    const typed = message as { id: string };
+    queueMicrotask(() => this.emit("message", {
+      data: {
+        type: "success",
+        id: typed.id,
+        result: {
+          simulation_id: "raw-deck-test",
+          engine: "wasm-nec2c",
+          computed_in_ms: 1,
+          total_segments: 1,
+          cached: false,
+          frequency_data: [],
+          warnings: [],
+        },
+      },
+    }));
+  }
+
+  emit(type: string, event: unknown): void {
+    const listeners = (this as unknown as { listeners: Map<string, Set<EventListenerOrEventListenerObject>> }).listeners.get(type);
+    listeners?.forEach((listener) => {
+      if (typeof listener === "function") listener(event as Event);
+      else listener.handleEvent(event as Event);
+    });
   }
 }
 
@@ -70,5 +102,19 @@ describe("WasmEngine worker failures", () => {
       message: "Simulation timed out after 120 seconds.",
     });
     expect(SilentWorker.latest?.terminated).toBe(true);
+  });
+
+  it("invokes the worker with the exact raw NEC deck", async () => {
+    vi.stubGlobal("Worker", AnsweringWorker);
+    const engine = new WasmEngine();
+    const deck = "CM exact\nCE\nGW 1 1 0 0 0 1 0 0 0.001\nGE -1\nEN\n";
+    await engine.runDeck({
+      deck,
+      parse: { nTheta: 1, nPhi: 1, thetaStart: 0, thetaStep: 5, phiStart: 0, phiStep: 5, computeCurrents: true, totalSegments: 1 },
+    });
+    expect((SilentWorker.latest as unknown as AnsweringWorker).posted).toEqual(expect.objectContaining({
+      type: "run-deck",
+      request: expect.objectContaining({ deck }),
+    }));
   });
 });

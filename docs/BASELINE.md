@@ -10,6 +10,8 @@ The supported baseline execution mode is the browser-local WebAssembly engine. T
 
 This branch is a preserved, runnable reference snapshot. It does not reverse D-001 (new product repository with selective reuse), D-005 (native solver bake-off), or D-006 (Wasm must later prove parity with the accepted native oracle). Making the inherited application reproducible is evidence-gathering before redevelopment, not a decision to ship its architecture unchanged.
 
+The descendant `feature/verified-dipole-model` branch adds a dedicated exact-deck route and does not alter the recorded generic baseline model/deck semantics in the table below. Its separate implementation and evidence are documented in [`VERIFIED_DIPOLE.md`](VERIFIED_DIPOLE.md).
+
 ## Tested Windows 11 toolchain
 
 | Component | Tested version |
@@ -79,6 +81,8 @@ The `VITE_ENGINE=wasm` build-time variable selects `WasmEngine` in `frontend/src
 6. It invokes the compiled NEC2C `main` function as `callMain(["-i", "/input.nec", "-o", "/output.out"])`.
 7. It reads `/output.out`, parses impedance, current, power, near-field, and far-field sections, and posts structured results to the UI.
 8. The caller is configured to reject a crashed/unreadable worker and terminates a simulation that exceeds 120 seconds, allowing a fresh worker on the next attempt. The timeout/reset path is unit-tested; explicit browser fault injection for the other worker events remains to be added.
+
+On the verified-dipole descendant branch, `WasmEngine.runDeck` is an additional message type: its dedicated adapter supplies an already-generated deck plus parse-grid metadata, and the worker writes that same string without invoking the generic builder.
 
 The unused native-service alternative runs `nec2c -i <temporary-input> -o <temporary-output>` via Python `subprocess.run` with `shell=False`, a configured timeout, and a private temporary work directory. The Docker image installs Debian's `nec2c`. A Windows native NEC2C executable is not bundled and this path was not validated on Windows.
 

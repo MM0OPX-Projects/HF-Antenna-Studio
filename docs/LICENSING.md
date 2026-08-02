@@ -22,6 +22,20 @@ GPL-3.0-or-later
 
 The AntennaSim baseline import includes the complete GPL-3.0-or-later text and upstream copyright notice at repository root, and the frontend/backend package metadata now uses the same SPDX expression. Public binary distribution is still gated on the remaining checklist, especially solver provenance, third-party notices, corresponding source, and branding/assets review.
 
+## Verified-dipole branch checkpoint
+
+The `feature/verified-dipole-model` work adds no runtime or development dependency and remains part of the GPL-3.0-or-later AntennaSim-derived source tree. The feature's new TypeScript, tests, and original UI are distributed under the repository license; existing shared AntennaSim components retain their upstream history and notices.
+
+External validation handling is consistent with the comparator policy:
+
+- the Ellingson Virginia Tech/UNM memo is linked and only selected factual scalar results plus an independently authored summary are recorded; the PDF and its figures are not copied into the repository;
+- no rftools.io code, output file, screenshot, interface artwork, or model asset is committed;
+- PyNEC/necpp was evaluated but is not installed, linked, bundled, or added as a dependency;
+- no 4NEC2, EZNEC, or AN-SOF artifact is included;
+- the `HF Antenna Studio` name is applied as original product text, while AntennaSim provenance remains explicit in the baseline documentation.
+
+This checkpoint does not resolve the pinned nec2c provenance or approve a public binary distribution. The existing solver and release checklist remains open and unchanged.
+
 If the project later decides to avoid all GPL-covered reuse and chooses a differently licensed solver arrangement, relicensing new original code would require contributor agreement and a new documented decision. The current architecture does not assume that future path.
 
 ## Audited upstream classifications

@@ -21,6 +21,7 @@ Decision review date: 2026-08-02
 | D-012 | Start with human-readable `.hfas` JSON and optional separately keyed result cache | Accepted |
 | D-013 | Defer parameters/optimization until the ordinary run path and metrics are validated | Accepted |
 | D-014 | Preserve a runnable AntennaSim baseline branch without selecting its Wasm architecture for the product | Accepted, baseline-only |
+| D-015 | Prove the first dipole slice with an exact displayed-deck boundary on the inherited branch | Accepted, experimental |
 
 ## D-001 — New repository with selective AntennaSim reuse
 
@@ -121,7 +122,7 @@ Do not make Wasm the initial solver. A future Wasm adapter must pass the same ex
 
 ### Evidence
 
-AntennaSim's deployed KJ7LNW/nec2c Wasm flow completed a simple smoke run. That establishes feasibility, not parity. The audited NEC2++ `nec_wasm.cpp` path is explicitly incomplete and its CI tests artifact creation rather than simulation.
+AntennaSim's deployed KJ7LNW/nec2c Wasm flow first completed a simple smoke run. The descendant verified-dipole branch now also matches one published free-space NEC-2 case, but that still does not establish parity with the future native solver or validate ground/general models. The audited NEC2++ `nec_wasm.cpp` path is explicitly incomplete and its CI tests artifact creation rather than simulation.
 
 ### Consequences
 
@@ -229,6 +230,20 @@ Preserve the audited AntennaSim 1.4.2 source and pinned NEC2C submodule on `feat
 - Baseline ranges prevent accidental behavior changes but cannot be promoted to independent validation evidence.
 - GPL provenance remains explicit because the imported source and history are not represented as clean-room work.
 
+## D-015 — Exact-deck verified dipole slice
+
+### Decision
+
+Implement the first centre-fed dipole vertical slice on the inherited baseline branch using a solver-independent SI schema, a dedicated NEC adapter, and an exact-deck worker message. The NEC text displayed to the user must be the same string written to the solver input file. Validate it against a published external NEC-2 case, while classifying application-generated ground cases only as regression evidence.
+
+### Consequences
+
+- The slice can test domain/compiler/parser/UI boundaries before repository migration.
+- The generic AntennaSim deck builder is not used for this model, preventing displayed/solved deck drift.
+- This decision supplies evidence for D-007 but does not reverse D-001, D-005, or D-006.
+- Wasm remains an experimental adapter until it has byte-deck parity with the selected native solver and the full independent corpus.
+- A 4NEC2 or equivalent established-package ground comparison remains release-blocking.
+
 ## Second, adversarial architecture review
 
 The following review intentionally argues against the preferred architecture. “Resolution” means either a concrete architecture change/gate or a documented reason to retain the risk; it does not mean the issue has already passed testing.
@@ -277,11 +292,11 @@ The planning set uses the following single positions:
 | Initial platform | Windows 11 x64 desktop with bundled HTML/TypeScript UI |
 | Runtime boundary | Tauri IPC to isolated native child process; no localhost server |
 | Solver | Native nec2c baseline and NEC2++ challenger; final choice pending Phase 0 |
-| Wasm | Deferred optional adapter, not assumed functional/validated |
+| Wasm | Experimental dipole slice works; product selection/parity validation remains deferred |
 | Offline/privacy | No ordinary-use network feature; disconnected installer/run test required |
 | Import | Loss-aware raw document plus explicit structured subset; no silent mutation |
 | Coordinates | NEC theta/phi internal; labelled/tested UI transformations |
-| Feature status | Planning only; no HF Antenna Studio feature is claimed implemented |
+| Feature status | One experimental verified-dipole slice is implemented on the inherited branch; the target desktop architecture remains proposed |
 | Optimization | Deferred until validated ordinary run and parameter infrastructure |
 
 Any future change to these positions requires an ADR update plus review of architecture, solver evaluation, roadmap, validation, risks, licensing, and product claims.

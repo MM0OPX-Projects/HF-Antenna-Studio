@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Added a dedicated verified centre-fed horizontal dipole workflow with SI-domain types, m/mm/ft/in display conversion, perfect/real/free-space ground, 50/75-ohm SWR, exact generated NEC, 2D patterns, and current magnitude/phase
+- Added a byte-identical raw-deck worker route so the NEC model shown in the verified workflow is the model executed by local nec2c/WASM
+- Added safe odd-segment selection and visible thin-wire, geometry, ground-clearance, and segmentation diagnostics based on NEC-2 modelling guidance
+- Added unit, adapter, parsing/result, failure, timeout, browser-console, five-geometry regression, and published external NEC-2 validation coverage
+- Added `docs/VERIFIED_DIPOLE.md` with the pipeline, numeric evidence, claim limits, and unresolved established-package/ground validation work
+- Applied the HF Antenna Studio product name to the local application shell and page metadata while retaining upstream provenance in documentation
 - Added a reproducible Windows 11 browser-local baseline with pinned Node, npm, Emscripten, and NEC2C versions
 - Added a guarded PowerShell build path for the pinned NEC2C WebAssembly solver
 - Added Playwright real-solver smoke tests for the existing dipole, vertical, and Yagi examples, including 2D/3D rendering and SWR/impedance checks
@@ -22,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- Filtered nec2c's ordinary stderr usage banner so it is not presented as a modelling warning while retaining warning/error lines
 - Added explicit simulation-worker handling for crashes, unreadable messages, startup failures, and a 120-second timeout
 - Removed two safe React effect warnings without changing calculation behavior
 

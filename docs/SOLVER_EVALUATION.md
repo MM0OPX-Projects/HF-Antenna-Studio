@@ -103,6 +103,8 @@ Pattern-derived efficiency is numerically integrated and capped at 100%. Given t
 
 The generator represents free space as `GE -1` and `GN -1`, perfect ground as `GE 0` plus `GN 1`, and real ground as `GE 0` plus `GN 2` with permittivity/conductivity. According to the [GE card documentation](https://www.nec2.org/part_3/cards/ge.html), the GE flag affects ground presence and current interpolation at ground; the [GN card](https://www.nec2.org/part_3/cards/gn.html) selects the ground parameters/model. Always using `GE 0` for grounded cases may be correct for some non-contact geometries but cannot be generalized to a wire ending on ground without reference tests.
 
+Feature checkpoint: the later dedicated verified-dipole adapter does not reuse this convention. It emits `GE 0` for free space and `GE -1` for its always-elevated wire over perfect or real ground, matching the manual flag definitions and avoiding `GE 1` contact interpolation. This does not silently change the inherited generic builder.
+
 #### Reproducibility data is incomplete
 
 The native project schema records useful editor data, but not enough of the raw imported NEC document, complete control-card intent, exact compiler version, solver version/binary hash, build flags, or raw input/output to reproduce every result.

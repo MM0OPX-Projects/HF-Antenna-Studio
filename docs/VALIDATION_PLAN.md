@@ -9,6 +9,14 @@ Establish defensible evidence that the exact distributed solver build, HF Antenn
 
 The application must not be its own oracle. Golden files generated only by HF Antenna Studio can detect regressions but cannot establish electromagnetic correctness.
 
+## Implementation checkpoint: verified dipole branch
+
+The `feature/verified-dipole-model` branch implements the first narrow slice of this plan. It has pure contract tests, an exact-deck worker route, failure/timeout tests, five real-solver browser regression cases, and a published external NEC-2 comparison. Detailed inputs, numbers, tolerances, and limitations are recorded in [`VERIFIED_DIPOLE.md`](VERIFIED_DIPOLE.md).
+
+The 38 MHz free-space case agrees with the published Virginia Tech/UNM NEC-2 result within 0.32 ohm for R/X and exactly at the reported 0.01 dB gain precision. The source uses 11 segments; the application uses its documented 21-segment automatic policy. This is independent numeric evidence for the free-space slice.
+
+The perfect-ground height family and real-ground execution are currently same-engine regression evidence only. The required established-package comparison remains open; consequently this checkpoint does not satisfy the full release gate described below.
+
 ## Claims this plan can and cannot support
 
 Passing the plan can support a bounded claim such as:

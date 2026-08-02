@@ -25,6 +25,7 @@ import { parseMaa } from "../parsers/maa-import";
 import { exportMaa } from "../parsers/maa-export";
 import { buildCardDeck } from "../parsers/nec-input";
 import type {
+  NecDeckRunRequest,
   WorkerRequest,
   WorkerResponse,
 } from "./worker";
@@ -136,6 +137,31 @@ function ensureSimWorkerListener(): void {
   });
 }
 
+function submitSimulationRequest(
+  message: WorkerRequest,
+  timeoutMs = SIMULATION_TIMEOUT_MS,
+): Promise<SimulationResult> {
+  ensureSimWorkerListener();
+  return new Promise<SimulationResult>((resolve, reject) => {
+    const timeoutId = setTimeout(() => {
+      resetSimulationWorker(
+        new Error(`Simulation timed out after ${timeoutMs / 1000} seconds.`),
+      );
+    }, timeoutMs);
+
+    pendingRequests.set(message.id, { resolve, reject, timeoutId });
+    try {
+      getSimWorker().postMessage(message);
+    } catch (error) {
+      resetSimulationWorker(
+        error instanceof Error
+          ? error
+          : new Error("Could not start the simulation worker."),
+      );
+    }
+  });
+}
+
 // ---------------------------------------------------------------------------
 // WasmEngine
 // ---------------------------------------------------------------------------
@@ -183,36 +209,30 @@ export class WasmEngine implements SimulationEngine {
     request: SimulateAdvancedRequest,
   ): Promise<SimulationResult> {
     assertSupportedFrequencyRange(request.frequency, request.frequencySegments);
-    ensureSimWorkerListener();
-
     const id = generateId();
-
     const message: WorkerRequest = {
       type: "simulate",
       id,
       request,
     };
+    return submitSimulationRequest(message);
+  }
 
-    return new Promise<SimulationResult>((resolve, reject) => {
-      const timeoutId = setTimeout(() => {
-        resetSimulationWorker(
-          new Error(
-            `Simulation timed out after ${SIMULATION_TIMEOUT_MS / 1000} seconds.`,
-          ),
-        );
-      }, SIMULATION_TIMEOUT_MS);
-
-      pendingRequests.set(id, { resolve, reject, timeoutId });
-      try {
-        getSimWorker().postMessage(message);
-      } catch (error) {
-        resetSimulationWorker(
-          error instanceof Error
-            ? error
-            : new Error("Could not start the simulation worker."),
-        );
-      }
-    });
+  /**
+   * Execute an exact, already-generated NEC deck. This is used by verified
+   * workflows where the deck shown to the user must be byte-for-byte the
+   * input sent to nec2c.
+   */
+  async runDeck(
+    request: NecDeckRunRequest,
+    timeoutMs = SIMULATION_TIMEOUT_MS,
+  ): Promise<SimulationResult> {
+    const message: WorkerRequest = {
+      type: "run-deck",
+      id: generateId(),
+      request,
+    };
+    return submitSimulationRequest(message, timeoutMs);
   }
 
   /**
