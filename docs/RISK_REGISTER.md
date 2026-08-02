@@ -48,6 +48,7 @@ Last reviewed: 2026-08-02
 | R-031 | Project/app name conflicts with an existing trademark or creates confusion. | L–M / H | No name clearance has been performed. | Search relevant software/radio trademark and package namespaces before public launch; rename before branding investment if needed. | Product + licensing leads | L / Open |
 
 | R-032 | A fast parameter change displays a radiation pattern calculated for an older geometry. | M / C | The height lab now hides non-matching results, terminates in-flight Wasm workers, and has rapid-change browser and scheduler tests; the future native/multi-job runner does not yet implement this contract. | Make immutable SI model/run identity mandatory for every adapter and cache; test out-of-order completion, cancel races, worker/process death, and persisted-cache provenance on each runner. | Domain + solver leads | L / Mitigating |
+| R-033 | Generated template dimensions, a shared segmentation rule, or idealised ground are mistaken for resonance or validated real-installation performance. | H / H | Eight templates now generate convenient frequency-linked starting models; same-engine solver regressions pass, but topology convergence and external comparisons are incomplete. | Label all generated dimensions as starting points; preserve manual override; expose exact deck/segment/feed/ground; require convergence, published/reference, native-parity, and established-package evidence per topology before support claims. | Domain + validation leads | M / Mitigating |
 
 ## Highest-priority pre-implementation risks
 

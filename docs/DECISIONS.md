@@ -23,6 +23,7 @@ Decision review date: 2026-08-02
 | D-014 | Preserve a runnable AntennaSim baseline branch without selecting its Wasm architecture for the product | Accepted, baseline-only |
 | D-015 | Prove the first dipole slice with an exact displayed-deck boundary on the inherited branch | Accepted, experimental |
 | D-016 | Supersede interactive solver jobs by terminating the worker and key every result/cache entry to the exact SI model | Accepted, experimental |
+| D-017 | Define parametric antennas in one declarative registry that emits the shared SI model; do not create per-template calculation screens | Accepted, experimental |
 
 ## D-001 — New repository with selective AntennaSim reuse
 
@@ -259,6 +260,21 @@ For the dipole height laboratory, geometry changes are synchronous UI state whil
 - The cache is process-memory only, limited to 40 exact models, and does not weaken D-009's future solver/compiler provenance requirements.
 - The native product runner must implement equivalent process-tree cancellation and immutable run identity; this decision does not reverse D-004 or D-006.
 
+## D-017 — Declarative antenna templates emit one shared SI model
+
+### Decision
+
+Represent antenna templates as data-plus-pure-generators in one registry. Each definition owns parameter metadata, starting dimensions, geometry, feed, loads, ground semantics, segmentation recommendation, validation, sliders, and band presets. Every definition emits the same solver-independent SI model and uses the same workbench, segmenter, NEC adapter, solver service, and result UI. Generated dimensions are explicitly starting points and manual dimensional override is preserved.
+
+### Consequences
+
+- New templates are added as reviewed definitions and tests, not independently hard-coded screens or solver routes.
+- Display units cannot leak into geometry or NEC generation.
+- Cross-parameter invalid geometry blocks execution rather than being silently clamped.
+- The common schema supports loads even though the initial eight definitions intentionally emit none.
+- A shared segment policy improves consistency but does not replace topology-specific convergence evidence.
+- The experimental Wasm implementation supplies contract evidence only; D-003 through D-006 still control the proposed Windows product runtime.
+
 ## Second, adversarial architecture review
 
 The following review intentionally argues against the preferred architecture. “Resolution” means either a concrete architecture change/gate or a documented reason to retain the risk; it does not mean the issue has already passed testing.
@@ -311,7 +327,7 @@ The planning set uses the following single positions:
 | Offline/privacy | No ordinary-use network feature; disconnected installer/run test required |
 | Import | Loss-aware raw document plus explicit structured subset; no silent mutation |
 | Coordinates | NEC theta/phi internal; labelled/tested UI transformations |
-| Feature status | One experimental verified-dipole slice is implemented on the inherited branch; the target desktop architecture remains proposed |
+| Feature status | Experimental verified-dipole, height-lab, and shared-template slices are implemented on the inherited branch; the target desktop architecture remains proposed |
 | Optimization | Deferred until validated ordinary run and parameter infrastructure |
 
 Any future change to these positions requires an ADR update plus review of architecture, solver evaluation, roadmap, validation, risks, licensing, and product claims.

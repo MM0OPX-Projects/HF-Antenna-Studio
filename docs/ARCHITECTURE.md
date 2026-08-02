@@ -15,6 +15,8 @@ The `feature/verified-dipole-model` branch implements a deliberately narrow vert
 
 The key architectural evidence is that the displayed deterministic deck can cross a narrow solver boundary without rebuilding it from a second application model. That pattern should be retained when the slice moves to the proposed `domain`, `nec-compiler`, `result-parser`, and native `solver-runner` packages. See [`VERIFIED_DIPOLE.md`](VERIFIED_DIPOLE.md) for implementation and validation boundaries.
 
+The `feature/antenna-template-system` branch extends that experiment with a declarative template registry, an SI-only shared parametric-wire schema, and one common workbench/segmentation/NEC pipeline for eight antenna topologies. It demonstrates that adding a template need not add a calculation screen. This remains inherited browser/Wasm implementation evidence rather than a change to the proposed Tauri/native architecture. See [`ANTENNA_TEMPLATE_SYSTEM.md`](ANTENNA_TEMPLATE_SYSTEM.md) for the contract, RF review, regression evidence, and open validation work.
+
 ## Why a desktop web architecture
 
 The product requires an HTML/JavaScript interface, offline operation, private local files, and dependable local native calculation on Windows 11. A desktop webview provides the desired UI technology without introducing a loopback web server, browser-origin file workarounds, Docker, Redis, or a permanently listening port.

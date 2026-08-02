@@ -224,6 +224,8 @@ If future dual licensing is contemplated, contributor terms must be redesigned b
 
 ## Internal consistency rules
 
+The `feature/antenna-template-system` implementation adds original project TypeScript, tests, and documentation under the existing GPL-3.0-or-later project terms. It adds no runtime dependency, copied proprietary asset, bundled comparator output, or externally sourced numeric validation table. The template regression values are generated locally and are explicitly not represented as independent reference data. Future externally sourced decks/results still require the documentation-and-validation checklist above.
+
 - Documentation must say GPL-3.0-or-later for HF Antenna Studio unless a later ADR changes it.
 - Do not call KJ7LNW/nec2c unambiguously public domain while its provenance is unresolved.
 - Do not describe a solver as “open-source and approved” until its exact source and bundle pass review.

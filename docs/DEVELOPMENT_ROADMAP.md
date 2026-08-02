@@ -157,6 +157,8 @@ Goal: reach a defensible initial public release for HF wire-antenna work.
 
 Implementation checkpoint (2026-08-02): `feature/dipole-height-lab` proves one bounded height parameter on the experimental browser/Wasm slice. Debounce, worker termination, stale-result suppression, cache identity, comparisons, and a five-point automatic animation are implemented and tested. This is evidence for the interaction contract, not completion of Phase 6: generic parameters, native-runner parity, persisted caches, arbitrary sweeps, discontinuity reporting, and workload budgets remain open.
 
+The subsequent `feature/antenna-template-system` checkpoint adds a declarative parameter/units/range/geometry/feed/load/ground/segmentation/validation/preset contract and one shared workbench for eight starting topologies. Frequency-linked starting dimensions and explicit manual override are implemented. It deliberately does not add an expression language, arbitrary dependency graph, persisted parameter sweeps, or optimization; the dimensions are not advertised as resonant. Independent external validation and native-runner parity remain open.
+
 Goal: support rapid exploration through the same validated model compiler and solver API.
 
 ### Work

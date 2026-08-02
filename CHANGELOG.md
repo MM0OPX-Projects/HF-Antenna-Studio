@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Added a reusable declarative antenna-template registry and one common workbench for horizontal dipole, inverted-V, sloper, quarter-wave vertical, ground-plane vertical, full-wave loop, delta loop, and square loop models
+- Added an SI-only shared template model with typed parameters, display units/ranges, geometry/feed/load/ground contracts, amateur-band presets, frequency-linked starting dimensions, explicit manual override, validation rules, and shared odd-segment recommendations
+- Added exact generated NEC inspection and local-solver results through one adapter, plus immediate interactive 3D geometry, metric/imperial controls, and ground presets
+- Added geometry, feed, segmentation, NEC, load, solver, UI-range, live-regeneration, mobile-width, invalid-model, unit-invariance, and eight-template numeric regression coverage
+- Added `docs/ANTENNA_TEMPLATE_SYSTEM.md` with contract details, RF/adversarial review, regression evidence, claim limits, and external validation work still required
 - Added an interactive dipole-height laboratory with immediate side/3D geometry, debounced local NEC calculation, polar azimuth/elevation plots, an orbitable 3D radiation surface, absolute/normalised scales, height/frequency/ground controls, and educational pattern labels
 - Added up to four labelled comparison traces, five wavelength-height presets, an automatic sweep animation, PNG/CSV export, reset, keyboard operation, and responsive mobile layout
 - Added cancellation at the synchronous Wasm worker boundary, stale-result suppression by exact SI model identity, and a bounded result cache
@@ -32,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- Corrected the ground-mounted quarter-wave template to use explicit NEC touching-ground geometry at `z = 0` with a perfect-ground default, and made the polygonal full-wave loop feed symmetric at bottom centre
 - Filtered nec2c's ordinary stderr usage banner so it is not presented as a modelling warning while retaining warning/error lines
 - Added explicit simulation-worker handling for crashes, unreadable messages, startup failures, and a 120-second timeout
 - Removed two safe React effect warnings without changing calculation behavior
