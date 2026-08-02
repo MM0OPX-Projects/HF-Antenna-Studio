@@ -11,6 +11,7 @@ import { AntennaTemplateStudioPage } from "./pages/AntennaTemplateStudioPage";
 import { VerticalAntennasPage } from "./pages/VerticalAntennasPage";
 import { YagiBeamModelsPage } from "./pages/YagiBeamModelsPage";
 import { LoopAndHexbeamModelsPage } from "./pages/LoopAndHexbeamModelsPage";
+import { PhasedArraysPage } from "./pages/PhasedArraysPage";
 
 export function AppRoutes() {
   return (
@@ -23,6 +24,7 @@ export function AppRoutes() {
       <Route path="/vertical-antennas" element={<VerticalAntennasPage />} />
       <Route path="/yagi-beams" element={<YagiBeamModelsPage />} />
       <Route path="/loop-and-hexbeam-models" element={<LoopAndHexbeamModelsPage />} />
+      <Route path="/phased-arrays" element={<PhasedArraysPage />} />
       <Route path="/library" element={<LibraryPage />} />
       <Route path="/learn" element={<LearnPage />} />
       <Route path="/about" element={<AboutPage />} />

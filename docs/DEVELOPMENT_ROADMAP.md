@@ -111,6 +111,8 @@ Implementation checkpoint (2026-08-02): `feature/vertical-antennas` implements t
 
 Implementation checkpoint (2026-08-02): `feature/yagi-beam-models` implements a bounded 2-to-8-element directional-array slice with explicit forward/rear metric definitions. Three perfect-ground exact decks pass direct comparison with a separately installed 4NEC2 NEC-2D engine and one NBS/NIST-scaled geometry passes a deliberately broad pattern sanity envelope. Broader Phase 5 is not complete: finite-ground, convergence, tube/material/feed/boom effects, other bands, native parity, and comparison against a package-authored external deck with fully recorded settings remain open.
 
+Implementation checkpoint (2026-08-02): `feature/phased-arrays` implements a bounded two-element vertical laboratory with separate enforced-current calibration and ideal-TL physical-network paths. Three classic perfect-ground decks pass an exact-deck external NEC-2D comparison and interactive cancellation/cache/overlay/phase-sweep contracts are tested. This does not complete Phase 5 or 6: physical feed-network validation, line loss/common mode, finite ground/radials, convergence, package-authored reference cases, native parity, generalized parameter sweeps, and packaged Windows performance remain open.
+
 ## Phase 4 — Loss-aware NEC interoperability and native projects
 
 Goal: make designs portable and reproducible without silent data loss.

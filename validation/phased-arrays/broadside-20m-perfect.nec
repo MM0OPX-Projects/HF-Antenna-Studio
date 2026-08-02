@@ -1,0 +1,14 @@
+CM HF Antenna Studio two-element phased vertical array
+CM SI units; bearing is converted to NEC X/Y geometry
+CM Explicit EX sources are voltages; ideal-current mode uses calibrated voltages
+CE
+GW 1 13 -2.6577346 0 0 -2.6577346 0 5.0496957 0.001
+GW 2 13 2.6577346 0 0 2.6577346 0 5.0496957 0.001
+GE 1
+GN 1 0 0 0 0 0
+PT 0 0 0 0
+EX 0 1 1 0 51.957961 -30.042609
+EX 0 2 1 0 51.957961 -30.042609
+FR 0 1 0 0 14.1 0
+RP 0 45 180 1000 0 0 2 2
+EN

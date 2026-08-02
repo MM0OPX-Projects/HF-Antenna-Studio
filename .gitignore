@@ -38,6 +38,7 @@ nec_workdir/
 !validation/vertical/*.nec
 !validation/yagi/*.nec
 !validation/loop-beams/*.nec
+!validation/phased-arrays/*.nec
 
 # Redis
 dump.rdb

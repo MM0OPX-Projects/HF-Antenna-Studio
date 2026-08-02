@@ -19,6 +19,7 @@ const NAV_LINKS = [
   { to: "/vertical-antennas", label: "Verticals", featured: false },
   { to: "/yagi-beams", label: "Yagi Beams", featured: false },
   { to: "/loop-and-hexbeam-models", label: "Loops & Hex", featured: false },
+  { to: "/phased-arrays", label: "Phased Arrays", featured: false },
   { to: "/library", label: "Library", featured: false },
   { to: "/learn", label: "Learn", featured: false },
   { to: "/about", label: "About", featured: false },
@@ -92,7 +93,7 @@ export function Navbar() {
           </Link>
 
           {/* Desktop nav links */}
-          <nav className="hidden md:flex items-center gap-4 text-sm">
+          <nav className="hidden xl:flex items-center gap-4 text-sm">
             {NAV_LINKS.map(({ to, label, featured }) => (
               <Link key={to} to={to} className={linkClass(to, featured)}>
                 {featured && (
@@ -118,7 +119,7 @@ export function Navbar() {
           <button
             type="button"
             onClick={openChangelog}
-            className="hidden cursor-pointer items-center gap-1.5 rounded-md border border-border px-2 py-1 text-[11px] text-text-secondary transition-colors hover:border-accent/40 hover:bg-surface-hover hover:text-text-primary md:inline-flex"
+            className="hidden cursor-pointer items-center gap-1.5 rounded-md border border-border px-2 py-1 text-[11px] text-text-secondary transition-colors hover:border-accent/40 hover:bg-surface-hover hover:text-text-primary xl:inline-flex"
             title="Show the latest changelog"
           >
             <svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true">
@@ -174,7 +175,7 @@ export function Navbar() {
           <button
             ref={toggleRef}
             onClick={() => setMenuOpen((o) => !o)}
-            className="md:hidden p-2 -mr-2 rounded-md text-text-secondary hover:text-text-primary
+            className="xl:hidden p-2 -mr-2 rounded-md text-text-secondary hover:text-text-primary
               hover:bg-surface-hover transition-colors"
             aria-label="Toggle navigation menu"
             aria-expanded={menuOpen}
@@ -209,7 +210,7 @@ export function Navbar() {
       {menuOpen && (
         <div
           ref={menuRef}
-          className="md:hidden absolute top-full left-0 right-0 z-50 border-b border-border bg-surface shadow-lg"
+          className="xl:hidden absolute top-full left-0 right-0 z-50 border-b border-border bg-surface shadow-lg"
         >
           <nav className="flex flex-col py-2">
             {NAV_LINKS.map(({ to, label, featured }) => (

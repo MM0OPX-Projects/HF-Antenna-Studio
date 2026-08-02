@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Added a two-element phased vertical-array laboratory with configurable SI geometry, metres/wavelength spacing, compass bearing, ideal-current and physical-feed modes, perfect/real ground, explicit radials, immediate 3D geometry, phasor/current views, debounced patterns, automatic phase sweep, and four saved overlays
+- Added coupled-port admittance calibration that converts ideal target currents into NEC voltage sources and rejects final patterns when parsed complex currents do not verify; physical mode instead uses one source junction and explicit ideal `TL` cards with solved currents and input impedance
+- Added stable circular beam-heading plateau centring, explicit forward/reverse and front-to-back/front-to-rear metrics, non-grazing 2-degree patterns, exact deck inspection, line-length/VF/delay conversions, shunt terminations, topology and validity warnings, and stale-result suppression
+- Added broadside and forward/reversed end-fire exact-deck fixtures that pass a separate 4NEC2 NEC-2D comparison, plus model/adapter/matrix/result/failure/cancellation/browser/mobile/keyboard/overlay/phase-sweep tests and `docs/PHASED_ARRAYS.md`
+
 - Added a dedicated loop and compact-beam laboratory for square, delta, and diamond loops, two-to-four-element cubical quads, and single-band broadband-style hexbeams on 20/17/15/12/10 metres
 - Added explicit generated wire paths and non-conducting hex supports, exact one-segment feed bridges, three delta feed regions, immediate 3D geometry, debounced/cancellable NEC solves, exact-deck inspection, 2D/3D patterns, impedance/SWR/gain/take-off metrics, and every-wire current magnitude/phase
 - Added derived feed-conductor orientation without inferring polarisation from antenna names, plus explicit +Y front/back metrics only for the directional quad and hex families

@@ -25,6 +25,10 @@ Decision review date: 2026-08-02
 | D-016 | Supersede interactive solver jobs by terminating the worker and key every result/cache entry to the exact SI model | Accepted, experimental |
 | D-017 | Define parametric antennas in one declarative registry that emits the shared SI model; do not create per-template calculation screens | Accepted, experimental |
 | D-018 | Keep perfect-ground contact, elevated explicit radials, and NEC radial-screen approximations as distinct vertical configurations | Accepted, experimental |
+| D-019 | Give directional models an explicit forward-axis and separate front/back from front/rear | Accepted, experimental |
+| D-020 | Use explicit source bridges for polygon and folded-wire feeds | Accepted, experimental |
+| D-021 | Treat initial hexbeam support as a disclosed single-band broadband-style topology | Accepted, experimental |
+| D-022 | Keep enforced ideal currents and physical TL feed networks as distinct phased-array modes | Accepted, experimental |
 
 ## D-001 — New repository with selective AntennaSim reuse
 
@@ -329,6 +333,19 @@ Represent three vertical configurations explicitly and never convert between the
 - Published/source-derived numbers require attribution but no proprietary asset, diagram, model deck, code, or output is copied.
 - A package-authored/reference construction and controlled convergence/measurement study are required before stronger hexbeam claims.
 
+## D-022 — Distinct phased-array excitation modes
+
+**Decision:** An ideal relative-current study and a physical transmission-line feed model are separate domain modes. Ideal mode must calibrate the coupled NEC voltage-source ports, solve for the required complex source voltages, and verify the final feed currents. Physical mode must contain one source and explicit `TL` topology; requested ideal currents cannot leak into it as purported physical results.
+
+**Consequences:**
+
+- A simple pair of `EX 0` voltage values is never relabelled as prescribed current.
+- Ideal mode has no single feed-impedance result and its calibrated voltages are not a construction prescription.
+- Physical mode reports source-junction impedance and solved element currents.
+- Ideal lossless non-radiating TL limitations, zero-length handling, topology, terminations, and the short source conductor remain visible in the model and exact deck.
+- Calibration and result caches use complete applicable model identities; a final complex-current mismatch blocks display.
+- Cross-build broadside/end-fire agreement supports the bounded ideal-current workflow only. Physical coax, finite ground, radials, and convergence remain separate validation gates.
+
 ## Second, adversarial architecture review
 
 The following review intentionally argues against the preferred architecture. “Resolution” means either a concrete architecture change/gate or a documented reason to retain the risk; it does not mean the issue has already passed testing.
@@ -381,7 +398,7 @@ The planning set uses the following single positions:
 | Offline/privacy | No ordinary-use network feature; disconnected installer/run test required |
 | Import | Loss-aware raw document plus explicit structured subset; no silent mutation |
 | Coordinates | NEC theta/phi internal; labelled/tested UI transformations |
-| Feature status | Experimental verified-dipole, height-lab, shared-template, vertical, Yagi, and loop/quad/hex slices are implemented on inherited branches; the target desktop architecture remains proposed |
+| Feature status | Experimental verified-dipole, height-lab, shared-template, vertical, Yagi, loop/quad/hex, and phased-array slices are implemented on inherited branches; the target desktop architecture remains proposed |
 | Optimization | Deferred until validated ordinary run and parameter infrastructure |
 
 Any future change to these positions requires an ADR update plus review of architecture, solver evaluation, roadmap, validation, risks, licensing, and product claims.

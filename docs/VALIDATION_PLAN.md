@@ -55,6 +55,14 @@ Five byte-identical 14.175 MHz perfect-ground decks agree with the separately in
 
 This is cross-build same-deck NEC-2 evidence, not an independent physical oracle. Source-bridge/corner/segment/grid convergence, finite-ground comparison, a package-authored or published reference per family, multiband hex coupling, and a controlled measurement comparison remain open release gates. In particular, the project's broadband-style hex path must not be described as a validated reproduction of a published or commercial hexbeam construction.
 
+## Implementation checkpoint: phased vertical arrays
+
+The `feature/phased-arrays` branch adds current-target calibration and explicit TL-network paths without treating them as equivalent. Unit tests cover SI geometry, compass rotation, metres/wavelengths, physical/electrical/delay conversions, radial connectivity and clearance, segmentation, exact cards, complex two-port inversion, current verification, directional plateau centring, failure, and cancellation. Browser tests cover classic broadside/end-fire/reversed cases, rapid stale-result suppression, physical TL execution, overlays, automatic phase sweep, real-ground/radial controls, keyboard use, mobile width, and console errors.
+
+Three byte-identical 14.1 MHz perfect-ground decks agree with the separate 4NEC2 merged NEC-2D build 2.7 at the 0.01 dB and 2-degree grid resolution: in-phase currents form a symmetric 0/180-degree broadside axis, and equal currents at -90/+90 degrees reverse the end-fire heading from 90 to 270 degrees with equal 8.18 dBi forward and -26.72 dBi reverse samples. [`PHASED_ARRAYS.md`](PHASED_ARRAYS.md) records exact inputs, hashes, source semantics, numeric evidence, and the adversarial RF review.
+
+This checkpoint validates cross-build execution and the bounded ideal-current contract only. It does not validate a physical coax implementation. TL-network external cases, loss/common-mode models, source-junction convergence, finite ground, explicit radials, spacing/segment/grid convergence, a package-authored phased-array reference, native parity, and controlled measurement remain open release gates.
+
 ## Claims this plan can and cannot support
 
 Passing the plan can support a bounded claim such as:
