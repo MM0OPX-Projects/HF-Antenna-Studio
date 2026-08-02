@@ -24,6 +24,7 @@ Decision review date: 2026-08-02
 | D-015 | Prove the first dipole slice with an exact displayed-deck boundary on the inherited branch | Accepted, experimental |
 | D-016 | Supersede interactive solver jobs by terminating the worker and key every result/cache entry to the exact SI model | Accepted, experimental |
 | D-017 | Define parametric antennas in one declarative registry that emits the shared SI model; do not create per-template calculation screens | Accepted, experimental |
+| D-018 | Keep perfect-ground contact, elevated explicit radials, and NEC radial-screen approximations as distinct vertical configurations | Accepted, experimental |
 
 ## D-001 — New repository with selective AntennaSim reuse
 
@@ -274,6 +275,20 @@ Represent antenna templates as data-plus-pure-generators in one registry. Each d
 - The common schema supports loads even though the initial eight definitions intentionally emit none.
 - A shared segment policy improves consistency but does not replace topology-specific convergence evidence.
 - The experimental Wasm implementation supplies contract evidence only; D-003 through D-006 still control the proposed Windows product runtime.
+
+## D-018 — Distinct vertical ground and radial representations
+
+### Decision
+
+Represent three vertical configurations explicitly and never convert between them silently: a ground-contact radiator over infinite perfect ground (`GE 1`, `GN 1`), elevated radial wires over perfect or Sommerfeld/Norton ground (`GE -1`, `GN 1`/`GN 2`), and NEC's reflection-coefficient radial-screen approximation (`GE 1`, `GN 0`, `RP 4`). The screen parameters describe an approximate ground screen, not explicit current-carrying radial geometry. Sommerfeld/Norton is not offered for that approximation because the reviewed NEC-2 engines reject the combination.
+
+### Consequences
+
+- Results and exact decks identify the active representation; perfect ground, finite ground, explicit wires, and the screen approximation are not described as physically identical.
+- Real-ground explicit wires must remain above ground in this workflow; touching, buried, or lossy radial-wire models require a separately validated formulation.
+- Screen mode cannot display radial-wire currents because no radial `GW` geometry exists.
+- Configuration changes regenerate and revalidate one immutable SI model before the solver runs.
+- The 40/20/10-m perfect-ground comparison is supporting evidence only. Finite-ground, screen, convergence, and packaged-native validation remain mandatory under D-005, D-006, and D-010.
 
 ## Second, adversarial architecture review
 

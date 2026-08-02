@@ -226,6 +226,8 @@ If future dual licensing is contemplated, contributor terms must be redesigned b
 
 The `feature/antenna-template-system` implementation adds original project TypeScript, tests, and documentation under the existing GPL-3.0-or-later project terms. It adds no runtime dependency, copied proprietary asset, bundled comparator output, or externally sourced numeric validation table. The template regression values are generated locally and are explicitly not represented as independent reference data. Future externally sourced decks/results still require the documentation-and-validation checklist above.
 
+The `feature/vertical-antennas` implementation likewise adds original project code, tests, documentation, and three application-generated ideal-monopole NEC fixtures under the existing project terms. The separate NEC-2 User's Guide Example 10 fixture is a short functional input deck transcribed from the cited official guide/sample source and must retain its source/provenance note; its redistribution status still requires release review. The local 4NEC2 installation and `nec2dxs11k.exe` are external comparison tools only: neither executable nor proprietary application asset is copied or bundled. The committed comparator script records locally generated numeric summaries and the executable hash, not a 4NEC2 binary or raw packaged output.
+
 - Documentation must say GPL-3.0-or-later for HF Antenna Studio unless a later ADR changes it.
 - Do not call KJ7LNW/nec2c unambiguously public domain while its provenance is unresolved.
 - Do not describe a solver as “open-source and approved” until its exact source and bundle pass review.

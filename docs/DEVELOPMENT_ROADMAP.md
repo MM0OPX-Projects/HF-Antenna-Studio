@@ -107,6 +107,8 @@ Goal: support the central HF workflows without concealing ground/model limitatio
 - Cancelled sweeps do not produce a successful complete result or stale-cache entry.
 - Performance limits and defaults are based on recorded Windows measurements.
 
+Implementation checkpoint (2026-08-02): `feature/vertical-antennas` implements three explicitly separated vertical configurations on the inherited browser/Wasm experimental slice. The three 40/20/10-m ideal perfect-ground decks pass an exact-deck comparison with a separately installed 4NEC2 NEC-2D engine, and the UI/solver corpus covers selected explicit-radial counts and heights. Phase 3 is not complete: finite-ground and screen comparisons, radial and feed-junction convergence, frequency-sweep infrastructure, native-runner parity, and packaged Windows performance evidence remain open.
+
 ## Phase 4 — Loss-aware NEC interoperability and native projects
 
 Goal: make designs portable and reproducible without silent data loss.

@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Added a dedicated vertical-antenna laboratory for ideal ground-mounted monopoles, elevated explicit-radial systems, and NEC's separate reflection-coefficient radial-screen approximation
+- Added interactive SI-backed controls for amateur-band frequency, radiator dimensions, feed height, radial count/length/diameter/droop, ground conductivity/permittivity, metric/imperial display, and 50/75-ohm SWR reference
+- Added exact NEC-deck inspection, interactive geometry and 3D pattern views, polar elevation/azimuth cuts, impedance/SWR/gain/take-off results, and per-wire current magnitude/phase displays
+- Added strong configuration, ground-clearance, geometry, thin-wire, feed-junction, and segmentation validity diagnostics for vertical models
+- Added 40/20/10-m exact-deck regression fixtures and a reproducible independent comparison against the locally installed 4NEC2 NEC-2D engine, plus an explicit-wire equivalent of NEC-2 User's Guide Example 10
+- Added vertical-model, NEC-adapter, parser/current-mapping, real-solver, radial-count/height, ground-mode, mobile, unit, invalid-model, and browser-console regression coverage
+- Added `docs/VERTICAL_ANTENNAS.md` with ground-model distinctions, numeric evidence, RF review findings, provenance, limitations, and remaining convergence/real-ground validation gates
 - Added a reusable declarative antenna-template registry and one common workbench for horizontal dipole, inverted-V, sloper, quarter-wave vertical, ground-plane vertical, full-wave loop, delta loop, and square loop models
 - Added an SI-only shared template model with typed parameters, display units/ranges, geometry/feed/load/ground contracts, amateur-band presets, frequency-linked starting dimensions, explicit manual override, validation rules, and shared odd-segment recommendations
 - Added exact generated NEC inspection and local-solver results through one adapter, plus immediate interactive 3D geometry, metric/imperial controls, and ground presets
@@ -37,6 +44,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- Prevented the NEC radial-screen approximation from being combined with the incompatible Sommerfeld/Norton ground option; the generated model now uses `GN 0` plus `RP 4` and labels the formulation explicitly
+- Corrected element-current position mapping for NEC output whose segment numbers are absolute across tags, restoring the radial current trace
 - Corrected the ground-mounted quarter-wave template to use explicit NEC touching-ground geometry at `z = 0` with a perfect-ground default, and made the polygonal full-wave loop feed symmetric at bottom centre
 - Filtered nec2c's ordinary stderr usage banner so it is not presented as a modelling warning while retaining warning/error lines
 - Added explicit simulation-worker handling for crashes, unreadable messages, startup failures, and a 120-second timeout

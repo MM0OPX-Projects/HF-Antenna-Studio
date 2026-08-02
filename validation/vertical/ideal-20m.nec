@@ -1,0 +1,12 @@
+CM HF Antenna Studio vertical system: ground-mounted-ideal
+CM Generated dimensions are starting points, not resonance guarantees
+CM Infinite perfect ground plane; no explicit radial wires
+CE
+GW 1 13 0 0 0 0 0 5.049695658 0.001
+GE 1
+GN 1 0 0 0 0 0
+PT 0 0 0 0
+EX 0 1 1 0 1 0
+FR 0 1 0 0 14.1 0
+RP 0 19 72 1000 0 0 5 5
+EN

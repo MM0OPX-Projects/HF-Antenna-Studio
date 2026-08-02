@@ -17,6 +17,8 @@ The key architectural evidence is that the displayed deterministic deck can cros
 
 The `feature/antenna-template-system` branch extends that experiment with a declarative template registry, an SI-only shared parametric-wire schema, and one common workbench/segmentation/NEC pipeline for eight antenna topologies. It demonstrates that adding a template need not add a calculation screen. This remains inherited browser/Wasm implementation evidence rather than a change to the proposed Tauri/native architecture. See [`ANTENNA_TEMPLATE_SYSTEM.md`](ANTENNA_TEMPLATE_SYSTEM.md) for the contract, RF review, regression evidence, and open validation work.
 
+The `feature/vertical-antennas` branch adds a solver-independent vertical-model schema and a dedicated NEC adapter for three intentionally non-equivalent configurations: a ground-contact monopole over perfect ground, elevated explicit radial wires over perfect or Sommerfeld/Norton ground, and NEC's reflection-coefficient radial-screen approximation. Exact model identity continues across generated deck, result, and UI, and incompatible card combinations are rejected before execution. Independent same-deck comparison with a separately installed 4NEC2 NEC-2D engine now supports the three 40/20/10-m perfect-ground fixtures; it does not yet validate finite-ground or radial-screen accuracy. See [`VERTICAL_ANTENNAS.md`](VERTICAL_ANTENNAS.md).
+
 ## Why a desktop web architecture
 
 The product requires an HTML/JavaScript interface, offline operation, private local files, and dependable local native calculation on Windows 11. A desktop webview provides the desired UI technology without introducing a loopback web server, browser-origin file workarounds, Docker, Redis, or a permanently listening port.
