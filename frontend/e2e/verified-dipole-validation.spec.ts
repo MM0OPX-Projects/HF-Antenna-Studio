@@ -13,7 +13,7 @@ function numberFrom(text: string): number {
   return Number(match[0]);
 }
 
-test("five reference geometries remain within recorded nec2c/WASM envelopes", async ({ page }) => {
+test("reference geometries remain within recorded nec2c/WASM envelopes", async ({ page }) => {
   await page.goto("/verified-dipole");
   const changelog = page.getByRole("button", { name: "Got it" });
   if (await changelog.isVisible().catch(() => false)) await changelog.click();

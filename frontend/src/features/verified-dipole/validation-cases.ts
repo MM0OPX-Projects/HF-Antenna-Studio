@@ -68,4 +68,11 @@ export const DIPOLE_REGRESSION_CASES: DipoleRegressionCase[] = [
     heightM: 21.262,
     expected: { resistanceOhm: 76.45, reactanceOhm: 34.54, maximumGainDbi: 8.23, takeOffAngleDeg: 15 },
   },
+  {
+    id: "height-two-waves",
+    description: "Half-wave dipole 2.00 wavelengths over perfect ground",
+    ground: "perfect",
+    heightM: 42.524,
+    expected: { resistanceOhm: 77.64, reactanceOhm: 39.38, maximumGainDbi: 8.14, takeOffAngleDeg: 60 },
+  },
 ];

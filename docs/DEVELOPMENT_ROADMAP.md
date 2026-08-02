@@ -155,6 +155,8 @@ Goal: reach a defensible initial public release for HF wire-antenna work.
 
 ## Phase 6 — Parameters, sliders, and parameter sweeps
 
+Implementation checkpoint (2026-08-02): `feature/dipole-height-lab` proves one bounded height parameter on the experimental browser/Wasm slice. Debounce, worker termination, stale-result suppression, cache identity, comparisons, and a five-point automatic animation are implemented and tested. This is evidence for the interaction contract, not completion of Phase 6: generic parameters, native-runner parity, persisted caches, arbitrary sweeps, discontinuity reporting, and workload budgets remain open.
+
 Goal: support rapid exploration through the same validated model compiler and solver API.
 
 ### Work

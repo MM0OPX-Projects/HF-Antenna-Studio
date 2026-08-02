@@ -6,6 +6,7 @@ import { LearnPage } from "./pages/LearnPage";
 import { AboutPage } from "./pages/AboutPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { VerifiedDipolePage } from "./pages/VerifiedDipolePage";
+import { DipoleHeightLabPage } from "./pages/DipoleHeightLabPage";
 
 export function AppRoutes() {
   return (
@@ -13,6 +14,7 @@ export function AppRoutes() {
       <Route path="/" element={<SimulatorPage />} />
       <Route path="/editor" element={<EditorPage />} />
       <Route path="/verified-dipole" element={<VerifiedDipolePage />} />
+      <Route path="/dipole-height-lab" element={<DipoleHeightLabPage />} />
       <Route path="/library" element={<LibraryPage />} />
       <Route path="/learn" element={<LearnPage />} />
       <Route path="/about" element={<AboutPage />} />

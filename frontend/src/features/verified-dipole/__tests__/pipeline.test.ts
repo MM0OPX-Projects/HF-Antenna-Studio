@@ -71,6 +71,7 @@ describe("verified dipole end-to-end service", () => {
     expect(Math.max(...run.result.azimuthPattern.map((point) => point.normalizedDb))).toBe(0);
     expect(Math.max(...run.result.elevationPattern.map((point) => point.normalizedDb))).toBe(0);
     expect(run.result.currentDistribution).toHaveLength(21);
+    expect(run.result.radiationPattern.theta_count).toBe(19);
     expect(Math.max(...run.result.currentDistribution.map((point) => point.normalizedMagnitude))).toBe(1);
   });
 
@@ -93,6 +94,22 @@ describe("verified dipole end-to-end service", () => {
     await assertion;
     await expect(pending).rejects.toBeInstanceOf(VerifiedDipoleSolverError);
     vi.useRealTimers();
+  });
+
+  it("cancels an injected solver without accepting its later result", async () => {
+    const controller = new AbortController();
+    let receivedSignal: AbortSignal | undefined;
+    const solver: ExactDeckSolver = (_request, signal) => {
+      receivedSignal = signal;
+      return new Promise(() => undefined);
+    };
+    const pending = runVerifiedDipole(createDefaultDipoleModel(), { solver, signal: controller.signal });
+    controller.abort();
+    await expect(pending).rejects.toEqual(expect.objectContaining({
+      name: "VerifiedDipoleSolverError",
+      message: expect.stringContaining("cancelled"),
+    }));
+    expect(receivedSignal?.aborted).toBe(true);
   });
 
   it("rejects malformed parsed output instead of displaying it", async () => {

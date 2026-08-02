@@ -47,6 +47,8 @@ Last reviewed: 2026-08-02
 | R-030 | Native project JSON is human-readable but becomes too large for pattern/current caches. | M / M | Dense 3D/sweep results can be large; JSON duplicates numeric overhead. | Make caches optional/content-addressed, keep model readable, measure before adopting a versioned container/binary array format, atomic writes. | Domain lead | L / Open |
 | R-031 | Project/app name conflicts with an existing trademark or creates confusion. | L–M / H | No name clearance has been performed. | Search relevant software/radio trademark and package namespaces before public launch; rename before branding investment if needed. | Product + licensing leads | L / Open |
 
+| R-032 | A fast parameter change displays a radiation pattern calculated for an older geometry. | M / C | The height lab now hides non-matching results, terminates in-flight Wasm workers, and has rapid-change browser and scheduler tests; the future native/multi-job runner does not yet implement this contract. | Make immutable SI model/run identity mandatory for every adapter and cache; test out-of-order completion, cancel races, worker/process death, and persisted-cache provenance on each runner. | Domain + solver leads | L / Mitigating |
+
 ## Highest-priority pre-implementation risks
 
 The following must be reduced in Phase 0 before broad UI work:

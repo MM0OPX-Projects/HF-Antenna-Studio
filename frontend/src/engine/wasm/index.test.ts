@@ -104,6 +104,18 @@ describe("WasmEngine worker failures", () => {
     expect(SilentWorker.latest?.terminated).toBe(true);
   });
 
+  it("terminates an in-flight worker when an exact-deck run is cancelled", async () => {
+    vi.stubGlobal("Worker", SilentWorker);
+    const controller = new AbortController();
+    const pending = new WasmEngine().runDeck({
+      deck: "CM cancel test\nCE\nEN\n",
+      parse: { nTheta: 1, nPhi: 1, thetaStart: 0, thetaStep: 5, phiStart: 0, phiStep: 5, computeCurrents: false, totalSegments: 1 },
+    }, 120_000, controller.signal);
+    controller.abort();
+    await expect(pending).rejects.toThrow("Simulation cancelled");
+    expect(SilentWorker.latest?.terminated).toBe(true);
+  });
+
   it("invokes the worker with the exact raw NEC deck", async () => {
     vi.stubGlobal("Worker", AnsweringWorker);
     const engine = new WasmEngine();

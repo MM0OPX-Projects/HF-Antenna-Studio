@@ -92,6 +92,7 @@ The following 14.1 MHz cases use a 10.631 m half-wave dipole and 1 mm wire diame
 | Dipole at 0.25λ | Perfect / 0.25λ | 94.11 | +75.78 | 7.49 | 90° |
 | Dipole at 0.5λ | Perfect / 0.50λ | 72.80 | +25.90 | 8.43 | 30° |
 | Dipole at 1λ | Perfect / 1.00λ | 76.45 | +34.54 | 8.23 | 15° |
+| Dipole at 2λ | Perfect / 2.00λ | 77.64 | +39.38 | 8.14 | 60° |
 
 ### External-package status
 
@@ -113,7 +114,7 @@ Tests cover:
 - missing/malformed solver output;
 - worker failure and feature timeout;
 - real nec2c/WASM UI execution, plots, current table, and console review;
-- the five-case regression set and published 38 MHz reference.
+- the six-case regression set and published 38 MHz reference.
 
 ## Known limitations and verification still required
 

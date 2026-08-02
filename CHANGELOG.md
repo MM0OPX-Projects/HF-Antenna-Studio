@@ -9,10 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Added an interactive dipole-height laboratory with immediate side/3D geometry, debounced local NEC calculation, polar azimuth/elevation plots, an orbitable 3D radiation surface, absolute/normalised scales, height/frequency/ground controls, and educational pattern labels
+- Added up to four labelled comparison traces, five wavelength-height presets, an automatic sweep animation, PNG/CSV export, reset, keyboard operation, and responsive mobile layout
+- Added cancellation at the synchronous Wasm worker boundary, stale-result suppression by exact SI model identity, and a bounded result cache
+- Added rapid-slider, cancellation, cache, units, pattern, comparison, export, animation, mobile, accessibility, real-solver validation, and full regression coverage for the height lab
 - Added a dedicated verified centre-fed horizontal dipole workflow with SI-domain types, m/mm/ft/in display conversion, perfect/real/free-space ground, 50/75-ohm SWR, exact generated NEC, 2D patterns, and current magnitude/phase
 - Added a byte-identical raw-deck worker route so the NEC model shown in the verified workflow is the model executed by local nec2c/WASM
 - Added safe odd-segment selection and visible thin-wire, geometry, ground-clearance, and segmentation diagnostics based on NEC-2 modelling guidance
-- Added unit, adapter, parsing/result, failure, timeout, browser-console, five-geometry regression, and published external NEC-2 validation coverage
+- Added unit, adapter, parsing/result, failure, timeout, browser-console, six-geometry regression, and published external NEC-2 validation coverage
 - Added `docs/VERIFIED_DIPOLE.md` with the pipeline, numeric evidence, claim limits, and unresolved established-package/ground validation work
 - Applied the HF Antenna Studio product name to the local application shell and page metadata while retaining upstream provenance in documentation
 - Added a reproducible Windows 11 browser-local baseline with pinned Node, npm, Emscripten, and NEC2C versions

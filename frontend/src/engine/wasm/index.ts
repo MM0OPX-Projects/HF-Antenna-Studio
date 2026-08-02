@@ -75,6 +75,7 @@ type PendingSimulation = {
   resolve: (result: SimulationResult) => void;
   reject: (error: Error) => void;
   timeoutId: ReturnType<typeof setTimeout>;
+  abortCleanup: () => void;
 };
 
 /** Map from request ID to its promise handlers and timeout. */
@@ -99,6 +100,7 @@ let simWorkerListenerAttached = false;
 function resetSimulationWorker(error: Error): void {
   for (const [id, pending] of pendingRequests) {
     clearTimeout(pending.timeoutId);
+    pending.abortCleanup();
     pending.reject(error);
     pendingRequests.delete(id);
   }
@@ -118,6 +120,7 @@ function ensureSimWorkerListener(): void {
 
     pendingRequests.delete(msg.id);
     clearTimeout(pending.timeoutId);
+    pending.abortCleanup();
 
     if (msg.type === "success") {
       pending.resolve(msg.result);
@@ -140,7 +143,11 @@ function ensureSimWorkerListener(): void {
 function submitSimulationRequest(
   message: WorkerRequest,
   timeoutMs = SIMULATION_TIMEOUT_MS,
+  signal?: AbortSignal,
 ): Promise<SimulationResult> {
+  if (signal?.aborted) {
+    return Promise.reject(new Error("Simulation cancelled."));
+  }
   ensureSimWorkerListener();
   return new Promise<SimulationResult>((resolve, reject) => {
     const timeoutId = setTimeout(() => {
@@ -149,7 +156,15 @@ function submitSimulationRequest(
       );
     }, timeoutMs);
 
-    pendingRequests.set(message.id, { resolve, reject, timeoutId });
+    const handleAbort = () => {
+      // nec2c executes synchronously inside the worker. Terminating it is the
+      // only reliable way to supersede an in-flight calculation immediately.
+      resetSimulationWorker(new Error("Simulation cancelled."));
+    };
+    signal?.addEventListener("abort", handleAbort, { once: true });
+    const abortCleanup = () => signal?.removeEventListener("abort", handleAbort);
+
+    pendingRequests.set(message.id, { resolve, reject, timeoutId, abortCleanup });
     try {
       getSimWorker().postMessage(message);
     } catch (error) {
@@ -226,13 +241,14 @@ export class WasmEngine implements SimulationEngine {
   async runDeck(
     request: NecDeckRunRequest,
     timeoutMs = SIMULATION_TIMEOUT_MS,
+    signal?: AbortSignal,
   ): Promise<SimulationResult> {
     const message: WorkerRequest = {
       type: "run-deck",
       id: generateId(),
       request,
     };
-    return submitSimulationRequest(message, timeoutMs);
+    return submitSimulationRequest(message, timeoutMs, signal);
   }
 
   /**

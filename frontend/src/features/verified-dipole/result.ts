@@ -1,4 +1,4 @@
-import type { FrequencyResult, SegmentCurrent, SimulationResult } from "../../api/nec";
+import type { FrequencyResult, PatternData, SegmentCurrent, SimulationResult } from "../../api/nec";
 import { computeSwr } from "../../engine/parsers/nec-output";
 import type { HorizontalDipoleModel } from "./model";
 import type { AdaptedDipoleNec } from "./nec-adapter";
@@ -28,6 +28,7 @@ export interface VerifiedDipoleResult {
   azimuthPattern: NormalizedPatternPoint[];
   elevationPattern: NormalizedPatternPoint[];
   currentDistribution: VerifiedCurrentPoint[];
+  radiationPattern: PatternData;
   generatedNec: string;
   engine: string;
   computedInMs: number;
@@ -144,6 +145,7 @@ export function validateDipoleResult(
     azimuthPattern: patterns.azimuth,
     elevationPattern: patterns.elevation,
     currentDistribution: currents,
+    radiationPattern: data.pattern!,
     generatedNec: adapted.deck,
     engine: simulation.engine,
     computedInMs: simulation.computed_in_ms,

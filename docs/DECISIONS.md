@@ -22,6 +22,7 @@ Decision review date: 2026-08-02
 | D-013 | Defer parameters/optimization until the ordinary run path and metrics are validated | Accepted |
 | D-014 | Preserve a runnable AntennaSim baseline branch without selecting its Wasm architecture for the product | Accepted, baseline-only |
 | D-015 | Prove the first dipole slice with an exact displayed-deck boundary on the inherited branch | Accepted, experimental |
+| D-016 | Supersede interactive solver jobs by terminating the worker and key every result/cache entry to the exact SI model | Accepted, experimental |
 
 ## D-001 — New repository with selective AntennaSim reuse
 
@@ -243,6 +244,20 @@ Implement the first centre-fed dipole vertical slice on the inherited baseline b
 - This decision supplies evidence for D-007 but does not reverse D-001, D-005, or D-006.
 - Wasm remains an experimental adapter until it has byte-deck parity with the selected native solver and the full independent corpus.
 - A 4NEC2 or equivalent established-package ground comparison remains release-blocking.
+
+## D-016 — Model-keyed interactive calculations
+
+### Decision
+
+For the dipole height laboratory, geometry changes are synchronous UI state while solver work is debounced by 450 ms. A new request aborts the old request; because the current nec2c Wasm call blocks its worker, cancellation terminates and recreates that worker rather than sending a message it cannot process. Results and the bounded in-memory cache are keyed by the complete solver-independent SI model. A result is displayable only when its key equals the current model key.
+
+### Consequences
+
+- Geometry remains responsive during pointer movement and the solver does not run for every movement event.
+- An old 2D/3D current trace is removed as soon as controls change; explicitly saved comparisons remain visible as labelled historical traces.
+- Cancellation rejects every request sharing the single worker, which is acceptable for this single-model experimental page but not yet a general multi-job scheduler.
+- The cache is process-memory only, limited to 40 exact models, and does not weaken D-009's future solver/compiler provenance requirements.
+- The native product runner must implement equivalent process-tree cancellation and immutable run identity; this decision does not reverse D-004 or D-006.
 
 ## Second, adversarial architecture review
 
