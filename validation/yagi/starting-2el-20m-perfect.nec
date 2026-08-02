@@ -1,0 +1,12 @@
+CM HF Antenna Studio 2-element Yagi regression fixture
+CM Application-generated exact deck; intended forward direction +Y
+CE
+GW 1 27 -5.3296437 -3.172407 10.57469 5.3296437 -3.172407 10.57469 0.0127
+GW 2 25 -5.0335524 0 10.57469 5.0335524 0 10.57469 0.0127
+GE 1
+GN 1 0 0 0 0 0
+PT 0 0 0 0
+EX 0 2 13 0 1 0
+FR 0 1 0 0 14.175 0
+RP 0 46 180 1000 0 0 2 2
+EN

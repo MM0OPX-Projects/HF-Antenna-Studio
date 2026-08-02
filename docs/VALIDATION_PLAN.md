@@ -39,6 +39,14 @@ The `feature/vertical-antennas` branch separates ideal perfect-ground contact, e
 
 The exact 40/20/10-m perfect-ground decks agree with the separately installed 4NEC2 NEC-2D build 2.7 comparator to 0.02 ohm per impedance component, 0.01 dB peak gain, and 0.01 degrees peak theta. A six-radial explicit-wire equivalent of NEC-2 User's Guide Example 10 also completes with finite impedance, pattern, and current results, but it changes the original symmetry/Green's-function staging and is therefore only a topology and solver-success check. Finite-ground and screen accuracy, radial-count/feed-junction convergence, and native-runner parity remain open release gates. Inputs, hashes, exact numbers, provenance, and claim limits are recorded in [`VERTICAL_ANTENNAS.md`](VERTICAL_ANTENNAS.md).
 
+## Implementation checkpoint: Yagi beam laboratory
+
+The `feature/yagi-beam-models` branch fixes a directional coordinate contract (`+Y` is forward), distinguishes axial rear gain from the maximum rear hemisphere, selects the cuts through the explicit forward peak, and computes circular interpolated -3 dB azimuth beamwidth. Contract tests cover element placement, centre feed, odd segmentation, 80-column card limits, ground cards, metric definitions, current mapping, invalid solver output, failures, cancellation, debounce, stale-result rejection, and exact-key caching.
+
+Three application-generated 20-m perfect-ground decks (2, 3, and 5 elements) agree with a separately installed 4NEC2 merged NEC-2D build 2.7 within 0.02 ohm per impedance component, 0.02 dB forward/rear gain, and 0.01 degrees forward theta. The comparator executable SHA-256 and complete numeric table are in [`YAGI_BEAMS.md`](YAGI_BEAMS.md). A scaled NBS Technical Note 688 three-element case also falls within the publication's two reported measured beamwidths, but differs in driven-element construction and measurement definition; it is therefore a sanity envelope rather than an exact oracle.
+
+Perfect-ground same-deck parity is not a complete validation claim. Sommerfeld/Norton comparison, segment/diameter/grid convergence, native-runner parity, physical feed/boom effects, and a package-authored external model comparison with fully recorded settings remain open gates.
+
 ## Claims this plan can and cannot support
 
 Passing the plan can support a bounded claim such as:

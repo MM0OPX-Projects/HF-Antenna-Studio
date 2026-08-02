@@ -1,4 +1,4 @@
-> **HF Antenna Studio application baseline:** this branch preserves the AntennaSim 1.4.2 application as a reproducible reference before redevelopment. Use [`docs/BASELINE.md`](docs/BASELINE.md) for the tested Windows 11 source-build and startup procedure, [`docs/ANTENNA_TEMPLATE_SYSTEM.md`](docs/ANTENNA_TEMPLATE_SYSTEM.md) for the experimental shared template contract, and [`docs/VERTICAL_ANTENNAS.md`](docs/VERTICAL_ANTENNAS.md) for dedicated vertical-model ground distinctions and validation evidence. The upstream README is retained below for provenance; its Docker/live-demo instructions are not the supported HF Antenna Studio baseline.
+> **HF Antenna Studio application baseline:** this branch preserves the AntennaSim 1.4.2 application as a reproducible reference before redevelopment. Use [`docs/BASELINE.md`](docs/BASELINE.md) for the tested Windows 11 source-build and startup procedure, [`docs/ANTENNA_TEMPLATE_SYSTEM.md`](docs/ANTENNA_TEMPLATE_SYSTEM.md) for the experimental shared template contract, [`docs/VERTICAL_ANTENNAS.md`](docs/VERTICAL_ANTENNAS.md) for vertical-model ground distinctions, and [`docs/YAGI_BEAMS.md`](docs/YAGI_BEAMS.md) for the dedicated directional-array workflow and validation evidence. The upstream README is retained below for provenance; its Docker/live-demo instructions are not the supported HF Antenna Studio baseline.
 
 <h1 align="center">AntennaSim</h1>
 
@@ -96,6 +96,7 @@ Full guides live in the [`docs/`](docs/) folder:
 | [Deployment](docs/deployment.md) | GitHub Pages (WebAssembly) and production Docker deployment |
 | [API Reference](docs/api.md) | REST + WebSocket endpoints and configuration (`.env`) |
 | [Vertical Antennas](docs/VERTICAL_ANTENNAS.md) | Vertical configurations, ground formulations, exact-deck comparison evidence, and limitations |
+| [Yagi Beam Models](docs/YAGI_BEAMS.md) | Directional model/metric contracts, exact-deck comparison evidence, and limitations |
 
 ---
 

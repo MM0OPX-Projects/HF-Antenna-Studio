@@ -2,9 +2,9 @@
  * Card component for grouping related content.
  */
 
-import type { ReactNode } from "react";
+import type { HTMLAttributes, ReactNode } from "react";
 
-interface CardProps {
+interface CardProps extends Omit<HTMLAttributes<HTMLDivElement>, "onClick"> {
   children: ReactNode;
   className?: string;
   /** Optional click handler (makes card interactive) */
@@ -18,11 +18,13 @@ export function Card({
   className = "",
   onClick,
   selected = false,
+  ...props
 }: CardProps) {
   const interactive = !!onClick;
 
   return (
     <div
+      {...props}
       role={interactive ? "button" : undefined}
       tabIndex={interactive ? 0 : undefined}
       onClick={onClick}

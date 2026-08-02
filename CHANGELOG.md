@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Added a dedicated 2-to-8-element Yagi beam laboratory with independent reflector/driven/director dimensions and spacings, height, diameter, perfect/real ground, amateur-band starting presets, and explicit 50/75-ohm SWR reference
+- Added immediate orbitable array geometry, debounced/cancellable NEC calculation, exact-deck inspection, azimuth/elevation/3D patterns, every-element current magnitude/phase, and four immutable comparison overlays
+- Added explicit +Y forward-axis metrics for forward/rear gain, separate front-to-back and front-to-rear ratios, interpolated azimuth beamwidth, take-off angle, feed impedance, and SWR
+- Added exact 2/3/5-element perfect-ground fixtures that pass a separate 4NEC2 NEC-2D same-deck comparison, plus a scaled NBS/NIST three-element pattern sanity case
+- Added Yagi model/adapter/result/failure/debounce/cache tests and real-solver browser coverage for rapid sliders, comparisons, validity, mobile layout, keyboard controls, 3D/current views, and console errors
+- Added `docs/YAGI_BEAMS.md` with coordinate/metric definitions, independent numeric evidence, RF review findings, provenance, limitations, and remaining validation gates
 - Added a dedicated vertical-antenna laboratory for ideal ground-mounted monopoles, elevated explicit-radial systems, and NEC's separate reflection-coefficient radial-screen approximation
 - Added interactive SI-backed controls for amateur-band frequency, radiator dimensions, feed height, radial count/length/diameter/droop, ground conductivity/permittivity, metric/imperial display, and 50/75-ohm SWR reference
 - Added exact NEC-deck inspection, interactive geometry and 3D pattern views, polar elevation/azimuth cuts, impedance/SWR/gain/take-off results, and per-wire current magnitude/phase displays
@@ -44,6 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- Limited generated Yagi `GW` cards to the classic NEC 80-column input constraint after an independent NEC-2D comparison exposed a cross-engine portability failure
 - Prevented the NEC radial-screen approximation from being combined with the incompatible Sommerfeld/Norton ground option; the generated model now uses `GN 0` plus `RP 4` and labels the formulation explicitly
 - Corrected element-current position mapping for NEC output whose segment numbers are absolute across tags, restoring the radial current trace
 - Corrected the ground-mounted quarter-wave template to use explicit NEC touching-ground geometry at `z = 0` with a perfect-ground default, and made the polygonal full-wave loop feed symmetric at bottom centre

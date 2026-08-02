@@ -36,6 +36,7 @@ docker-compose.override.yml
 *.out
 nec_workdir/
 !validation/vertical/*.nec
+!validation/yagi/*.nec
 
 # Redis
 dump.rdb

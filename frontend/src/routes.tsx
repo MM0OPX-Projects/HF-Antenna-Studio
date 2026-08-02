@@ -9,6 +9,7 @@ import { VerifiedDipolePage } from "./pages/VerifiedDipolePage";
 import { DipoleHeightLabPage } from "./pages/DipoleHeightLabPage";
 import { AntennaTemplateStudioPage } from "./pages/AntennaTemplateStudioPage";
 import { VerticalAntennasPage } from "./pages/VerticalAntennasPage";
+import { YagiBeamModelsPage } from "./pages/YagiBeamModelsPage";
 
 export function AppRoutes() {
   return (
@@ -19,6 +20,7 @@ export function AppRoutes() {
       <Route path="/dipole-height-lab" element={<DipoleHeightLabPage />} />
       <Route path="/antenna-templates" element={<AntennaTemplateStudioPage />} />
       <Route path="/vertical-antennas" element={<VerticalAntennasPage />} />
+      <Route path="/yagi-beams" element={<YagiBeamModelsPage />} />
       <Route path="/library" element={<LibraryPage />} />
       <Route path="/learn" element={<LearnPage />} />
       <Route path="/about" element={<AboutPage />} />

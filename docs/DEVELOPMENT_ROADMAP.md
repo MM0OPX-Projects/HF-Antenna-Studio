@@ -109,6 +109,8 @@ Goal: support the central HF workflows without concealing ground/model limitatio
 
 Implementation checkpoint (2026-08-02): `feature/vertical-antennas` implements three explicitly separated vertical configurations on the inherited browser/Wasm experimental slice. The three 40/20/10-m ideal perfect-ground decks pass an exact-deck comparison with a separately installed 4NEC2 NEC-2D engine, and the UI/solver corpus covers selected explicit-radial counts and heights. Phase 3 is not complete: finite-ground and screen comparisons, radial and feed-junction convergence, frequency-sweep infrastructure, native-runner parity, and packaged Windows performance evidence remain open.
 
+Implementation checkpoint (2026-08-02): `feature/yagi-beam-models` implements a bounded 2-to-8-element directional-array slice with explicit forward/rear metric definitions. Three perfect-ground exact decks pass direct comparison with a separately installed 4NEC2 NEC-2D engine and one NBS/NIST-scaled geometry passes a deliberately broad pattern sanity envelope. Broader Phase 5 is not complete: finite-ground, convergence, tube/material/feed/boom effects, other bands, native parity, and comparison against a package-authored external deck with fully recorded settings remain open.
+
 ## Phase 4 — Loss-aware NEC interoperability and native projects
 
 Goal: make designs portable and reproducible without silent data loss.
@@ -160,6 +162,8 @@ Goal: reach a defensible initial public release for HF wire-antenna work.
 Implementation checkpoint (2026-08-02): `feature/dipole-height-lab` proves one bounded height parameter on the experimental browser/Wasm slice. Debounce, worker termination, stale-result suppression, cache identity, comparisons, and a five-point automatic animation are implemented and tested. This is evidence for the interaction contract, not completion of Phase 6: generic parameters, native-runner parity, persisted caches, arbitrary sweeps, discontinuity reporting, and workload budgets remain open.
 
 The subsequent `feature/antenna-template-system` checkpoint adds a declarative parameter/units/range/geometry/feed/load/ground/segmentation/validation/preset contract and one shared workbench for eight starting topologies. Frequency-linked starting dimensions and explicit manual override are implemented. It deliberately does not add an expression language, arbitrary dependency graph, persisted parameter sweeps, or optimization; the dimensions are not advertised as resonant. Independent external validation and native-runner parity remain open.
+
+The `feature/yagi-beam-models` checkpoint applies the same immutable-run contract to multiple coupled element dimensions and four saved comparison traces. Geometry changes immediately, solver work is debounced for 450 ms, the active worker is terminated when superseded, stale outputs are withheld, and exact SI models key a bounded cache. It remains a single-page in-memory experiment rather than the generic persisted sweep system required by this phase.
 
 Goal: support rapid exploration through the same validated model compiler and solver API.
 

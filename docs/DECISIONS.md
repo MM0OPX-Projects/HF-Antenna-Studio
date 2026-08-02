@@ -290,6 +290,21 @@ Represent three vertical configurations explicitly and never convert between the
 - Configuration changes regenerate and revalidate one immutable SI model before the solver runs.
 - The 40/20/10-m perfect-ground comparison is supporting evidence only. Finite-ground, screen, convergence, and packaged-native validation remain mandatory under D-005, D-006, and D-010.
 
+## D-019 — Directional arrays have an explicit forward-axis contract
+
+**Decision:** A directional antenna model defines its intended forward axis in domain coordinates. Metrics must not infer “front” by calling the unconstrained global maximum forward.
+
+**Rationale:** Arbitrary Yagi dimensions can reverse the main response or create stronger sidelobes. Silently relabelling that maximum as front conceals a model/design failure and makes front-to-back ambiguous.
+
+**Consequences:**
+
+- The Yagi model places the reflector at negative Y, directors at positive Y, and fixes intended forward at `+Y` / NEC `phi = 90 degrees`.
+- Forward gain is the best forward-hemisphere sample; axial rear and maximum-rear-hemisphere gain are retained separately.
+- Front-to-back and front-to-rear are separate named results, with exact definitions in documentation and tests.
+- Saved comparisons preserve the complete solved model and result definitions; a newer slider state cannot relabel or inherit an older pattern.
+- `GW` output must remain within the classic 80-column portability bound demonstrated by the independent NEC-2D comparator.
+- This decision does not validate arbitrary Yagi designs, select an optimizer, or reverse D-005, D-006, or D-010.
+
 ## Second, adversarial architecture review
 
 The following review intentionally argues against the preferred architecture. “Resolution” means either a concrete architecture change/gate or a documented reason to retain the risk; it does not mean the issue has already passed testing.
@@ -342,7 +357,7 @@ The planning set uses the following single positions:
 | Offline/privacy | No ordinary-use network feature; disconnected installer/run test required |
 | Import | Loss-aware raw document plus explicit structured subset; no silent mutation |
 | Coordinates | NEC theta/phi internal; labelled/tested UI transformations |
-| Feature status | Experimental verified-dipole, height-lab, and shared-template slices are implemented on the inherited branch; the target desktop architecture remains proposed |
+| Feature status | Experimental verified-dipole, height-lab, shared-template, vertical, and Yagi slices are implemented on inherited branches; the target desktop architecture remains proposed |
 | Optimization | Deferred until validated ordinary run and parameter infrastructure |
 
 Any future change to these positions requires an ADR update plus review of architecture, solver evaluation, roadmap, validation, risks, licensing, and product claims.

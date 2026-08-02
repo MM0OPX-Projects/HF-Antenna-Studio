@@ -17,6 +17,7 @@ const NAV_LINKS = [
   { to: "/dipole-height-lab", label: "Height Lab", featured: false },
   { to: "/antenna-templates", label: "Templates", featured: false },
   { to: "/vertical-antennas", label: "Verticals", featured: false },
+  { to: "/yagi-beams", label: "Yagi Beams", featured: false },
   { to: "/library", label: "Library", featured: false },
   { to: "/learn", label: "Learn", featured: false },
   { to: "/about", label: "About", featured: false },
