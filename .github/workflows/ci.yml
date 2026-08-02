@@ -4,7 +4,9 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [main]
+    branches:
+      - main
+      - "feature/**"
 
 jobs:
   frontend:
@@ -17,11 +19,27 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 3.1.56
+
+      - name: Build NEC2C WebAssembly artifacts
+        working-directory: .
+        run: |
+          chmod +x wasm/build.sh
+          ./wasm/build.sh
+          mkdir -p frontend/public/wasm
+          cp wasm/build/nec2c.js frontend/public/wasm/
+          cp wasm/build/nec2c.wasm frontend/public/wasm/
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24.14.0
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
@@ -38,4 +56,65 @@ jobs:
         run: npm test
 
       - name: Build
+        env:
+          VITE_ENGINE: wasm
         run: npm run build
+
+      - name: Install Chromium for smoke tests
+        run: npx playwright install --with-deps chromium
+
+      - name: Browser smoke tests
+        run: npm run test:smoke
+
+  windows-baseline:
+    name: Windows 11 baseline
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 3.1.56
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.0
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build NEC2C WebAssembly artifacts
+        shell: powershell
+        run: >-
+          powershell.exe -NoProfile -ExecutionPolicy Bypass
+          -File .\scripts\build-wasm.ps1
+          -EmsdkPath $env:EMSDK
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Type check
+        working-directory: frontend
+        run: npm run type-check
+
+      - name: Unit tests
+        working-directory: frontend
+        run: npm test
+
+      - name: Production Wasm build
+        working-directory: frontend
+        run: npm run build:wasm
+
+      - name: Install Chromium
+        working-directory: frontend
+        run: npx playwright install chromium
+
+      - name: Browser smoke tests
+        working-directory: frontend
+        run: npm run test:smoke

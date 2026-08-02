@@ -1,3 +1,5 @@
+> **HF Antenna Studio application baseline:** this branch preserves the AntennaSim 1.4.2 application as a reproducible reference before redevelopment. Use [`docs/BASELINE.md`](docs/BASELINE.md) for the tested Windows 11 source-build and startup procedure. The upstream README is retained below for provenance; its Docker/live-demo instructions are not the supported HF Antenna Studio baseline.
+
 <h1 align="center">AntennaSim</h1>
 
 <p align="center">

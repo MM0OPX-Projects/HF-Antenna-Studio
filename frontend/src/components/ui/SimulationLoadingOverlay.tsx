@@ -26,12 +26,11 @@ const MESSAGES = [
 const ROTATE_INTERVAL = 2400;
 
 export function SimulationLoadingOverlay() {
-  const [msgIndex, setMsgIndex] = useState(0);
+  const [msgIndex, setMsgIndex] = useState(
+    () => Math.floor(Math.random() * MESSAGES.length),
+  );
 
   useEffect(() => {
-    // Start from a random message so it doesn't always begin the same way
-    setMsgIndex(Math.floor(Math.random() * MESSAGES.length));
-
     const timer = setInterval(() => {
       setMsgIndex((prev) => (prev + 1) % MESSAGES.length);
     }, ROTATE_INTERVAL);

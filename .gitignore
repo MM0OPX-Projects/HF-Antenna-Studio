@@ -44,6 +44,8 @@ coverage/
 htmlcov/
 .coverage
 .pytest_cache/
+frontend/test-results/
+frontend/playwright-report/
 
 # Logs
 *.log

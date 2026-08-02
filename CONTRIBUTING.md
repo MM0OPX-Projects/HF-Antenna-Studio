@@ -1,5 +1,7 @@
 # Contributing to AntennaSim
 
+> This is the preserved AntennaSim-derived baseline for HF Antenna Studio. Follow [`docs/BASELINE.md`](docs/BASELINE.md) for the pinned Node 24.14.0/npm 11.19.0 Windows setup. The upstream contribution guide below is retained for provenance and will be replaced during redevelopment.
+
 Thank you for your interest in contributing to AntennaSim! This guide will help you get started.
 
 ## Development Setup
@@ -8,7 +10,7 @@ Thank you for your interest in contributing to AntennaSim! This guide will help 
 
 - [Docker](https://docs.docker.com/get-docker/) and Docker Compose
 - [Git](https://git-scm.com/)
-- [Node.js 20+](https://nodejs.org/) (only needed for running checks locally)
+- [Node.js 24.14.0](https://nodejs.org/) and npm 11.x (for the tested application baseline)
 
 ### Getting Started
 

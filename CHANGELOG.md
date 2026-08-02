@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Added a reproducible Windows 11 browser-local baseline with pinned Node, npm, Emscripten, and NEC2C versions
+- Added a guarded PowerShell build path for the pinned NEC2C WebAssembly solver
+- Added Playwright real-solver smoke tests for the existing dipole, vertical, and Yagi examples, including 2D/3D rendering and SWR/impedance checks
+- Added `docs/BASELINE.md` with exact installation, solver execution, known limitations, review evidence, and regression boundaries
+
+### Changed
+
+- Updated compatible frontend dependencies and declared the directly imported `three-stdlib` package
+- Made Wasm development and production commands cross-platform on Windows and Unix-like systems
+- Extended CI to build the real Wasm solver before running browser smoke tests
+
+### Fixed
+
+- Added explicit simulation-worker handling for crashes, unreadable messages, startup failures, and a 120-second timeout
+- Removed two safe React effect warnings without changing calculation behavior
+
+### Security
+
+- Reduced the clean-install audit from 12 vulnerabilities to two entries for one React Router RSC-mode advisory; the client-only SPA does not use the affected RSC/server-action path, and the offered forced downgrade was not applied
+
 ## [1.4.2] - 2026-07-31
 
 ### Added

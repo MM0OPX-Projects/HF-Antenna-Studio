@@ -40,11 +40,6 @@ export function Navbar() {
   const menuRef = useRef<HTMLDivElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
 
-  // Close menu on route change
-  useEffect(() => {
-    setMenuOpen(false);
-  }, [location.pathname]);
-
   // Close menu on outside click (ignore clicks on the toggle button itself —
   // those are handled by the button's onClick which toggles the state)
   useEffect(() => {
@@ -81,7 +76,7 @@ export function Navbar() {
       <div className="flex items-center justify-between px-4 h-11 border-b border-border bg-surface">
         <div className="flex items-center gap-6">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
+          <Link to="/" className="flex items-center gap-2" onClick={() => setMenuOpen(false)}>
             <span className="text-accent font-bold text-lg tracking-tight">
               AntennaSim
             </span>
@@ -215,6 +210,7 @@ export function Navbar() {
               <Link
                 key={to}
                 to={to}
+                onClick={() => setMenuOpen(false)}
                 className={`flex items-center gap-2 px-6 py-3 text-sm transition-colors ${
                   location.pathname === to
                     ? "text-accent font-medium bg-accent/5"

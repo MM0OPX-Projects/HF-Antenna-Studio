@@ -68,10 +68,18 @@ function getOptWorker(): Worker {
 // Pending request tracking
 // ---------------------------------------------------------------------------
 
-/** Map from request ID to { resolve, reject } for pending simulation requests. */
+const SIMULATION_TIMEOUT_MS = 120_000;
+
+type PendingSimulation = {
+  resolve: (result: SimulationResult) => void;
+  reject: (error: Error) => void;
+  timeoutId: ReturnType<typeof setTimeout>;
+};
+
+/** Map from request ID to its promise handlers and timeout. */
 const pendingRequests = new Map<
   string,
-  { resolve: (r: SimulationResult) => void; reject: (e: Error) => void }
+  PendingSimulation
 >();
 
 /** Counter for generating unique request IDs */
@@ -87,6 +95,17 @@ function generateId(): string {
 
 let simWorkerListenerAttached = false;
 
+function resetSimulationWorker(error: Error): void {
+  for (const [id, pending] of pendingRequests) {
+    clearTimeout(pending.timeoutId);
+    pending.reject(error);
+    pendingRequests.delete(id);
+  }
+  simWorker?.terminate();
+  simWorker = null;
+  simWorkerListenerAttached = false;
+}
+
 function ensureSimWorkerListener(): void {
   if (simWorkerListenerAttached) return;
   simWorkerListenerAttached = true;
@@ -97,6 +116,7 @@ function ensureSimWorkerListener(): void {
     if (!pending) return;
 
     pendingRequests.delete(msg.id);
+    clearTimeout(pending.timeoutId);
 
     if (msg.type === "success") {
       pending.resolve(msg.result);
@@ -106,15 +126,13 @@ function ensureSimWorkerListener(): void {
   });
 
   getSimWorker().addEventListener("error", (event) => {
-    // If the worker crashes, reject all pending requests
-    const error = new Error(`Simulation worker error: ${event.message}`);
-    for (const [id, pending] of pendingRequests) {
-      pending.reject(error);
-      pendingRequests.delete(id);
-    }
-    // Reset worker so it can be re-created
-    simWorker = null;
-    simWorkerListenerAttached = false;
+    resetSimulationWorker(new Error(`Simulation worker error: ${event.message}`));
+  });
+
+  getSimWorker().addEventListener("messageerror", () => {
+    resetSimulationWorker(
+      new Error("Simulation worker returned an unreadable response."),
+    );
   });
 }
 
@@ -176,8 +194,24 @@ export class WasmEngine implements SimulationEngine {
     };
 
     return new Promise<SimulationResult>((resolve, reject) => {
-      pendingRequests.set(id, { resolve, reject });
-      getSimWorker().postMessage(message);
+      const timeoutId = setTimeout(() => {
+        resetSimulationWorker(
+          new Error(
+            `Simulation timed out after ${SIMULATION_TIMEOUT_MS / 1000} seconds.`,
+          ),
+        );
+      }, SIMULATION_TIMEOUT_MS);
+
+      pendingRequests.set(id, { resolve, reject, timeoutId });
+      try {
+        getSimWorker().postMessage(message);
+      } catch (error) {
+        resetSimulationWorker(
+          error instanceof Error
+            ? error
+            : new Error("Could not start the simulation worker."),
+        );
+      }
     });
   }
 

@@ -16,7 +16,7 @@ Goal: remove the assumptions that could invalidate the rest of the architecture.
 ### Work
 
 - Confirm project name availability and adopt branding created specifically for HF Antenna Studio.
-- Adopt a root GPL-3.0-or-later license before accepting application code; establish SPDX and third-party notice conventions.
+- Maintain the imported root GPL-3.0-or-later license and package metadata; establish SPDX and third-party notice conventions before release.
 - Inventory AntennaSim components that may be reused and create a file-level provenance record.
 - Resolve or conservatively document the exact `nec2c` source license/provenance.
 - Pin and reproducibly build x64 Windows candidates for native `nec2c` and NEC2++.

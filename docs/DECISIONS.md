@@ -20,6 +20,7 @@ Decision review date: 2026-08-02
 | D-011 | Make v1 offline and private by construction, with no ordinary-use network feature | Accepted |
 | D-012 | Start with human-readable `.hfas` JSON and optional separately keyed result cache | Accepted |
 | D-013 | Defer parameters/optimization until the ordinary run path and metrics are validated | Accepted |
+| D-014 | Preserve a runnable AntennaSim baseline branch without selecting its Wasm architecture for the product | Accepted, baseline-only |
 
 ## D-001 — New repository with selective AntennaSim reuse
 
@@ -46,7 +47,7 @@ A direct fork would maximize immediate visible functionality, but would also mak
 
 ### Decision
 
-Adopt GPL-3.0-or-later for the combined application distribution. Add the canonical root license and contribution policy before accepting application code. Treat `nec2c` under conservative GPL obligations until provenance is resolved.
+Adopt GPL-3.0-or-later for the combined application distribution. Retain the canonical root license and contribution policy included with the imported baseline, and keep package metadata consistent. Treat `nec2c` under conservative GPL obligations until provenance is resolved.
 
 ### Consequences
 
@@ -215,6 +216,19 @@ Deliver deterministic parameters/sliders/sweeps only after normal calculations a
 - The validated immutable run API remains the only route to a candidate result.
 - Final candidates require finer/alternate verification rather than accepting the best objective value.
 
+## D-014 — Runnable inherited baseline without product-architecture selection
+
+### Decision
+
+Preserve the audited AntennaSim 1.4.2 source and pinned NEC2C submodule on `feature/application-baseline`, make its browser-Wasm route reproducible on Windows 11, and use it as regression evidence during redevelopment. This is a reference snapshot, not a decision to retain AntennaSim's repository structure, duplicated backend/browser pipelines, or Wasm as HF Antenna Studio's product solver.
+
+### Consequences
+
+- Existing behavior can be observed and regression-tested before components are selectively ported.
+- D-001, D-005, and D-006 remain in force: the target repository structure is new, the native solver bake-off is undecided, and Wasm must later pass parity against the accepted oracle.
+- Baseline ranges prevent accidental behavior changes but cannot be promoted to independent validation evidence.
+- GPL provenance remains explicit because the imported source and history are not represented as clean-room work.
+
 ## Second, adversarial architecture review
 
 The following review intentionally argues against the preferred architecture. “Resolution” means either a concrete architecture change/gate or a documented reason to retain the risk; it does not mean the issue has already passed testing.
@@ -259,7 +273,7 @@ The planning set uses the following single positions:
 | Topic | Consistent position |
 |---|---|
 | Repository | New repository, selective attributed AntennaSim reuse |
-| Application license | GPL-3.0-or-later before code; exact dependency review still required |
+| Application license | GPL-3.0-or-later applied; exact dependency/release review still required |
 | Initial platform | Windows 11 x64 desktop with bundled HTML/TypeScript UI |
 | Runtime boundary | Tauri IPC to isolated native child process; no localhost server |
 | Solver | Native nec2c baseline and NEC2++ challenger; final choice pending Phase 0 |

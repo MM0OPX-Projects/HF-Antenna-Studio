@@ -5,7 +5,7 @@ Last reviewed: 2026-08-02
 
 ## Recommended project license
 
-Adopt **GNU GPL-3.0-or-later** for HF Antenna Studio's combined application distribution before application code is accepted.
+Use **GNU GPL-3.0-or-later** for HF Antenna Studio's combined application distribution.
 
 Reasons:
 
@@ -20,7 +20,7 @@ Use SPDX identifier:
 GPL-3.0-or-later
 ```
 
-The first code-bearing commit should add the complete canonical GPL-3.0 license text at repository root, project copyright guidance, and package metadata. This planning-only repository is not ready for public binary distribution until that step is complete.
+The AntennaSim baseline import includes the complete GPL-3.0-or-later text and upstream copyright notice at repository root, and the frontend/backend package metadata now uses the same SPDX expression. Public binary distribution is still gated on the remaining checklist, especially solver provenance, third-party notices, corresponding source, and branding/assets review.
 
 If the project later decides to avoid all GPL-covered reuse and chooses a differently licensed solver arrangement, relicensing new original code would require contributor agreement and a new documented decision. The current architecture does not assume that future path.
 
