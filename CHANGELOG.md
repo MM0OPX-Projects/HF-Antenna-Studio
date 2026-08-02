@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Added a dedicated loop and compact-beam laboratory for square, delta, and diamond loops, two-to-four-element cubical quads, and single-band broadband-style hexbeams on 20/17/15/12/10 metres
+- Added explicit generated wire paths and non-conducting hex supports, exact one-segment feed bridges, three delta feed regions, immediate 3D geometry, debounced/cancellable NEC solves, exact-deck inspection, 2D/3D patterns, impedance/SWR/gain/take-off metrics, and every-wire current magnitude/phase
+- Added derived feed-conductor orientation without inferring polarisation from antenna names, plus explicit +Y front/back metrics only for the directional quad and hex families
+- Added five perfect-ground exact-deck fixtures and a reproducible independent 4NEC2 NEC-2D comparison, with geometry/connectivity/feed/segmentation/result/failure tests and real-solver browser coverage for every family
+- Added `docs/LOOP_AND_HEXBEAM_MODELS.md` with topology, dimension provenance, numeric evidence, review findings, limitations, and remaining family-specific validation gates
 - Added a dedicated 2-to-8-element Yagi beam laboratory with independent reflector/driven/director dimensions and spacings, height, diameter, perfect/real ground, amateur-band starting presets, and explicit 50/75-ohm SWR reference
 - Added immediate orbitable array geometry, debounced/cancellable NEC calculation, exact-deck inspection, azimuth/elevation/3D patterns, every-element current magnitude/phase, and four immutable comparison overlays
 - Added explicit +Y forward-axis metrics for forward/rear gain, separate front-to-back and front-to-rear ratios, interpolated azimuth beamwidth, take-off angle, feed impedance, and SWR

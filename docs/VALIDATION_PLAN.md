@@ -47,6 +47,14 @@ Three application-generated 20-m perfect-ground decks (2, 3, and 5 elements) agr
 
 Perfect-ground same-deck parity is not a complete validation claim. Sommerfeld/Norton comparison, segment/diameter/grid convergence, native-runner parity, physical feed/boom effects, and a package-authored external model comparison with fully recorded settings remain open gates.
 
+## Implementation checkpoint: loop, cubical-quad, and hexbeam laboratory
+
+The `feature/loop-and-hexbeam-models` branch adds separate typed models for square, delta, and diamond loops, two-to-four-element cubical quads, and single-band broadband-style hexbeams. Every feed is an explicit one-segment bridge; closed-loop connectivity and the hexbeam's four intentional open tips are contract-tested. Feed-conductor orientation is derived from geometry and is never promoted into a polarisation claim. Quad and hexbeam direction is fixed at `+Y` under D-019.
+
+Five byte-identical 14.175 MHz perfect-ground decks agree with the separately installed 4NEC2 merged NEC-2D build 2.7 within 0.02 ohm per impedance component, 0.02 dB peak gain, and 0.01 degree peak theta. The corpus covers square, bottom-fed delta, diamond, two-element quad, and 20 m broadband-style hexbeam models. Real-solver browser tests additionally cover the other delta feed positions, a four-element quad, every hex construction-band geometry, and a 10 m solve. Exact numbers, executable hash, topology provenance, and claim limits are in [`LOOP_AND_HEXBEAM_MODELS.md`](LOOP_AND_HEXBEAM_MODELS.md).
+
+This is cross-build same-deck NEC-2 evidence, not an independent physical oracle. Source-bridge/corner/segment/grid convergence, finite-ground comparison, a package-authored or published reference per family, multiband hex coupling, and a controlled measurement comparison remain open release gates. In particular, the project's broadband-style hex path must not be described as a validated reproduction of a published or commercial hexbeam construction.
+
 ## Claims this plan can and cannot support
 
 Passing the plan can support a bounded claim such as:

@@ -1,0 +1,18 @@
+CM HF Antenna Studio diamond loop
+CM SI units; every GW card is an actual solved conductor
+CM Feed-conductor orientation sloping; no polarisation claim is inferred
+CM Dimensions are starting points, not resonance or performance guarantees
+CE
+GW 1 7 0 0 5.2873449 -1.891791 0 7.179136 0.001
+GW 2 1 -1.891791 0 7.179136 -1.9217008 0 7.2090457 0.001
+GW 3 7 -1.9217008 0 7.2090457 -3.8134918 0 9.1008367 0.001
+GW 4 13 -3.8134918 0 9.1008367 0 0 12.914329 0.001
+GW 5 13 0 0 12.914329 3.8134918 0 9.1008367 0.001
+GW 6 13 3.8134918 0 9.1008367 0 0 5.2873449 0.001
+GE 1
+GN 1 0 0 0 0 0
+PT 0 0 0 0
+EX 0 2 1 0 1 0
+FR 0 1 0 0 14.175 0
+RP 0 46 180 1000 0 0 2 2
+EN

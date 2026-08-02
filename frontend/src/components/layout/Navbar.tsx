@@ -18,6 +18,7 @@ const NAV_LINKS = [
   { to: "/antenna-templates", label: "Templates", featured: false },
   { to: "/vertical-antennas", label: "Verticals", featured: false },
   { to: "/yagi-beams", label: "Yagi Beams", featured: false },
+  { to: "/loop-and-hexbeam-models", label: "Loops & Hex", featured: false },
   { to: "/library", label: "Library", featured: false },
   { to: "/learn", label: "Learn", featured: false },
   { to: "/about", label: "About", featured: false },

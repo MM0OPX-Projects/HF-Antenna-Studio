@@ -305,6 +305,30 @@ Represent three vertical configurations explicitly and never convert between the
 - `GW` output must remain within the classic 80-column portability bound demonstrated by the independent NEC-2D comparator.
 - This decision does not validate arbitrary Yagi designs, select an optimizer, or reverse D-005, D-006, or D-010.
 
+## D-020 — Feed locations use explicit source bridges
+
+**Decision:** Parametric polygon and folded-wire generators split the selected conductor at the requested feed location and insert one short, collinear, one-segment source bridge. The bridge length is bounded by the parent edge and selected from wavelength and wire-diameter constraints. The sole `EX` card targets that bridge; nearest-segment rounding is not used.
+
+**Consequences:**
+
+- Bottom, lower-corner-region, and side-region feeds have deterministic coordinates and source identity.
+- The generated geometry differs slightly from an ideal zero-length gap; bridge-length and adjacent-segment convergence are required.
+- Feed-conductor orientation can be derived from the bridge vector, but does not establish radiated polarisation.
+- Connectivity, aspect ratio, exact deck identity, output-current mapping, and solver failure are testable without embedding NEC syntax in the antenna schema.
+- This decision applies to the dedicated loop/quad/hex workflow; existing generic templates are not retroactively claimed to have this contract.
+
+## D-021 — Initial hexbeam support is a disclosed single-band broadband-style topology
+
+**Decision:** Implement one band at a time as explicit M-style driven and rear-reflector wire paths on a six-arm visual support frame. Use attributed published conductor/tip-spacing facts as starting values, wavelength-scale smaller nominal support radii, and derive the rear projection needed to retain exact requested reflector length. Do not label the model as a faithful named-design reproduction or model stacked multiband coupling.
+
+**Consequences:**
+
+- Users can inspect and change every conductive path dimension, separation, height, and diameter.
+- Visual supports never enter the NEC deck, and flexible construction mechanics are outside the model.
+- The topology can be cross-engine tested now without implying that its pattern matches a physical G3TXQ/K4KIO antenna.
+- Published/source-derived numbers require attribution but no proprietary asset, diagram, model deck, code, or output is copied.
+- A package-authored/reference construction and controlled convergence/measurement study are required before stronger hexbeam claims.
+
 ## Second, adversarial architecture review
 
 The following review intentionally argues against the preferred architecture. “Resolution” means either a concrete architecture change/gate or a documented reason to retain the risk; it does not mean the issue has already passed testing.
@@ -357,7 +381,7 @@ The planning set uses the following single positions:
 | Offline/privacy | No ordinary-use network feature; disconnected installer/run test required |
 | Import | Loss-aware raw document plus explicit structured subset; no silent mutation |
 | Coordinates | NEC theta/phi internal; labelled/tested UI transformations |
-| Feature status | Experimental verified-dipole, height-lab, shared-template, vertical, and Yagi slices are implemented on inherited branches; the target desktop architecture remains proposed |
+| Feature status | Experimental verified-dipole, height-lab, shared-template, vertical, Yagi, and loop/quad/hex slices are implemented on inherited branches; the target desktop architecture remains proposed |
 | Optimization | Deferred until validated ordinary run and parameter infrastructure |
 
 Any future change to these positions requires an ADR update plus review of architecture, solver evaluation, roadmap, validation, risks, licensing, and product claims.
