@@ -163,6 +163,8 @@ Parse an ordered NEC document with comments, original values/text, source locati
 - Exact text preservation and semantic round trip are separate testable properties.
 - Raw execution still obeys the safe-card policy in D-004.
 
+Implementation checkpoint (2026-08-05): `feature/wire-editor` introduces the first ordered, loss-aware browser document and structured-conversion gate. Browser-decoded source text and line endings remain downloadable; unsupported solver-significant cards block conversion; supported GW/GE/EX/LD/TL/GN/FR data is not clamped or defaulted silently. This is a bounded implementation of D-008, not completion: the future native host still needs legacy-encoding handling, size limits, raw safe-card execution policy, additional dialects/cards, and Windows file-recovery tests.
+
 ## D-009 — NEC coordinates as the canonical convention
 
 ### Decision

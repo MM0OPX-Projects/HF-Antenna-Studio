@@ -172,11 +172,18 @@ Press `?` anywhere in the app to see the full shortcuts panel.
 
 ### Wire Editor
 
+Use the antenna object list for exact XYZ endpoint coordinates, segment counts, wire radius, source placement, and supported NEC lumped loads. The 3D viewport supports adding wires, dragging endpoints or complete wires, snapping/locking coincident endpoints, and viewing the ground grid and NEC X/Y/Z axes. The Tools section provides numeric translation, centroid rotation, duplicate, and X/Y/Z mirror-copy operations. Templates remain available and load into the same editor model. Ground settings expose the NEC `GE` geometry/contact choice separately from the `GN` electromagnetic ground model; automatic mode displays the exact effective GE value.
+
+NEC import distinguishes **Original NEC** from **Generated NEC**. The original button returns the browser-decoded source text with its original line endings; Generated NEC contains the supported structured editor state. Unsupported solver-significant cards block graphical conversion and are listed in the conversion report; they are never silently discarded. See `WIRE_EDITOR.md` for the exact card matrix and limitations.
+
 | Key | Action |
 |---|---|
 | `V` | Select mode |
 | `A` | Add wire mode |
 | `M` | Move mode |
+| `S` | Snap the first selected endpoint onto the second |
+| `Shift + S` | Snap while translating the source wire to preserve length |
+| `J` | Lock/unlock the selected coincident junction |
 | `Ctrl + Z` | Undo |
 | `Ctrl + Shift + Z` | Redo |
 | `Ctrl + A` | Select all |

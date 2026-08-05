@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Added a reusable arbitrary-wire editing completion pass with numeric XYZ geometry, source/load placement, selection translation and centroid rotation, explicit all-axis mirror-copy controls, object-list source/load markers, NEC coordinate/scale labels, and existing 3D drag/snap/connect/split/duplicate/undo workflows retained alongside templates
+- Added a loss-aware NEC document import gate that retains the browser-decoded original source text and ordered card diagnostics, converts the published GW/GE/EX/LD/TL/GN/FR subset without clamping or source invention, preserves GE ground-contact semantics, blocks unsupported solver-significant cards, and distinguishes Original NEC from supported-state Generated NEC export
+- Added duplicate-tag, disconnected-group, partial-overlap, interior-intersection, ground-crossing, segmentation, source, load, and transmission-line validity checks plus exact/semantic parser round-trip, transform/undo, native-project, browser, and real-solver regression coverage
+- Added `docs/WIRE_EDITOR.md` with the coordinate/edit contract, NEC card matrix, data-loss boundary, validation behavior, evidence scope, and limitations
+
 - Added a two-element phased vertical-array laboratory with configurable SI geometry, metres/wavelength spacing, compass bearing, ideal-current and physical-feed modes, perfect/real ground, explicit radials, immediate 3D geometry, phasor/current views, debounced patterns, automatic phase sweep, and four saved overlays
 - Added coupled-port admittance calibration that converts ideal target currents into NEC voltage sources and rejects final patterns when parsed complex currents do not verify; physical mode instead uses one source junction and explicit ideal `TL` cards with solved currents and input impedance
 - Added stable circular beam-heading plateau centring, explicit forward/reverse and front-to-back/front-to-rear metrics, non-grazing 2-degree patterns, exact deck inspection, line-length/VF/delay conversions, shunt terminations, topology and validity warnings, and stale-result suppression

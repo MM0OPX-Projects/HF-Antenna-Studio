@@ -287,6 +287,8 @@ Three distinct properties are tested:
 
 For semantic testing, run original and exported decks through an accepted solver and compare results. This is a regression/interoperability check; external reference cases are still needed for physical validation.
 
+Implementation checkpoint (2026-08-05): the wire-editor suite now separates these three properties in code. Unit fixtures retain CRLF/mixed source text, compare every represented GW/GE/EX/LD/TL/GN/FR value after generated-deck reparse, and assert that unsupported/malformed cards block structured conversion with diagnostics. Browser tests retain/download an unsupported decoded deck without changing its text and run a supported imported dipole through the real local Wasm solver. This establishes the bounded structured-import contract; an accepted-solver original-versus-generated numeric corpus, fixed-column/dialect/legacy-encoding corpus, huge-file limits, and established-package import comparison remain required.
+
 ## Windows, offline, and privacy validation
 
 Release matrix initially covers supported Windows 11 x64 versions on:

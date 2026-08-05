@@ -136,6 +136,8 @@ Goal: make designs portable and reproducible without silent data loss.
 - Projects reproduce the exact deck and identify cache invalidation after schema/compiler/solver changes.
 - File operations pass interrupted-write and path-encoding tests on Windows 11.
 
+Implementation checkpoint (2026-08-05): `feature/wire-editor` completes a browser-local subset of this phase. It retains ordered card records plus browser-decoded source text/line endings, publishes and tests a structured GW/GE-1-0-1/EX0/LD0-1-4-5/TL/GN-1-1-2/FR0 matrix, blocks unsupported solver-significant cards, preserves multiple linear FR blocks, and stores import provenance in native project schema v3. Phase 4 remains open for raw safe execution, legacy encodings, additional cards/dialects, bounded native file I/O, atomic writes/backups, Windows path tests, and solver-semantic comparison of a broader imported corpus.
+
 ## Phase 5 — Broader validated model subset and release hardening
 
 Goal: reach a defensible initial public release for HF wire-antenna work.
