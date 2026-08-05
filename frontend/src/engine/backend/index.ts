@@ -105,6 +105,9 @@ export class BackendEngine implements SimulationEngine {
         voltage_imag: e.voltage_imag,
       })),
       ground: buildGroundPayload(request.ground),
+      ...(request.geometry_ground_flag !== undefined
+        ? { geometry_ground_flag: request.geometry_ground_flag }
+        : {}),
       frequency: {
         start_mhz: request.frequency.start_mhz,
         stop_mhz: request.frequency.stop_mhz,
@@ -178,9 +181,15 @@ export class BackendEngine implements SimulationEngine {
           ? { transmission_lines: data.transmission_lines ?? [] }
           : {}),
         ground: { ground_type: data.ground.type },
+        ...(data.geometry_ground_flag !== undefined
+          ? { geometry_ground_flag: data.geometry_ground_flag }
+          : {}),
         frequency_start_mhz: data.frequency_start_mhz,
         frequency_stop_mhz: data.frequency_stop_mhz,
         frequency_steps: data.frequency_steps,
+        ...(data.frequencySegments?.length
+          ? { frequency_segments: data.frequencySegments }
+          : {}),
       },
     );
     return resp.content;

@@ -55,7 +55,9 @@ def build_card_deck(request: SimulationRequest) -> str:
     # Geometry end
     # GE 1 if ground-connected vertical (wire touches z=0), GE 0 otherwise
     ground_type = request.ground.ground_type
-    if ground_type == GroundType.FREE_SPACE:
+    if request.geometry_ground_flag is not None:
+        lines.append(f"GE {request.geometry_ground_flag}")
+    elif ground_type == GroundType.FREE_SPACE:
         lines.append("GE -1")
     else:
         lines.append("GE 0")

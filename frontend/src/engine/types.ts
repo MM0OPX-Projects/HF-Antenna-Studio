@@ -32,6 +32,7 @@ export type {
 } from "../api/nec";
 
 import type { SimulationResult, LumpedLoad, TransmissionLine, WireArc, GeometryTransformDef, CylindricalSymmetryDef } from "../api/nec";
+import type { GeometryGroundFlag } from "./geometry-ground";
 
 // ---- Simulation request types ----
 
@@ -63,6 +64,8 @@ export interface SimulateAdvancedRequest {
   wires: WireGeometry[];
   excitations: Excitation[];
   ground: GroundConfig;
+  /** Explicit NEC GE flag. Omit only for legacy callers using builder defaults. */
+  geometry_ground_flag?: GeometryGroundFlag;
   frequency: FrequencyRange;
   /** Optional multi-segment sweep — when present, overrides `frequency` */
   frequencySegments?: FrequencySegment[];
@@ -96,9 +99,67 @@ export interface ImportResult {
     voltage_imag: number;
   }>;
   ground_type: string;
+  /** Exact represented GE flag from a NEC source. */
+  geometry_ground_flag?: GeometryGroundFlag;
   frequency_start_mhz: number;
   frequency_stop_mhz: number;
   frequency_steps: number;
+  /** Every parsed frequency block, in source order. */
+  frequency_segments?: FrequencyRange[];
+  /** Supported LD cards retained by the structured editor. */
+  loads?: LumpedLoad[];
+  /** Supported TL cards retained by the structured editor. */
+  transmission_lines?: TransmissionLine[];
+  /** Full ground parameters when the source deck supplied them. */
+  ground?: GroundConfig;
+  /** Loss-aware source document and conversion report for NEC imports. */
+  nec_document?: NecDocumentReport;
+}
+
+export type NecCardDisposition =
+  | "represented"
+  | "regenerated"
+  | "preserved_only"
+  | "blocking";
+
+export interface NecCardRecord {
+  line_number: number;
+  card: string;
+  raw: string;
+  disposition: NecCardDisposition;
+  message?: string;
+}
+
+export interface NecImportDiagnostic {
+  severity: "warning" | "error";
+  code: string;
+  message: string;
+  line_number?: number;
+  card?: string;
+}
+
+/**
+ * Ordered, loss-aware NEC source document.
+ *
+ * `original_text` deliberately retains the browser-decoded source code points
+ * and line endings. Arbitrary legacy encodings and byte-order marks are not
+ * claimed to round-trip byte-for-byte. The structured
+ * editor is only opened when `structured_editable` is true; otherwise the
+ * original remains downloadable without pretending unsupported cards were
+ * converted.
+ */
+export interface NecDocumentReport {
+  original_text: string;
+  cards: NecCardRecord[];
+  diagnostics: NecImportDiagnostic[];
+  structured_editable: boolean;
+}
+
+/** NEC provenance stored with an editor session/native project. */
+export interface NecImportState {
+  source_name: string;
+  document: NecDocumentReport;
+  imported_model_fingerprint: string;
 }
 
 /** Data needed for file export */
@@ -109,9 +170,11 @@ export interface ExportData {
   loads?: LumpedLoad[];
   transmission_lines?: TransmissionLine[];
   ground: GroundConfig;
+  geometry_ground_flag?: GeometryGroundFlag;
   frequency_start_mhz: number;
   frequency_stop_mhz: number;
   frequency_steps: number;
+  frequencySegments?: FrequencySegment[];
 }
 
 // ---- Optimizer types ----

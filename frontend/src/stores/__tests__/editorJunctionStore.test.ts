@@ -27,7 +27,10 @@ function resetEditor(wires = baseWires, junctions: EditorJunction[] = []) {
     canUndo: false,
     canRedo: false,
     geometryTransaction: null,
+    geometryGroundFlag: null,
     lastEditorMessage: null,
+    necImport: null,
+    blockedNecImport: null,
     clipboard: [],
     clipboardJunctions: [],
   });

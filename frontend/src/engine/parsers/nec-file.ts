@@ -214,6 +214,11 @@ function parseFloatToken(token: string, symbols: Record<string, number>): number
   return evalNumericExpression(trimmed, symbols);
 }
 
+/** Shared numeric-expression entry point for the loss-aware document parser. */
+export function parseNecNumericToken(token: string, symbols: Record<string, number>): number {
+  return parseFloatToken(token, symbols);
+}
+
 function part(parts: string[], i: number): string {
   return i < parts.length ? parts[i]! : "";
 }
@@ -237,7 +242,8 @@ function parseFloats(
 
 // ---- Main parser ----
 
-export function parseNecFile(content: string): ImportResult {
+/** @deprecated Test/migration reference only. Product imports use parseNecFile below. */
+export function parseNecFileLegacy(content: string): ImportResult {
   const lines = content.trim().replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
 
   const comments: string[] = [];
@@ -400,3 +406,5 @@ export function parseNecFile(content: string): ImportResult {
     frequency_steps: frequencySteps,
   };
 }
+
+export { parseNecDocument as parseNecFile } from "./nec-document";

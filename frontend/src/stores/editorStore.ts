@@ -13,6 +13,8 @@
 import { create } from "zustand";
 import type { WireGeometry, Excitation, GroundConfig, FrequencyRange, FrequencySegment } from "../templates/types";
 import type { LumpedLoad, TransmissionLine } from "../api/nec";
+import type { NecImportState } from "../engine/types";
+import type { GeometryGroundFlag } from "../engine/geometry-ground";
 import { autoSegment, centerSegment } from "../engine/segmentation";
 import { computeSteps } from "../utils/ham-bands";
 import { clampFrequencyMhz, MAX_FREQUENCY_MHZ, MIN_FREQUENCY_MHZ } from "../engine/limits";
@@ -99,6 +101,8 @@ interface EditorState {
   mode: EditorMode;
   /** Ground configuration */
   ground: GroundConfig;
+  /** Explicit NEC GE behavior, or null for editor auto-selection. */
+  geometryGroundFlag: GeometryGroundFlag | null;
   /** Frequency range for simulation */
   frequencyRange: FrequencyRange;
   /** Multi-segment frequency sweep (empty = use single frequencyRange) */
@@ -111,6 +115,10 @@ interface EditorState {
   nextTag: number;
   /** Design frequency for auto-segmentation */
   designFrequencyMhz: number;
+  /** Original NEC source and conversion report, when this model was imported. */
+  necImport: NecImportState | null;
+  /** Most recent raw-only NEC import that was refused without replacing the model. */
+  blockedNecImport: NecImportState | null;
 
   // Undo/redo
   undoStack: EditorSnapshot[];
@@ -152,6 +160,20 @@ interface EditorState {
   clearAll: () => void;
   /** Set all wires at once (e.g. from import) */
   setWires: (wires: EditorWire[], excitations?: Excitation[], junctions?: EditorJunction[]) => void;
+  /** Atomically replace the complete editable model with a reviewed NEC import. */
+  loadImportedModel: (model: {
+    wires: EditorWire[];
+    excitations: Excitation[];
+    loads: LumpedLoad[];
+    transmissionLines: TransmissionLine[];
+    ground: GroundConfig;
+    geometryGroundFlag: GeometryGroundFlag;
+    frequencyRange: FrequencyRange;
+    frequencySegments: FrequencySegment[];
+    necImport: NecImportState;
+  }) => void;
+  setNecImport: (value: NecImportState | null) => void;
+  setBlockedNecImport: (value: NecImportState | null) => void;
 
   // ---- Selection ----
   /** Select a single wire (deselects others unless additive) */
@@ -181,6 +203,7 @@ interface EditorState {
 
   // ---- Settings ----
   setGround: (ground: GroundConfig) => void;
+  setGeometryGroundFlag: (flag: GeometryGroundFlag | null) => void;
   setFrequencyRange: (freq: FrequencyRange) => void;
   /** Set all frequency segments at once */
   setFrequencySegments: (segments: FrequencySegment[]) => void;
@@ -239,6 +262,8 @@ interface EditorState {
   duplicateSelected: () => void;
   /** Mirror selected wires across an axis */
   mirrorSelected: (axis: "x" | "y" | "z") => void;
+  /** Rotate selected wires about their shared centroid. */
+  rotateSelected: (axis: "x" | "y" | "z", angleDeg: number) => EditorActionResult;
 
   // ---- Undo/Redo ----
   undo: () => void;
@@ -352,6 +377,27 @@ function reconcileSegmentReferences(state: EditorState, wires: EditorWire[]) {
       segment1: scaleSegment(line.wire_tag1, line.segment1),
       segment2: scaleSegment(line.wire_tag2, line.segment2),
     })),
+  };
+}
+
+/** Clone tag-addressed sources, loads, and fully contained TLs for copied geometry. */
+function cloneSelectedReferences(state: EditorState, tagMap: ReadonlyMap<number, number>) {
+  return {
+    excitations: state.excitations.flatMap((source) => {
+      const wireTag = tagMap.get(source.wire_tag);
+      return wireTag === undefined ? [] : [{ ...source, wire_tag: wireTag }];
+    }),
+    loads: state.loads.flatMap((load) => {
+      const wireTag = tagMap.get(load.wire_tag);
+      return wireTag === undefined ? [] : [{ ...load, wire_tag: wireTag }];
+    }),
+    transmissionLines: state.transmissionLines.flatMap((line) => {
+      const wireTag1 = tagMap.get(line.wire_tag1);
+      const wireTag2 = tagMap.get(line.wire_tag2);
+      return wireTag1 === undefined || wireTag2 === undefined
+        ? []
+        : [{ ...line, wire_tag1: wireTag1, wire_tag2: wireTag2 }];
+    }),
   };
 }
 
@@ -502,12 +548,15 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   mode: "select",
   verticalDrag: false,
   ground: { ...DEFAULT_GROUND },
+  geometryGroundFlag: null,
   frequencyRange: { ...DEFAULT_FREQ },
   frequencySegments: [],
   snapSize: 0.1,
   showGrid: true,
   nextTag: 1,
   designFrequencyMhz: DEFAULT_FREQUENCY_MHZ,
+  necImport: null,
+  blockedNecImport: null,
   clipboard: [],
   clipboardJunctions: [],
 
@@ -782,6 +831,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const tagSet = new Set(tags);
     const newWires = state.wires.filter((w) => !tagSet.has(w.tag));
     const newExcitations = state.excitations.filter((e) => !tagSet.has(e.wire_tag));
+    const newLoads = state.loads.filter((load) => load.wire_tag === 0 || !tagSet.has(load.wire_tag));
+    const newTransmissionLines = state.transmissionLines.filter(
+      (line) => !tagSet.has(line.wire_tag1) && !tagSet.has(line.wire_tag2),
+    );
     const newSelected = new Set(state.selectedTags);
     for (const t of tags) newSelected.delete(t);
     const newJunctions = state.junctions
@@ -794,6 +847,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       ...pushUndo(state),
       wires: newWires,
       excitations: newExcitations,
+      loads: newLoads,
+      transmissionLines: newTransmissionLines,
       selectedTags: newSelected,
       selectedEndpoints: state.selectedEndpoints.filter((endpoint) => !tagSet.has(endpoint.wireTag)),
       junctions: newJunctions,
@@ -817,6 +872,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
     const tag1 = state.nextTag;
     const tag2 = state.nextTag + 1;
+    const firstManualSegments = Math.max(1, Math.ceil(wire.segments / 2));
+    const secondManualSegments = Math.max(1, Math.floor(wire.segments / 2));
 
     const wire1: EditorWire = {
       ...wire,
@@ -824,8 +881,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       x2: midX,
       y2: midY,
       z2: midZ,
-      segments: computeSegments({ x1: wire.x1, y1: wire.y1, z1: wire.z1, x2: midX, y2: midY, z2: midZ }, state.designFrequencyMhz),
-      segmentsManual: false,
+      segments: wire.segmentsManual
+        ? firstManualSegments
+        : computeSegments({ x1: wire.x1, y1: wire.y1, z1: wire.z1, x2: midX, y2: midY, z2: midZ }, state.designFrequencyMhz),
+      segmentsManual: wire.segmentsManual,
     };
     const wire2: EditorWire = {
       ...wire,
@@ -833,30 +892,50 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       x1: midX,
       y1: midY,
       z1: midZ,
-      segments: computeSegments({ x1: midX, y1: midY, z1: midZ, x2: wire.x2, y2: wire.y2, z2: wire.z2 }, state.designFrequencyMhz),
-      segmentsManual: false,
+      segments: wire.segmentsManual
+        ? secondManualSegments
+        : computeSegments({ x1: midX, y1: midY, z1: midZ, x2: wire.x2, y2: wire.y2, z2: wire.z2 }, state.designFrequencyMhz),
+      segmentsManual: wire.segmentsManual,
     };
 
-    // Update excitations if they reference the split wire.
-    // Map segment to the correct half based on its original position.
     const halfSegment = Math.ceil(wire.segments / 2);
-    const newExcitations = state.excitations.map((e) => {
-      if (e.wire_tag === tag) {
-        if (e.segment <= halfSegment) {
-          // Falls in first half — scale into wire1's segment range
-          const ratio = e.segment / halfSegment;
-          const newSeg = Math.max(1, Math.min(wire1.segments, Math.round(ratio * wire1.segments)));
-          return { ...e, wire_tag: tag1, segment: newSeg };
-        } else {
-          // Falls in second half — scale into wire2's segment range
-          const offsetInSecondHalf = e.segment - halfSegment;
-          const secondHalfTotal = wire.segments - halfSegment;
-          const ratio = offsetInSecondHalf / secondHalfTotal;
-          const newSeg = Math.max(1, Math.min(wire2.segments, Math.round(ratio * wire2.segments)));
-          return { ...e, wire_tag: tag2, segment: newSeg };
-        }
+    const mapSplitSegment = (segment: number) => {
+      if (segment <= halfSegment) {
+        const ratio = segment / halfSegment;
+        return { wireTag: tag1, segment: Math.max(1, Math.min(wire1.segments, Math.round(ratio * wire1.segments))) };
       }
-      return e;
+      const secondHalfTotal = Math.max(1, wire.segments - halfSegment);
+      const ratio = (segment - halfSegment) / secondHalfTotal;
+      return { wireTag: tag2, segment: Math.max(1, Math.min(wire2.segments, Math.round(ratio * wire2.segments))) };
+    };
+    const newExcitations = state.excitations.map((source) => {
+      if (source.wire_tag !== tag) return source;
+      const mapped = mapSplitSegment(source.segment);
+      return { ...source, wire_tag: mapped.wireTag, segment: mapped.segment };
+    });
+    const newLoads = state.loads.flatMap((load) => {
+      if (load.wire_tag !== tag) return [load];
+      if (load.segment_start === 0 && load.segment_end === 0) {
+        return [{ ...load, wire_tag: tag1 }, { ...load, wire_tag: tag2 }];
+      }
+      const start = mapSplitSegment(load.segment_start);
+      const end = mapSplitSegment(load.segment_end);
+      if (start.wireTag === end.wireTag) {
+        return [{ ...load, wire_tag: start.wireTag, segment_start: start.segment, segment_end: end.segment }];
+      }
+      return [
+        { ...load, wire_tag: tag1, segment_start: start.segment, segment_end: wire1.segments },
+        { ...load, wire_tag: tag2, segment_start: 1, segment_end: end.segment },
+      ];
+    });
+    const newTransmissionLines = state.transmissionLines.map((line) => {
+      const first = line.wire_tag1 === tag ? mapSplitSegment(line.segment1) : null;
+      const second = line.wire_tag2 === tag ? mapSplitSegment(line.segment2) : null;
+      return {
+        ...line,
+        ...(first ? { wire_tag1: first.wireTag, segment1: first.segment } : {}),
+        ...(second ? { wire_tag2: second.wireTag, segment2: second.segment } : {}),
+      };
     });
 
     const newWires = state.wires.filter((w) => w.tag !== tag).concat([wire1, wire2]);
@@ -886,6 +965,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       ...pushUndo(state),
       wires: newWires,
       excitations: newExcitations,
+      loads: newLoads,
+      transmissionLines: newTransmissionLines,
       selectedTags: newSelected,
       selectedEndpoints: [],
       junctions: [...transferredJunctions, midpointJunction],
@@ -1206,6 +1287,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       junctions: [],
       nextJunctionId: 1,
       nextTag: 1,
+      geometryGroundFlag: null,
+      necImport: null,
+      blockedNecImport: null,
     });
   },
 
@@ -1230,6 +1314,49 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       nextTag: maxTag + 1,
     });
   },
+
+  loadImportedModel: (model) => {
+    const maxTag = model.wires.reduce((max, wire) => Math.max(max, wire.tag), 0);
+    set({
+      wires: model.wires.map((wire) => ({ ...wire, selected: false, segmentsManual: true })),
+      excitations: model.excitations.map((source) => ({ ...source })),
+      loads: model.loads.map((load) => ({ ...load })),
+      transmissionLines: model.transmissionLines.map((line) => ({ ...line })),
+      ground: { ...model.ground },
+      geometryGroundFlag: model.geometryGroundFlag,
+      frequencyRange: { ...model.frequencyRange },
+      frequencySegments: model.frequencySegments.map((range) => ({ ...range })),
+      necImport: {
+        ...model.necImport,
+        document: {
+          ...model.necImport.document,
+          cards: model.necImport.document.cards.map((card) => ({ ...card })),
+          diagnostics: model.necImport.document.diagnostics.map((item) => ({ ...item })),
+        },
+      },
+      blockedNecImport: null,
+      designFrequencyMhz: clampFrequencyMhz(
+        (model.frequencyRange.start_mhz + model.frequencyRange.stop_mhz) / 2,
+      ),
+      junctions: [],
+      nextJunctionId: 1,
+      nextTag: maxTag + 1,
+      selectedTags: new Set(),
+      selectedEndpoints: [],
+      undoStack: [],
+      redoStack: [],
+      canUndo: false,
+      canRedo: false,
+      geometryTransaction: null,
+      clipboard: [],
+      clipboardJunctions: [],
+      pickingExcitationForTag: null,
+      lastEditorMessage: "NEC model imported without clamping or invented sources.",
+    });
+  },
+
+  setNecImport: (value) => set({ necImport: value }),
+  setBlockedNecImport: (value) => set({ blockedNecImport: value }),
 
   // ---- Selection ----
 
@@ -1444,7 +1571,15 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   // ---- Settings ----
 
-  setGround: (ground) => set({ ground }),
+  setGround: (ground) => set((state) => ({
+    ground,
+    geometryGroundFlag: ground.type === "free_space"
+      ? 0
+      : state.ground.type === "free_space"
+        ? null
+        : state.geometryGroundFlag,
+  })),
+  setGeometryGroundFlag: (geometryGroundFlag) => set({ geometryGroundFlag }),
   setFrequencyRange: (freq) => set({ frequencyRange: freq }),
   setFrequencySegments: (segments) => set({ frequencySegments: segments }),
   addFrequencySegment: (segment) => {
@@ -1526,7 +1661,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setExcitation: (wireTag, segment) => {
     const state = get();
     const existing = state.excitations.findIndex((e) => e.wire_tag === wireTag);
-    const exc: Excitation = { wire_tag: wireTag, segment, voltage_real: 1, voltage_imag: 0 };
+    const previous = existing >= 0 ? state.excitations[existing] : undefined;
+    const exc: Excitation = previous
+      ? { ...previous, segment }
+      : { wire_tag: wireTag, segment, voltage_real: 1, voltage_imag: 0 };
     let newExcitations: Excitation[];
     if (existing >= 0) {
       newExcitations = [...state.excitations];
@@ -1664,30 +1802,16 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       state.nextJunctionId,
     );
 
-    // Also duplicate excitations that reference selected wires
-    const newExcitations = [...state.excitations];
-    for (const w of selected) {
-      const exc = state.excitations.find((e) => e.wire_tag === w.tag);
-      if (exc) {
-        const newWire = newWires.find(
-          (nw) =>
-            Math.abs(nw.x1 - w.x1) < 1e-6 &&
-            Math.abs(nw.z1 - w.z1) < 1e-6 &&
-            Math.abs(nw.x2 - w.x2) < 1e-6 &&
-            Math.abs(nw.z2 - w.z2) < 1e-6,
-        );
-        if (newWire) {
-          newExcitations.push({ ...exc, wire_tag: newWire.tag });
-        }
-      }
-    }
+    const clonedReferences = cloneSelectedReferences(state, tagMap);
 
     const newSelected = new Set(newWires.map((w) => w.tag));
 
     set({
       ...pushUndo(state),
       wires: [...state.wires, ...newWires],
-      excitations: newExcitations,
+      excitations: [...state.excitations, ...clonedReferences.excitations],
+      loads: [...state.loads, ...clonedReferences.loads],
+      transmissionLines: [...state.transmissionLines, ...clonedReferences.transmissionLines],
       selectedTags: newSelected,
       selectedEndpoints: [],
       junctions: [...state.junctions, ...cloned.junctions],
@@ -1740,6 +1864,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       tagMap,
       state.nextJunctionId,
     );
+    const clonedReferences = cloneSelectedReferences(state, tagMap);
 
     const newSelected = new Set([
       ...state.selectedTags,
@@ -1749,12 +1874,78 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set({
       ...pushUndo(state),
       wires: [...state.wires, ...newWires],
+      excitations: [...state.excitations, ...clonedReferences.excitations],
+      loads: [...state.loads, ...clonedReferences.loads],
+      transmissionLines: [...state.transmissionLines, ...clonedReferences.transmissionLines],
       selectedTags: newSelected,
       selectedEndpoints: [],
       junctions: [...state.junctions, ...cloned.junctions],
       nextJunctionId: cloned.nextJunctionId,
       nextTag: tag,
     });
+  },
+
+  rotateSelected: (axis, angleDeg) => {
+    const state = get();
+    const selected = state.wires.filter((wire) => state.selectedTags.has(wire.tag));
+    if (selected.length === 0) return actionResult(false, "Select at least one wire to rotate.");
+    if (!Number.isFinite(angleDeg)) return actionResult(false, "Rotation angle must be finite.");
+    if (Math.abs(angleDeg) < 1e-12) return actionResult(true, "Rotation angle is zero; geometry unchanged.");
+
+    const points = selected.flatMap((wire) => [
+      { x: wire.x1, y: wire.y1, z: wire.z1 },
+      { x: wire.x2, y: wire.y2, z: wire.z2 },
+    ]);
+    const center = points.reduce(
+      (sum, point) => ({ x: sum.x + point.x, y: sum.y + point.y, z: sum.z + point.z }),
+      { x: 0, y: 0, z: 0 },
+    );
+    center.x /= points.length;
+    center.y /= points.length;
+    center.z /= points.length;
+
+    const radians = angleDeg * Math.PI / 180;
+    const cosine = Math.cos(radians);
+    const sine = Math.sin(radians);
+    const rotatePoint = (point: Point3): Point3 => {
+      const x = point.x - center.x;
+      const y = point.y - center.y;
+      const z = point.z - center.z;
+      if (axis === "x") {
+        return { x: point.x, y: center.y + y * cosine - z * sine, z: center.z + y * sine + z * cosine };
+      }
+      if (axis === "y") {
+        return { x: center.x + x * cosine + z * sine, y: point.y, z: center.z - x * sine + z * cosine };
+      }
+      return { x: center.x + x * cosine - y * sine, y: center.y + x * sine + y * cosine, z: point.z };
+    };
+
+    const refs = expandJunctionEndpoints(
+      selected.flatMap((wire) => [
+        { wireTag: wire.tag, endpoint: "start" as const },
+        { wireTag: wire.tag, endpoint: "end" as const },
+      ]),
+      state.junctions,
+    );
+    let rotated = state.wires;
+    for (const ref of refs) {
+      const current = getEndpointPosition(rotated, ref);
+      if (current) rotated = setEndpointPosition(rotated, ref, rotatePoint(current));
+    }
+    const conflict = lengthLockConflict(state.wires, rotated);
+    if (conflict !== null) {
+      const message = `Wire ${conflict} has a locked length and prevents this connected rotation.`;
+      set({ lastEditorMessage: message });
+      return actionResult(false, message);
+    }
+    const newWires = recomputeMovedWireSegments(state.wires, rotated, state.designFrequencyMhz);
+    set({
+      ...pushUndo(state),
+      wires: newWires,
+      ...reconcileSegmentReferences(state, newWires),
+      lastEditorMessage: null,
+    });
+    return actionResult(true, `Rotated ${selected.length} wire${selected.length === 1 ? "" : "s"} ${angleDeg}° about ${axis.toUpperCase()}.`);
   },
 
   // ---- Undo/Redo ----

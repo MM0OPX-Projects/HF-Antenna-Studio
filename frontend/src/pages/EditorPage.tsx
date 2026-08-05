@@ -14,6 +14,7 @@ import { useSimulationStore } from "../stores/simulationStore";
 import { useUIStore } from "../stores/uiStore";
 import { MAX_FREQUENCY_MHZ, MIN_FREQUENCY_MHZ } from "../engine/limits";
 import { EditorScene } from "../components/three/EditorScene";
+import { getGroundGridMetrics } from "../components/three/ground-grid";
 import { ErrorBoundary } from "../components/common/ErrorBoundary";
 import { ViewToggleToolbar } from "../components/three/ViewToggleToolbar";
 import { WireMeasurementTool } from "../components/three/WireMeasurementTool";
@@ -25,6 +26,7 @@ import { EndpointConnectionControls } from "../components/editors/EndpointConnec
 import { WireTable } from "../components/editors/WireTable";
 import { WirePropertiesPanel } from "../components/editors/WirePropertiesPanel";
 import { GroundEditor } from "../components/editors/GroundEditor";
+import { GeometryGroundEditor } from "../components/editors/GeometryGroundEditor";
 import { BalunEditor } from "../components/editors/BalunEditor";
 import { TemplatePicker } from "../components/editors/TemplatePicker";
 import { ParameterPanel } from "../components/editors/ParameterPanel";
@@ -32,6 +34,7 @@ import { ResultsPanel } from "../components/results/ResultsTabs";
 import { PatternFrequencySlider } from "../components/results/PatternFrequencySlider";
 import { CompareOverlay } from "../components/results/CompareOverlay";
 import { ImportExportPanel } from "../components/editors/ImportExportPanel";
+import { TransformPanel } from "../components/editors/TransformPanel";
 import { OptimizerPanel } from "../components/editors/OptimizerPanel";
 import { ColorScale } from "../components/ui/ColorScale";
 import { SimulationLoadingOverlay } from "../components/ui/SimulationLoadingOverlay";
@@ -52,6 +55,7 @@ import {
 } from "../utils/units";
 import type { LengthUnit } from "../utils/units";
 import { validateSimulationRequest } from "../engine/validation";
+import { resolveGeometryGroundFlag } from "../engine/geometry-ground";
 import { templates } from "../templates";
 import { getDefaultParams } from "../templates/types";
 import type { ProjectFile } from "../utils/project-file";
@@ -86,6 +90,8 @@ export function EditorPage() {
   const junctions = useEditorStore((s) => s.junctions);
   const ground = useEditorStore((s) => s.ground);
   const setGround = useEditorStore((s) => s.setGround);
+  const geometryGroundFlag = useEditorStore((s) => s.geometryGroundFlag);
+  const setGeometryGroundFlag = useEditorStore((s) => s.setGeometryGroundFlag);
   const frequencyRange = useEditorStore((s) => s.frequencyRange);
   const frequencySegments = useEditorStore((s) => s.frequencySegments);
   const setFrequencyRange = useEditorStore((s) => s.setFrequencyRange);
@@ -117,6 +123,8 @@ export function EditorPage() {
   const setWires = useEditorStore((s) => s.setWires);
   const addLoad = useEditorStore((s) => s.addLoad);
   const addTransmissionLine = useEditorStore((s) => s.addTransmissionLine);
+  const necImport = useEditorStore((s) => s.necImport);
+  const setNecImport = useEditorStore((s) => s.setNecImport);
   const setPickingExcitationForTag = useEditorStore(
     (s) => s.setPickingExcitationForTag,
   );
@@ -165,6 +173,7 @@ export function EditorPage() {
 
   // Tools sub-section accordion state (only used within "tools" section)
   const [toolsImportOpen, setToolsImportOpen] = useState(false);
+  const [toolsTransformOpen, setToolsTransformOpen] = useState(true);
   const [toolsCompareOpen, setToolsCompareOpen] = useState(false);
   const [toolsOptimizerOpen, setToolsOptimizerOpen] = useState(false);
 
@@ -176,6 +185,10 @@ export function EditorPage() {
 
   // Pattern resolution
   const [patternStep, setPatternStep] = useState(5);
+  const effectiveGeometryGroundFlag = useMemo(
+    () => resolveGeometryGroundFlag(wires, ground, geometryGroundFlag),
+    [wires, ground, geometryGroundFlag],
+  );
   // Mobile tab state (local to editor)
   const [mobileTab, setMobileTab] = useState<MobileEditorTab>("wires");
 
@@ -258,7 +271,7 @@ export function EditorPage() {
   // and whenever antenna geometry or config changes.
   useEffect(() => {
     resetSimulation();
-  }, [wires, excitations, loads, transmissionLines, ground, resetSimulation]);
+  }, [wires, excitations, loads, transmissionLines, ground, effectiveGeometryGroundFlag, resetSimulation]);
 
   // Handlers
   const handleToggle = useCallback(
@@ -283,6 +296,7 @@ export function EditorPage() {
       wires: wireGeometry,
       excitations,
       ground,
+      geometry_ground_flag: effectiveGeometryGroundFlag,
       frequency: frequencyRange,
       frequencySegments: frequencySegments.length > 0 ? frequencySegments : undefined,
       loads: loads.length > 0 ? loads : undefined,
@@ -296,7 +310,7 @@ export function EditorPage() {
       },
       pattern_step: patternStep,
     });
-  }, [wires, excitations, ground, frequencyRange, frequencySegments, loads, transmissionLines, computeCurrents, patternStep, simulateAdvanced, getWireGeometry]);
+  }, [wires, excitations, ground, effectiveGeometryGroundFlag, frequencyRange, frequencySegments, loads, transmissionLines, computeCurrents, patternStep, simulateAdvanced, getWireGeometry]);
 
   // Template loader handlers
   const handleTemplateSelect = useCallback((t: AntennaTemplate) => {
@@ -366,9 +380,8 @@ export function EditorPage() {
   );
 
   const handleProjectSave = useCallback((): ProjectFile => {
-    const wireGeometry = getWireGeometry();
     return createEditorProject(
-      wireGeometry,
+      wires,
       excitations,
       loads,
       transmissionLines,
@@ -377,8 +390,11 @@ export function EditorPage() {
       designFrequencyMhz,
       junctions,
       simResult ?? null,
+      necImport,
+      frequencySegments,
+      geometryGroundFlag,
     );
-  }, [getWireGeometry, excitations, loads, transmissionLines, ground, frequencyRange, designFrequencyMhz, junctions, simResult]);
+  }, [wires, excitations, loads, transmissionLines, ground, geometryGroundFlag, frequencyRange, frequencySegments, designFrequencyMhz, junctions, simResult, necImport]);
 
   const handleProjectLoad = useCallback(
     (project: ProjectFile) => {
@@ -388,16 +404,27 @@ export function EditorPage() {
       }
       const ed = project.editor;
       clearAll();
+      // Set the auto-segmentation reference while the editor is empty, then
+      // restore the saved geometry exactly rather than re-segmenting it.
+      setDesignFrequency(ed.designFrequencyMhz);
       setWires(
-        ed.wires.map((w) => ({ ...w, selected: false })),
+        ed.wires.map((w) => ({
+          ...w,
+          selected: false,
+          segmentsManual: w.segmentsManual ?? Boolean(ed.necImport),
+        })),
         ed.excitations,
         ed.junctions,
       );
+      ed.loads.forEach((load) => addLoad(load));
+      ed.transmissionLines.forEach((line) => addTransmissionLine(line));
       setGround(ed.ground);
+      setGeometryGroundFlag(ed.geometryGroundFlag ?? null);
       setFrequencyRange(ed.frequencyRange);
-      setDesignFrequency(ed.designFrequencyMhz);
+      setFrequencySegments(ed.frequencySegments ?? []);
+      setNecImport(ed.necImport ?? null);
     },
-    [clearAll, setWires, setGround, setFrequencyRange, setDesignFrequency]
+    [clearAll, setWires, addLoad, addTransmissionLine, setGround, setGeometryGroundFlag, setFrequencyRange, setFrequencySegments, setDesignFrequency, setNecImport]
   );
 
   const isLoading = simStatus === "loading";
@@ -410,14 +437,18 @@ export function EditorPage() {
     return getWireGeometry();
   }, [wires, getWireGeometry]);
   const validation = useMemo(
-    () => validateSimulationRequest(wireGeometry, excitations, ground, frequencyRange),
-    [wireGeometry, excitations, ground, frequencyRange]
+    () => validateSimulationRequest(wireGeometry, excitations, ground, frequencyRange, loads, transmissionLines, frequencySegments, effectiveGeometryGroundFlag),
+    [wireGeometry, excitations, ground, frequencyRange, loads, transmissionLines, frequencySegments, effectiveGeometryGroundFlag]
   );
 
   const patternData = selectedFreqResult?.pattern ?? null;
   const currentData = selectedFreqResult?.currents ?? null;
   const nearFieldData = simResult?.near_field ?? null;
   const totalSegments = getTotalSegments();
+  const groundGridMetrics = useMemo(
+    () => getGroundGridMetrics(wireGeometry),
+    [wireGeometry],
+  );
 
   // Compute current antenna height (min Z across all wire endpoints)
   const antennaMinZ = useMemo(() => {
@@ -538,6 +569,10 @@ export function EditorPage() {
                 </span>
               )}
             </div>
+          </div>
+
+          <div className="pointer-events-none absolute bottom-2 left-2 z-10 rounded border border-border bg-surface/80 px-2 py-1 text-[9px] font-mono text-text-secondary backdrop-blur-sm" aria-label="NEC coordinate legend">
+            <span className="text-red-500">X</span> / <span className="text-emerald-500">Y</span> / <span className="text-blue-500">Z up</span> · grid {groundGridMetrics.cellSize} m · snap {snapSize > 0 ? `${snapSize} m` : "off"}
           </div>
 
           {/* Color scale */}
@@ -689,10 +724,24 @@ export function EditorPage() {
                 {/* === Tools section: collapsible sub-sections === */}
                 {editorSection === "tools" && (
                   <div className="flex flex-col">
+                    {/* Numeric transforms */}
+                    <button
+                      onClick={() => setToolsTransformOpen(!toolsTransformOpen)}
+                      className="flex items-center justify-between w-full px-2 py-1.5 text-[10px] font-semibold text-text-secondary uppercase tracking-wider hover:bg-surface-hover transition-colors"
+                    >
+                      <span>Transform</span>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`transition-transform ${toolsTransformOpen ? "rotate-180" : ""}`}><path d="M6 9l6 6 6-6" /></svg>
+                    </button>
+                    {toolsTransformOpen && (
+                      <div className="px-2 pb-2 pt-1">
+                        <TransformPanel />
+                      </div>
+                    )}
+
                     {/* Import/Export */}
                     <button
                       onClick={() => setToolsImportOpen(!toolsImportOpen)}
-                      className="flex items-center justify-between w-full px-2 py-1.5 text-[10px] font-semibold text-text-secondary uppercase tracking-wider hover:bg-surface-hover transition-colors"
+                      className="flex items-center justify-between w-full px-2 py-1.5 text-[10px] font-semibold text-text-secondary uppercase tracking-wider hover:bg-surface-hover transition-colors border-t border-border"
                     >
                       <span>Import / Export</span>
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`transition-transform ${toolsImportOpen ? "rotate-180" : ""}`}><path d="M6 9l6 6 6-6" /></svg>
@@ -760,6 +809,11 @@ export function EditorPage() {
 
                     {/* Ground */}
                     <GroundEditor ground={ground} onChange={setGround} />
+                    <GeometryGroundEditor
+                      value={geometryGroundFlag}
+                      effectiveValue={effectiveGeometryGroundFlag}
+                      onChange={setGeometryGroundFlag}
+                    />
 
                     {/* Pattern resolution */}
                     <div>
@@ -844,6 +898,15 @@ export function EditorPage() {
             <ValidationWarnings validation={validation} />
 
             {/* Run */}
+            <p data-testid="wire-editor-simulation-status" className="text-[10px] text-text-secondary" aria-live="polite">
+              {simStatus === "loading"
+                ? "NEC calculation running…"
+                : simStatus === "success"
+                  ? `${simResult?.frequency_data.length ?? 0} frequency points calculated`
+                  : simStatus === "error"
+                    ? "NEC calculation failed"
+                    : "Ready to validate and calculate"}
+            </p>
             <Button
               onClick={handleRunSimulation}
               loading={isLoading}
@@ -875,7 +938,7 @@ export function EditorPage() {
             <Button
               onClick={handleRunSimulation}
               loading={isLoading}
-              disabled={isLoading || !canRun}
+              disabled={isLoading || !canRun || !validation.valid}
               size="sm"
               className="shrink-0"
             >
@@ -984,6 +1047,11 @@ export function EditorPage() {
                 </select>
               </div>
               <GroundEditor ground={ground} onChange={setGround} />
+              <GeometryGroundEditor
+                value={geometryGroundFlag}
+                effectiveValue={effectiveGeometryGroundFlag}
+                onChange={setGeometryGroundFlag}
+              />
             </div>
           )}
           {mobileTab === "tools" && (
@@ -1000,6 +1068,8 @@ export function EditorPage() {
                 )}
                 <Button onClick={handleLoadTemplate} className="w-full mt-2" size="sm">Load into Editor</Button>
               </div>
+              <div className="border-t border-border" />
+              <TransformPanel />
               <div className="border-t border-border" />
               {/* Import/Export */}
               <div>

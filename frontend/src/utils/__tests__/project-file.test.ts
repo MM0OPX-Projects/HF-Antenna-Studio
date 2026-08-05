@@ -77,13 +77,14 @@ describe("createEditorProject", () => {
   });
 
   it("deep-copies wires (no shared references)", () => {
-    const wires = [{ tag: 1, segments: 21, x1: -5, y1: 0, z1: 10, x2: 5, y2: 0, z2: 10, radius: 0.001 }];
+    const wires = [{ tag: 1, segments: 21, segmentsManual: true, lengthLocked: true, x1: -5, y1: 0, z1: 10, x2: 5, y2: 0, z2: 10, radius: 0.001 }];
     const project = createEditorProject(
       wires, [], [], [], { type: "free_space" },
       { start_mhz: 14.0, stop_mhz: 14.35, steps: 15 }, 14.1,
     );
     wires[0]!.x1 = 999; // Mutate original
     expect(project.editor!.wires[0]!.x1).toBe(-5); // Project unchanged
+    expect(project.editor!.wires[0]).toMatchObject({ segmentsManual: true, lengthLocked: true });
   });
 
   it("deep-copies persistent editor junctions", () => {
@@ -105,6 +106,33 @@ describe("createEditorProject", () => {
 
     junctions[0]!.endpoints[0]!.wireTag = 99;
     expect(project.editor!.junctions[0]!.endpoints[0]!.wireTag).toBe(1);
+  });
+
+  it("preserves decoded NEC source provenance and multi-block frequency intent", () => {
+    const necImport = {
+      source_name: "import.nec",
+      imported_model_fingerprint: "semantic-model",
+      document: {
+        original_text: "CM exact\r\nGW 1 3 0 0 1 1 0 1 .001\r\nEN\r\n",
+        structured_editable: true,
+        cards: [{ line_number: 1, card: "CM", raw: "CM exact", disposition: "regenerated" as const }],
+        diagnostics: [],
+      },
+    };
+    const project = createEditorProject(
+      [{ tag: 1, segments: 3, x1: 0, y1: 0, z1: 1, x2: 1, y2: 0, z2: 1, radius: 0.001 }],
+      [], [], [], { type: "free_space" },
+      { start_mhz: 7, stop_mhz: 7.2, steps: 3 }, 14.1, [], null, necImport,
+      [{ start_mhz: 7, stop_mhz: 7.2, steps: 3 }, { start_mhz: 14, stop_mhz: 14.2, steps: 2 }],
+      -1,
+    );
+    const roundTrip = validateProjectFile(JSON.parse(JSON.stringify(project)));
+    expect(roundTrip.editor?.necImport?.document.original_text).toBe(necImport.document.original_text);
+    expect(roundTrip.editor?.frequencySegments).toHaveLength(2);
+    expect(roundTrip.editor?.geometryGroundFlag).toBe(-1);
+
+    necImport.document.cards[0]!.raw = "changed";
+    expect(project.editor?.necImport?.document.cards[0]?.raw).toBe("CM exact");
   });
 });
 

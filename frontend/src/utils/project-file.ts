@@ -6,19 +6,26 @@
  * their work.
  */
 
-import type { GroundConfig, FrequencyRange, Excitation, WireGeometry } from "../templates/types";
+import type { GroundConfig, FrequencyRange, FrequencySegment, Excitation, WireGeometry } from "../templates/types";
 import type { LumpedLoad, TransmissionLine, SimulationResult } from "../api/nec";
 import type { EditorJunction } from "./editor-junctions";
+import type { NecImportState } from "../engine/types";
+import type { GeometryGroundFlag } from "../engine/geometry-ground";
 
 // ---------------------------------------------------------------------------
 // Schema
 // ---------------------------------------------------------------------------
 
 /** Current schema version. Increment when the format changes. */
-export const PROJECT_SCHEMA_VERSION = 2;
+export const PROJECT_SCHEMA_VERSION = 3;
 
 /** File extension (without dot) */
 export const PROJECT_FILE_EXTENSION = "antennasim";
+
+export interface ProjectEditorWire extends WireGeometry {
+  segmentsManual?: boolean;
+  lengthLocked?: boolean;
+}
 
 export interface ProjectFile {
   /** Schema version for forward compatibility */
@@ -39,15 +46,20 @@ export interface ProjectFile {
 
   /** Editor mode state */
   editor?: {
-    wires: WireGeometry[];
+    wires: ProjectEditorWire[];
     excitations: Excitation[];
     loads: LumpedLoad[];
     transmissionLines: TransmissionLine[];
     /** Editor-only endpoint groups that move as one connection */
     junctions: EditorJunction[];
     ground: GroundConfig;
+    /** Explicit NEC GE behavior, or null for automatic editor selection. */
+    geometryGroundFlag?: GeometryGroundFlag | null;
     frequencyRange: FrequencyRange;
+    frequencySegments?: FrequencySegment[];
     designFrequencyMhz: number;
+    /** Optional browser-decoded imported NEC source plus its conversion report. */
+    necImport?: NecImportState | null;
   };
 
   /** Cached simulation result (optional — can be large) */
@@ -104,14 +116,48 @@ export function validateProjectFile(data: unknown): ProjectFile {
     if (!Array.isArray(ed.junctions)) {
       throw new Error("Invalid project file: editor mode requires 'editor.junctions' array");
     }
+    for (const collection of ["excitations", "loads", "transmissionLines"] as const) {
+      if (ed[collection] === undefined && obj.version < 3) ed[collection] = [];
+      if (!Array.isArray(ed[collection])) {
+        throw new Error(`Invalid project file: editor.${collection} must be an array`);
+      }
+    }
+    if (ed.frequencySegments === undefined && obj.version < 3) ed.frequencySegments = [];
+    if (ed.frequencySegments !== undefined && !Array.isArray(ed.frequencySegments)) {
+      throw new Error("Invalid project file: editor.frequencySegments must be an array");
+    }
+    if (
+      ed.geometryGroundFlag !== undefined &&
+      ed.geometryGroundFlag !== null &&
+      ed.geometryGroundFlag !== -1 &&
+      ed.geometryGroundFlag !== 0 &&
+      ed.geometryGroundFlag !== 1
+    ) {
+      throw new Error("Invalid project file: editor.geometryGroundFlag must be -1, 0, 1, or null");
+    }
 
-    const wireTags = new Set(
-      ed.wires.flatMap((wire) => {
-        if (typeof wire !== "object" || wire === null) return [];
-        const tag = (wire as Record<string, unknown>).tag;
-        return typeof tag === "number" ? [tag] : [];
-      }),
-    );
+    if (ed.necImport !== undefined && ed.necImport !== null) {
+      if (typeof ed.necImport !== "object") {
+        throw new Error("Invalid project file: editor.necImport must be an object");
+      }
+      const necImport = ed.necImport as Record<string, unknown>;
+      const document = necImport.document as Record<string, unknown> | undefined;
+      if (typeof necImport.source_name !== "string" || typeof necImport.imported_model_fingerprint !== "string" || !document || typeof document.original_text !== "string" || !Array.isArray(document.cards) || !Array.isArray(document.diagnostics)) {
+        throw new Error("Invalid project file: editor.necImport is incomplete");
+      }
+    }
+
+    const wireTags = new Set<number>();
+    for (const rawWire of ed.wires) {
+      if (typeof rawWire !== "object" || rawWire === null) continue;
+      const wire = rawWire as Record<string, unknown>;
+      if (typeof wire.tag === "number") wireTags.add(wire.tag);
+      for (const field of ["segmentsManual", "lengthLocked"] as const) {
+        if (wire[field] !== undefined && typeof wire[field] !== "boolean") {
+          throw new Error(`Invalid project file: editor wire ${field} must be boolean`);
+        }
+      }
+    }
     const junctionIds = new Set<number>();
     const connectedEndpoints = new Set<string>();
     for (const rawJunction of ed.junctions) {
@@ -179,7 +225,7 @@ export function createSimulatorProject(
  * Create a ProjectFile from editor mode state.
  */
 export function createEditorProject(
-  wires: WireGeometry[],
+  wires: ProjectEditorWire[],
   excitations: Excitation[],
   loads: LumpedLoad[],
   transmissionLines: TransmissionLine[],
@@ -188,6 +234,9 @@ export function createEditorProject(
   designFrequencyMhz: number,
   junctions: EditorJunction[] = [],
   result?: SimulationResult | null,
+  necImport?: NecImportState | null,
+  frequencySegments: FrequencySegment[] = [],
+  geometryGroundFlag: GeometryGroundFlag | null = null,
 ): ProjectFile {
   return {
     version: PROJECT_SCHEMA_VERSION,
@@ -195,7 +244,19 @@ export function createEditorProject(
     created_at: new Date().toISOString(),
     mode: "editor",
     editor: {
-      wires: wires.map((w) => ({ ...w })),
+      wires: wires.map((wire) => ({
+        tag: wire.tag,
+        segments: wire.segments,
+        x1: wire.x1,
+        y1: wire.y1,
+        z1: wire.z1,
+        x2: wire.x2,
+        y2: wire.y2,
+        z2: wire.z2,
+        radius: wire.radius,
+        ...(wire.segmentsManual !== undefined ? { segmentsManual: wire.segmentsManual } : {}),
+        ...(wire.lengthLocked !== undefined ? { lengthLocked: wire.lengthLocked } : {}),
+      })),
       excitations: excitations.map((e) => ({ ...e })),
       loads: loads.map((l) => ({ ...l })),
       transmissionLines: transmissionLines.map((t) => ({ ...t })),
@@ -204,8 +265,18 @@ export function createEditorProject(
         endpoints: junction.endpoints.map((endpoint) => ({ ...endpoint })),
       })),
       ground: { ...ground },
+      geometryGroundFlag,
       frequencyRange: { ...frequencyRange },
+      frequencySegments: frequencySegments.map((segment) => ({ ...segment })),
       designFrequencyMhz,
+      necImport: necImport ? {
+        ...necImport,
+        document: {
+          ...necImport.document,
+          cards: necImport.document.cards.map((card) => ({ ...card })),
+          diagnostics: necImport.document.diagnostics.map((diagnostic) => ({ ...diagnostic })),
+        },
+      } : null,
     },
     result: result ?? null,
   };

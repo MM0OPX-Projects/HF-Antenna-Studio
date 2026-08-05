@@ -18,7 +18,7 @@ from src.converters.maa_import import parse_maa, MAAParseError
 from src.converters.maa_export import export_maa
 from src.converters.nec_file import parse_nec_file, NECParseError
 from src.simulation.nec_input import build_card_deck
-from src.models.simulation import SimulationRequest, FrequencyConfig
+from src.models.simulation import SimulationRequest, FrequencyConfig, FrequencySegmentConfig
 from src.models.limits import MAX_FREQUENCY_MHZ, MIN_FREQUENCY_MHZ
 
 logger = logging.getLogger("antsim.api.convert")
@@ -62,6 +62,8 @@ class ExportRequest(BaseModel):
     frequency_start_mhz: float = Field(default=14.0, ge=MIN_FREQUENCY_MHZ, le=MAX_FREQUENCY_MHZ)
     frequency_stop_mhz: float = Field(default=14.5, ge=MIN_FREQUENCY_MHZ, le=MAX_FREQUENCY_MHZ)
     frequency_steps: int = Field(default=11, ge=1, le=201)
+    frequency_segments: list[FrequencySegmentConfig] | None = None
+    geometry_ground_flag: int | None = Field(default=None, ge=-1, le=1)
 
 
 class ExportResponse(BaseModel):
@@ -160,6 +162,8 @@ async def export_file(request: ExportRequest) -> ExportResponse:
             comment=request.title,
             loads=request.loads,
             transmission_lines=request.transmission_lines,
+            frequency_segments=request.frequency_segments,
+            geometry_ground_flag=request.geometry_ground_flag,
         )
         content = build_card_deck(sim_request)
         return ExportResponse(

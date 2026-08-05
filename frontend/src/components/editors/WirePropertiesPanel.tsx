@@ -13,6 +13,7 @@ import { centerSegment } from "../../engine/segmentation";
 import { useUIStore } from "../../stores/uiStore";
 import { NumberInput } from "../ui/NumberInput";
 import type { Excitation } from "../../templates/types";
+import { LoadEditor } from "./LoadEditor";
 
 function CoordField({
   label,
@@ -367,19 +368,20 @@ export function WirePropertiesPanel() {
         />
       </div>
 
-      {/* Radius */}
+      {/* Diameter (stored as NEC radius internally) */}
       <div className="space-y-1">
         <div className="text-[11px] text-text-secondary font-medium">
-          Radius
+          Wire diameter
         </div>
         <NumberInput
-          value={wire.radius}
-          onChange={(v) => handleRadiusChange(wire.tag, v)}
-          min={0.0001}
-          max={0.1}
-          decimals={6}
-          unit="m"
+          value={wire.radius * 2000}
+          onChange={(diameterMm) => handleRadiusChange(wire.tag, diameterMm / 2000)}
+          min={0.002}
+          max={200}
+          decimals={3}
+          unit="mm"
         />
+        <p className="text-[9px] text-text-secondary/70">Stored for NEC as radius {wire.radius.toPrecision(5)} m.</p>
       </div>
 
       {/* Wire length — editable + lock toggle */}
@@ -518,6 +520,8 @@ export function WirePropertiesPanel() {
           </div>
         )}
       </div>
+
+      <LoadEditor wire={wire} />
 
       {/* Actions */}
       <div className="border-t border-border pt-2 flex gap-1">

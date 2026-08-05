@@ -38,6 +38,8 @@ export function WireTable() {
   const deleteWires = useEditorStore((s) => s.deleteWires);
   const addWire = useEditorStore((s) => s.addWire);
   const designFrequencyMhz = useEditorStore((s) => s.designFrequencyMhz);
+  const excitations = useEditorStore((s) => s.excitations);
+  const loads = useEditorStore((s) => s.loads);
 
   const [editCell, setEditCell] = useState<EditCell | null>(null);
   const [editValue, setEditValue] = useState("");
@@ -132,7 +134,7 @@ export function WireTable() {
   const headerBar = (
     <div className="flex items-center justify-between px-2 py-1.5 border-b border-border">
       <h3 className="text-xs font-medium text-text-secondary uppercase tracking-wider">
-        Wires ({wires.length})
+        Antenna objects ({wires.length} wires)
       </h3>
       <div className="flex items-center gap-1.5">
         {selectedTags.size > 0 && (
@@ -200,7 +202,7 @@ export function WireTable() {
 
       {/* === Desktop table (lg and up) === */}
       <div className="hidden lg:block flex-1 overflow-auto">
-        <table className="w-full text-[10px] font-mono">
+        <table aria-label="Antenna wire object list" data-testid="antenna-object-list" className="w-full text-[10px] font-mono">
           <thead className="sticky top-0 bg-surface z-10">
             <tr>
               {COLUMNS.map((col) => (
@@ -221,7 +223,17 @@ export function WireTable() {
               return (
                 <tr
                   key={wire.tag}
+                  aria-selected={isSelected}
+                  aria-label={`Wire ${wire.tag}`}
+                  tabIndex={0}
+                  title={`Wire ${wire.tag}${excitations.some((source) => source.wire_tag === wire.tag) ? "; source" : ""}${loads.some((load) => load.wire_tag === wire.tag) ? "; loaded" : ""}`}
                   onClick={(e) => handleRowClick(wire.tag, e)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      selectWire(wire.tag, event.shiftKey || event.ctrlKey || event.metaKey);
+                    }
+                  }}
                   className={`cursor-pointer transition-colors ${
                     isSelected
                       ? "bg-accent/15 hover:bg-accent/20"
@@ -269,7 +281,7 @@ export function WireTable() {
                         }
                       >
                         {col.key === "tag"
-                          ? String(value)
+                          ? <>{String(value)}{excitations.some((source) => source.wire_tag === wire.tag) && <span className="ml-0.5 text-swr-warning" title="Excitation source">S</span>}{loads.some((load) => load.wire_tag === wire.tag) && <span className="ml-0.5 text-accent" title="Lumped load">L</span>}</>
                           : col.key === "segments"
                             ? <>{String(value)}{wire.segmentsManual && <span className="text-accent ml-0.5" title="Manual override">*</span>}</>
                             : formatNum(value as number, col.key === "radius" ? 6 : 4)}
@@ -319,7 +331,7 @@ export function WireTable() {
             >
               {/* Card header */}
               <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-bold text-accent">Wire {wire.tag}</span>
+                <span className="text-xs font-bold text-accent">Wire {wire.tag}{excitations.some((source) => source.wire_tag === wire.tag) && <span className="ml-1 text-swr-warning" title="Excitation source">Source</span>}{loads.some((load) => load.wire_tag === wire.tag) && <span className="ml-1 text-accent" title="Lumped load">Load</span>}</span>
                 <span className="text-[11px] text-text-secondary font-mono">
                   {wire.segments}{wire.segmentsManual ? <span className="text-accent">*</span> : ""} segs | R={formatNum(wire.radius, 6)}m
                 </span>

@@ -69,7 +69,11 @@ export function buildCardDeck(request: SimulateAdvancedRequest): string {
 
   // ---- Geometry end ----
   const groundType = request.ground.type;
-  if (groundType === "free_space") {
+  if (request.geometry_ground_flag !== undefined) {
+    lines.push(`GE ${request.geometry_ground_flag}`);
+  } else if (groundType === "free_space") {
+    // Retain the inherited generic-builder convention for callers that have
+    // not opted into the wire editor's explicit GE contract.
     lines.push("GE -1");
   } else {
     lines.push("GE 0");

@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Grid } from "@react-three/drei";
 import type { WireData } from "./types";
 import { useUIStore } from "../../stores/uiStore";
-import { getAntennaSpan } from "./visualScale";
+import { getGroundGridMetrics } from "./ground-grid";
 
 /**
  * Ground plane visualization with auto-sizing grid at Y=0.
@@ -15,48 +15,14 @@ interface GroundPlaneProps {
   wires?: WireData[];
 }
 
-function roundUpNice(value: number): number {
-  const exponent = Math.floor(Math.log10(value));
-  const scale = 10 ** exponent;
-  const fraction = value / scale;
-  const niceFraction = fraction <= 1 ? 1 : fraction <= 2 ? 2 : fraction <= 5 ? 5 : 10;
-  return niceFraction * scale;
-}
-
 export function GroundPlane({ wires = [] }: GroundPlaneProps) {
   const theme = useUIStore((s) => s.theme);
   const isDark = theme === "dark";
 
-  const { gridSize, cellSize, sectionSize, fadeDistance } = useMemo(() => {
-    if (wires.length === 0) {
-      return { gridSize: 100, cellSize: 1, sectionSize: 5, fadeDistance: 80 };
-    }
-
-    // Compute horizontal footprint in Three.js coords
-    let maxExtent = 0;
-    for (const w of wires) {
-      // NEC2 → Three.js: X stays, Y→Z (negated)
-      maxExtent = Math.max(
-        maxExtent,
-        Math.abs(w.x1),
-        Math.abs(w.x2),
-        Math.abs(w.y1),
-        Math.abs(w.y2)
-      );
-    }
-
-    const antennaSpan = getAntennaSpan(wires);
-    const size = roundUpNice(Math.max(maxExtent * 4, antennaSpan * 4));
-    const cell = roundUpNice(size / 40);
-    const section = cell * 5;
-
-    return {
-      gridSize: size,
-      cellSize: cell,
-      sectionSize: section,
-      fadeDistance: size * 0.8,
-    };
-  }, [wires]);
+  const { gridSize, cellSize, sectionSize, fadeDistance } = useMemo(
+    () => getGroundGridMetrics(wires),
+    [wires],
+  );
 
   return (
     <group>

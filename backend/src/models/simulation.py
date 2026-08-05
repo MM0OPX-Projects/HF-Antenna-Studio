@@ -93,6 +93,9 @@ class SimulationRequest(StrictModel):
     wires: list[Wire] = Field(min_length=1, max_length=5000)
     excitations: list[Excitation] = Field(min_length=1, max_length=50)
     ground: GroundConfig = Field(default_factory=GroundConfig)
+    geometry_ground_flag: int | None = Field(
+        default=None, ge=-1, le=1,
+        description="Explicit NEC GE flag (-1, 0, or 1); legacy default when omitted")
     frequency: FrequencyConfig
     pattern: PatternConfig = Field(default_factory=PatternConfig)
     comment: str = Field(default="AntennaSim simulation", max_length=200)
@@ -132,6 +135,12 @@ class SimulationRequest(StrictModel):
                     f"Total frequency points across all segments ({total_points}) "
                     f"exceeds maximum of 301"
                 )
+        return self
+
+    @model_validator(mode="after")
+    def validate_geometry_ground_flag(self) -> "SimulationRequest":
+        if self.geometry_ground_flag not in (None, -1, 0, 1):
+            raise ValueError("geometry_ground_flag must be -1, 0, or 1")
         return self
 
     @model_validator(mode="after")

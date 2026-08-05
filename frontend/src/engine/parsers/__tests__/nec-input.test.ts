@@ -44,6 +44,15 @@ function makeDipole(
 // ---------------------------------------------------------------------------
 
 describe("Ground models", () => {
+  it("honours an explicit wire-editor GE flag", () => {
+    const deck = buildCardDeck(makeDipole({
+      ground: { type: "perfect" },
+      geometry_ground_flag: -1,
+    }));
+    expect(findCards(deck, "GE")).toEqual(["GE -1"]);
+    expect(findCards(deck, "GN")[0]).toMatch(/^GN 1/);
+  });
+
   it("free_space: GE -1, GN -1", () => {
     const deck = buildCardDeck(makeDipole({ ground: { type: "free_space" } }));
     expect(findCards(deck, "GE")).toEqual(["GE -1"]);

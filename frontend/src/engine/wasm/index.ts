@@ -290,11 +290,13 @@ export class WasmEngine implements SimulationEngine {
       wires: data.wires,
       excitations: data.excitations,
       ground: data.ground,
+      geometry_ground_flag: data.geometry_ground_flag,
       frequency: {
         start_mhz: data.frequency_start_mhz,
         stop_mhz: data.frequency_stop_mhz,
         steps: data.frequency_steps,
       },
+      frequencySegments: data.frequencySegments,
       loads: data.loads,
       transmission_lines: data.transmission_lines,
       compute_currents: true,
