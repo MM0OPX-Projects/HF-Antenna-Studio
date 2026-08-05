@@ -94,6 +94,7 @@ export interface VerticalCurrentPoint {
   magnitudeA: number;
   normalizedMagnitude: number;
   phaseDeg: number;
+  positionM: VerticalPoint3M;
 }
 
 export interface VerticalSolverResult {

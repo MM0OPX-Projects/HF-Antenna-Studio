@@ -47,7 +47,7 @@ export interface PhasedSegmentation { wires: SegmentedPhasedWire[]; totalSegment
 export interface LineMetrics { physicalLengthM: number; electricalLengthDeg: number; delayS: number; necEquivalentLengthM: number }
 export interface ComplexValue { real: number; imag: number }
 export interface PhasedPatternPoint { angleDeg: number; gainDbi: number; normalizedDb: number }
-export interface PhasedCurrentPoint { wireId: string; family: PhasedWireFamily; tag: number; segment: number; fractionAlongWire: number; magnitudeA: number; normalizedMagnitude: number; phaseDeg: number }
+export interface PhasedCurrentPoint { wireId: string; family: PhasedWireFamily; tag: number; segment: number; fractionAlongWire: number; magnitudeA: number; normalizedMagnitude: number; phaseDeg: number; positionM: PhasedPoint3M }
 export interface ElementFeedCurrent { element: 1 | 2; magnitudeA: number; phaseDeg: number; complex: ComplexValue }
 export interface PhasedArraySolverResult {
   modelKey: string;

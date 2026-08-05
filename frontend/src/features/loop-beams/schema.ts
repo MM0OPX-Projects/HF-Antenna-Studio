@@ -103,6 +103,7 @@ export interface LoopBeamCurrentPoint {
   magnitudeA: number;
   normalizedMagnitude: number;
   phaseDeg: number;
+  positionM: LoopBeamPoint3M;
 }
 export interface LoopBeamSolverResult {
   modelKey: string;

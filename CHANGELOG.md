@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Added a shared segment-resolved NEC current visualisation for the Simulator, Wire Editor, verified dipole, vertical, loop/quad/hex, Yagi, and phased-array workflows, with magnitude, phase, combined, and slowed per-segment phasor modes
+- Added exact wire/tag and segment inspection with parsed XYZ position, engineering current units, phase, accessible selection, explicit normalised-scale legends, and five-family real-Wasm browser coverage
+- Added `docs/CURRENT_VISUALISATION.md` with data lineage, coordinate/animation semantics, evidence limits, test coverage, and outstanding complex-current validation work
+
 - Added a local virtual frequency analyser for the current Simulator antenna with start/stop and centre/span entry, Region 1 band presets, 3–401 points, configurable reference impedance, exact cursor inspection, six impedance/match traces, an optional Smith chart, and four saved overlays
 - Added an impedance-only NEC sweep path using one batched `FR` card and `XQ` execution in the cancellable Web Worker, avoiding per-frequency far-field grids while retaining the established output parser and preventing partial or superseded result publication
 - Added CSV, active-chart PNG, and versioned analyser project-data exports plus calculation, deck, parser-contract, failure, cancellation, real-Wasm, overlay, download, and browser-console regression coverage
@@ -63,6 +67,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Added `docs/BASELINE.md` with exact installation, solver execution, known limitations, review evidence, and regression boundaries
 
 ### Changed
+
+- Replaced the legacy wire-average “Flow” particles with animation derived independently from each parsed NEC segment-current phasor, avoiding an unsupported travelling-current implication
 
 - Updated compatible frontend dependencies and declared the directly imported `three-stdlib` package
 - Made Wasm development and production commands cross-platform on Windows and Unix-like systems

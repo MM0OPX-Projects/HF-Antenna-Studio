@@ -78,6 +78,7 @@ export interface YagiCurrentPoint {
   magnitudeA: number;
   normalizedMagnitude: number;
   phaseDeg: number;
+  positionM: YagiPoint3M;
 }
 
 export interface YagiSolverResult {

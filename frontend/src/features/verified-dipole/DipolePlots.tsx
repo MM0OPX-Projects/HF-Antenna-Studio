@@ -1,4 +1,6 @@
 import type { NormalizedPatternPoint, VerifiedCurrentPoint } from "./result";
+import { CurrentVisualisationPanel } from "../current-visualisation/CurrentVisualisationPanel";
+import { adaptPositionedCurrents } from "../current-visualisation/adapters";
 
 interface PatternPlotProps {
   title: string;
@@ -43,6 +45,7 @@ export function DipolePatternPlot({ title, points, xLabel }: PatternPlotProps) {
 }
 
 export function DipoleCurrentPlot({ points }: { points: VerifiedCurrentPoint[] }) {
+  const visualData = adaptPositionedCurrents(points.map((point) => ({ wireId: "dipole-conductor", tag: 1, segment: point.segment, positionM: point.positionM3D, magnitudeA: point.magnitudeA, phaseDeg: point.phaseDeg })));
   const width = 460;
   const height = 220;
   const pad = { left: 44, right: 18, top: 20, bottom: 36 };
@@ -53,7 +56,7 @@ export function DipoleCurrentPlot({ points }: { points: VerifiedCurrentPoint[] }
   const sy = (value: number) => pad.top + (1 - value) * (height - pad.top - pad.bottom);
   const path = linePath(points.map((point) => ({ x: sx(point.positionM), y: sy(point.normalizedMagnitude) })));
 
-  return (
+  return (<>
     <figure className="rounded-lg border border-border bg-background/40 p-3" data-testid="current-distribution">
       <figcaption className="mb-2 text-sm font-semibold text-text-primary">Element-current magnitude</figcaption>
       <svg viewBox={`0 0 ${width} ${height}`} className="w-full" role="img" aria-label="Normalized element-current magnitude along the dipole">
@@ -76,5 +79,6 @@ export function DipoleCurrentPlot({ points }: { points: VerifiedCurrentPoint[] }
         </table>
       </div>
     </figure>
-  );
+    <CurrentVisualisationPanel data={visualData} title="Dipole NEC current visualisation" testId="dipole-current-visualisation" />
+  </>);
 }

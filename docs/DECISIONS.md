@@ -29,6 +29,7 @@ Decision review date: 2026-08-02
 | D-020 | Use explicit source bridges for polygon and folded-wire feeds | Accepted, experimental |
 | D-021 | Treat initial hexbeam support as a disclosed single-band broadband-style topology | Accepted, experimental |
 | D-022 | Keep enforced ideal currents and physical TL feed networks as distinct phased-array modes | Accepted, experimental |
+| D-023 | Bind current views to parsed segment results and label every visual normalization | Accepted, experimental |
 
 ## D-001 — New repository with selective AntennaSim reuse
 
@@ -348,6 +349,19 @@ Represent three vertical configurations explicitly and never convert between the
 - Calibration and result caches use complete applicable model identities; a final complex-current mismatch blocks display.
 - Cross-build broadside/end-fire agreement supports the bounded ideal-current workflow only. Physical coax, finite ground, radials, and convergence remain separate validation gates.
 
+## D-023 — Current views preserve segment-result lineage
+
+**Decision:** Every current visual mode must derive from parsed complex NEC segment-current records. Views may normalise visual size/colour within a solved run, but must label that transformation, retain exact numeric inspection, and must not replace available results with a textbook envelope or whole-wire average.
+
+**Consequences:**
+
+- Magnitude, phase, and combined views share one `SegmentCurrent`-based renderer and exact tag/segment selection.
+- The optional animation evaluates each parsed phasor independently as a slowed teaching snapshot; it is not labelled as current flow or RF-time propagation.
+- Family result validators retain parsed NEC XYZ positions instead of reconstructing locations from display charts.
+- A solver table with one sample yields one sample glyph; the view does not invent conductor endpoints or intermediate currents.
+- Normalised geometry cannot be read as absolute current. Inspector values retain their engineering units and excitation dependency.
+- Current-specific external comparisons remain a validation gate; correct lineage alone does not establish solver accuracy.
+
 ## Second, adversarial architecture review
 
 The following review intentionally argues against the preferred architecture. “Resolution” means either a concrete architecture change/gate or a documented reason to retain the risk; it does not mean the issue has already passed testing.
@@ -400,7 +414,7 @@ The planning set uses the following single positions:
 | Offline/privacy | No ordinary-use network feature; disconnected installer/run test required |
 | Import | Loss-aware raw document plus explicit structured subset; no silent mutation |
 | Coordinates | NEC theta/phi internal; labelled/tested UI transformations |
-| Feature status | Experimental verified-dipole, height-lab, shared-template, vertical, Yagi, loop/quad/hex, and phased-array slices are implemented on inherited branches; the target desktop architecture remains proposed |
+| Feature status | Experimental verified-dipole, height-lab, shared-template, vertical, Yagi, loop/quad/hex, phased-array, frequency-analyser, wire-editor, and shared current-visualisation slices are implemented on inherited branches; the target desktop architecture remains proposed |
 | Optimization | Deferred until validated ordinary run and parameter infrastructure |
 
 Any future change to these positions requires an ADR update plus review of architecture, solver evaluation, roadmap, validation, risks, licensing, and product claims.

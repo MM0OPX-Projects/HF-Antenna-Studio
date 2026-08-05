@@ -59,6 +59,7 @@ function mapCurrents(currents: SegmentCurrent[] | null, adapted: AdaptedVertical
       magnitudeA: point.current_magnitude,
       normalizedMagnitude: point.current_magnitude / maximum,
       phaseDeg: point.current_phase_deg,
+      positionM: { x: point.x, y: point.y, z: point.z },
     };
   });
 }

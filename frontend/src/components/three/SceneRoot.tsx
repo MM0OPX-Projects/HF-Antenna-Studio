@@ -1,5 +1,5 @@
 import { Canvas } from "@react-three/fiber";
-import { Suspense, useMemo, useRef } from "react";
+import { Suspense, useMemo, useRef, useState } from "react";
 import { ACESFilmicToneMapping, SRGBColorSpace } from "three";
 import { GroundPlane } from "./GroundPlane";
 import { CompassRose } from "./CompassRose";
@@ -15,7 +15,6 @@ import { VolumetricShells } from "./VolumetricShells";
 import { GroundReflection } from "./GroundReflection";
 import { CurrentDistribution3D } from "./CurrentDistribution3D";
 import { NearFieldPlane } from "./NearFieldPlane";
-import { CurrentFlowParticles } from "./CurrentFlowParticles";
 import { RadiationSlice } from "./RadiationSlice";
 import { SceneRaycaster } from "./SceneRaycaster";
 import { WireMeasurementOverlay3D } from "./WireMeasurementOverlay3D";
@@ -24,6 +23,8 @@ import type { PatternData, SegmentCurrent, NearFieldResult } from "../../api/nec
 import { useUIStore } from "../../stores/uiStore";
 import { createVisualScale } from "./visualScale";
 import type { WireMeasurementPointMode } from "../../utils/wire-measurement";
+import { CurrentVisualisationControls } from "../../features/current-visualisation/CurrentVisualisationControls";
+import type { CurrentVisualMode } from "../../features/current-visualisation/types";
 
 interface SceneRootProps {
   wires: WireData[];
@@ -59,9 +60,13 @@ export function SceneRoot({
   const theme = useUIStore((s) => s.theme);
   const sceneBg = theme === "dark" ? "#0A0A0F" : "#E8E8ED";
   const fogColor = theme === "dark" ? "#0A0A0F" : "#E8E8ED";
+  const [currentMode, setCurrentMode] = useState<CurrentVisualMode>("magnitude");
+  const [currentAnimated, setCurrentAnimated] = useState(false);
+  const [selectedCurrent, setSelectedCurrent] = useState<SegmentCurrent | null>(null);
+  const effectiveSelectedCurrent = selectedCurrent && currents?.includes(selectedCurrent) ? selectedCurrent : null;
 
   // Dim wires when current/flow overlays are active so the colors show through
-  const wiresDimmed = (viewToggles.current || viewToggles.currentFlow) && !!currents && currents.length > 0;
+  const wiresDimmed = viewToggles.current && !!currents && currents.length > 0;
   const visualScale = useMemo(() => createVisualScale(wires), [wires]);
 
   // Tooltip ref — direct DOM mutation, no React state
@@ -207,14 +212,13 @@ export function SceneRoot({
         {viewToggles.current && currents && currents.length > 0 && (
           <CurrentDistribution3D
             currents={currents}
+            mode={currentMode}
+            animated={currentAnimated}
+            selected={effectiveSelectedCurrent}
+            onSelect={setSelectedCurrent}
             tubeRadius={visualScale.currentRadius}
             particleRadius={visualScale.particleRadius}
           />
-        )}
-
-        {/* Animated current flow particles */}
-        {viewToggles.currentFlow && currents && currents.length > 0 && (
-          <CurrentFlowParticles currents={currents} particleRadius={visualScale.particleRadius} />
         )}
 
         {/* Near-field heatmap plane */}
@@ -241,6 +245,11 @@ export function SceneRoot({
         {!measurementActive && <SceneRaycaster tooltipRef={tooltipRef} />}
       </Suspense>
     </Canvas>
+    {viewToggles.current && currents && currents.length > 0 && (
+      <div className="absolute left-2 top-2 z-20 max-w-[min(620px,calc(100%-1rem))]" data-testid="viewport-current-visualisation">
+        <CurrentVisualisationControls currents={currents} mode={currentMode} animated={currentAnimated} selected={effectiveSelectedCurrent} onModeChange={setCurrentMode} onAnimatedChange={setCurrentAnimated} onSelect={setSelectedCurrent} compact />
+      </div>
+    )}
     <div
       ref={tooltipRef}
       className="fixed z-50 pointer-events-none bg-surface/95 backdrop-blur-sm border border-border rounded-md px-2.5 py-1.5 shadow-lg text-[11px] font-mono leading-relaxed whitespace-nowrap"

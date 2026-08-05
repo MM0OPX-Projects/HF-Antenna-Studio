@@ -34,7 +34,6 @@ export interface ViewToggles {
   /** V2: Show near-field heatmap plane */
   nearField: boolean;
   /** V2: Show animated current flow particles */
-  currentFlow: boolean;
   /** V2: Show animated radiation pattern slice */
   slice: boolean;
 }

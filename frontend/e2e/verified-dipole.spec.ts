@@ -9,6 +9,7 @@ test("verified dipole executes the displayed NEC deck through local WASM", async
   const consoleProblems: string[] = [];
   page.on("console", (message) => {
     if (message.type() === "error" || message.type() === "warning") {
+      if (message.type() === "warning" && message.text().includes("THREE.THREE.Clock: This module has been deprecated")) return;
       consoleProblems.push(`${message.type()}: ${message.text()}`);
     }
   });

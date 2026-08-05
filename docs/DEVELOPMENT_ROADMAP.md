@@ -85,6 +85,8 @@ Goal: make the validated vertical slice usable for common straight-wire antenna 
 - Undo/redo and unit changes do not alter canonical geometry unexpectedly.
 - The straight-wire/free-space validation corpus passes in the release build.
 
+Implementation checkpoint (2026-08-05): `feature/current-visualisation` implements a shared experimental segment-current renderer and inspector across the inherited browser/Wasm Simulator, Wire Editor, dipole, vertical, loop/compact-beam, Yagi, and phased-array views. It removes a whole-wire average-flow metaphor and tests real-solver segment selection in five antenna families. Phase 2 remains open: complex currents still need byte-identical external reference/package comparison, near-null phase treatment, accessibility/perception review, and packaged Windows GPU/DPI/manual testing.
+
 ## Phase 3 — Ground and frequency sweeps
 
 Goal: support the central HF workflows without concealing ground/model limitations.

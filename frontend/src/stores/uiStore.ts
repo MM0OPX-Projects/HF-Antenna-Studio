@@ -79,7 +79,6 @@ export const useUIStore = create<UIState>((set) => ({
     reflection: false,
     volumetric: false,
     nearField: false,
-    currentFlow: false,
     slice: false,
   },
   resultsTab: "swr",

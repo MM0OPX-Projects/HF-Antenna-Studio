@@ -32,8 +32,7 @@ const GROUPS: ToggleGroup[] = [
   {
     label: "Current",
     items: [
-      { key: "current", label: "Current" },
-      { key: "currentFlow", label: "Flow" },
+      { key: "current", label: "NEC current" },
     ],
   },
   {

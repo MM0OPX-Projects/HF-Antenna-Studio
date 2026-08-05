@@ -14,6 +14,7 @@ export interface VerifiedCurrentPoint {
   magnitudeA: number;
   normalizedMagnitude: number;
   phaseDeg: number;
+  positionM3D: { x: number; y: number; z: number };
 }
 
 export interface VerifiedDipoleResult {
@@ -103,6 +104,7 @@ function mapCurrents(currents: SegmentCurrent[] | null, totalLengthM: number): V
     magnitudeA: point.current_magnitude,
     normalizedMagnitude: point.current_magnitude / maximum,
     phaseDeg: point.current_phase_deg,
+    positionM3D: { x: point.x, y: point.y, z: point.z },
   }));
 }
 

@@ -25,7 +25,6 @@ import { VolumetricShells } from "./VolumetricShells";
 import { GroundReflection } from "./GroundReflection";
 import { CurrentDistribution3D } from "./CurrentDistribution3D";
 import { NearFieldPlane } from "./NearFieldPlane";
-import { CurrentFlowParticles } from "./CurrentFlowParticles";
 import type { VisualScale } from "./visualScale";
 import { createVisualScale } from "./visualScale";
 import { RadiationSlice } from "./RadiationSlice";
@@ -39,6 +38,8 @@ import { useUIStore } from "../../stores/uiStore";
 import { useEditorStore, snap } from "../../stores/editorStore";
 import { findEndpointJunction, sameEndpoint, type EndpointRef } from "../../utils/editor-junctions";
 import type { WireMeasurementPointMode } from "../../utils/wire-measurement";
+import { CurrentVisualisationControls } from "../../features/current-visualisation/CurrentVisualisationControls";
+import type { CurrentVisualMode } from "../../features/current-visualisation/types";
 
 interface EditorSceneProps {
   viewToggles: ViewToggles;
@@ -50,6 +51,10 @@ interface EditorSceneProps {
   measurementSelectedTags?: readonly number[];
   measurementPointMode?: WireMeasurementPointMode;
   onMeasurementWireSelect?: (tag: number) => void;
+  currentMode?: CurrentVisualMode;
+  currentAnimated?: boolean;
+  selectedCurrent?: SegmentCurrent | null;
+  onCurrentSelect?: (current: SegmentCurrent) => void;
 }
 
 /** Ground plane for raycasting (XZ plane at y=0 in Three.js = z=0 in NEC2) */
@@ -144,12 +149,16 @@ function EditorSceneContent({
   measurementSelectedTags = [],
   measurementPointMode = "closest",
   onMeasurementWireSelect,
+  currentMode = "magnitude",
+  currentAnimated = false,
+  selectedCurrent = null,
+  onCurrentSelect,
 }: EditorSceneProps) {
   const theme = useUIStore((s) => s.theme);
   const accurateFeedpoint = useUIStore((s) => s.accurateFeedpoint);
 
   // Dim wires when current/flow overlays are active so the colors show through
-  const wiresDimmed = (viewToggles.current || viewToggles.currentFlow) && !!currents && currents.length > 0;
+  const wiresDimmed = viewToggles.current && !!currents && currents.length > 0;
 
   const wires = useEditorStore((s) => s.wires);
   const excitations = useEditorStore((s) => s.excitations);
@@ -789,14 +798,13 @@ function EditorSceneContent({
       {viewToggles.current && currents && currents.length > 0 && (
         <CurrentDistribution3D
           currents={currents}
+          mode={currentMode}
+          animated={currentAnimated}
+          selected={selectedCurrent}
+          onSelect={onCurrentSelect}
           tubeRadius={visualScale.currentRadius}
           particleRadius={visualScale.particleRadius}
         />
-      )}
-
-      {/* Animated current flow particles */}
-      {viewToggles.currentFlow && currents && currents.length > 0 && (
-        <CurrentFlowParticles currents={currents} particleRadius={visualScale.particleRadius} />
       )}
 
       {/* Near-field heatmap plane */}
@@ -833,6 +841,10 @@ export function EditorScene({
   const theme = useUIStore((s) => s.theme);
   const isPicking = useEditorStore((s) => s.pickingExcitationForTag) !== null;
   const sceneBg = theme === "dark" ? "#0A0A0F" : "#E8E8ED";
+  const [currentMode, setCurrentMode] = useState<CurrentVisualMode>("magnitude");
+  const [currentAnimated, setCurrentAnimated] = useState(false);
+  const [selectedCurrent, setSelectedCurrent] = useState<SegmentCurrent | null>(null);
+  const effectiveSelectedCurrent = selectedCurrent && currents?.includes(selectedCurrent) ? selectedCurrent : null;
 
   // Tooltip ref — direct DOM mutation, no React state
   const tooltipRef = useRef<HTMLDivElement>(null);
@@ -871,10 +883,19 @@ export function EditorScene({
           measurementSelectedTags={measurementSelectedTags}
           measurementPointMode={measurementPointMode}
           onMeasurementWireSelect={onMeasurementWireSelect}
+          currentMode={currentMode}
+          currentAnimated={currentAnimated}
+          selectedCurrent={effectiveSelectedCurrent}
+          onCurrentSelect={setSelectedCurrent}
         />
         {!measurementActive && <SceneRaycaster tooltipRef={tooltipRef} />}
       </Suspense>
     </Canvas>
+    {viewToggles.current && currents && currents.length > 0 && (
+      <div className="absolute left-2 top-2 z-20 max-w-[min(620px,calc(100%-1rem))]" data-testid="editor-current-visualisation">
+        <CurrentVisualisationControls currents={currents} mode={currentMode} animated={currentAnimated} selected={effectiveSelectedCurrent} onModeChange={setCurrentMode} onAnimatedChange={setCurrentAnimated} onSelect={setSelectedCurrent} compact />
+      </div>
+    )}
     <div
       ref={tooltipRef}
       className="fixed z-50 pointer-events-none bg-surface/95 backdrop-blur-sm border border-border rounded-md px-2.5 py-1.5 shadow-lg text-[11px] font-mono leading-relaxed whitespace-nowrap"
