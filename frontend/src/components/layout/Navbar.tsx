@@ -13,6 +13,7 @@ import { useUIStore } from "../../stores/uiStore";
 const NAV_LINKS = [
   { to: "/", label: "Simulator", featured: false },
   { to: "/editor", label: "Wire Editor", featured: true },
+  { to: "/frequency-analyser", label: "Analyser", featured: true },
   { to: "/verified-dipole", label: "Verified Dipole", featured: false },
   { to: "/dipole-height-lab", label: "Height Lab", featured: false },
   { to: "/antenna-templates", label: "Templates", featured: false },
@@ -93,7 +94,7 @@ export function Navbar() {
           </Link>
 
           {/* Desktop nav links */}
-          <nav className="hidden xl:flex items-center gap-4 text-sm">
+          <nav className="hidden 2xl:flex items-center gap-3 text-xs">
             {NAV_LINKS.map(({ to, label, featured }) => (
               <Link key={to} to={to} className={linkClass(to, featured)}>
                 {featured && (
@@ -119,7 +120,7 @@ export function Navbar() {
           <button
             type="button"
             onClick={openChangelog}
-            className="hidden cursor-pointer items-center gap-1.5 rounded-md border border-border px-2 py-1 text-[11px] text-text-secondary transition-colors hover:border-accent/40 hover:bg-surface-hover hover:text-text-primary xl:inline-flex"
+            className="hidden cursor-pointer items-center gap-1.5 rounded-md border border-border px-2 py-1 text-[11px] text-text-secondary transition-colors hover:border-accent/40 hover:bg-surface-hover hover:text-text-primary 2xl:inline-flex"
             title="Show the latest changelog"
           >
             <svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true">
@@ -175,7 +176,7 @@ export function Navbar() {
           <button
             ref={toggleRef}
             onClick={() => setMenuOpen((o) => !o)}
-            className="xl:hidden p-2 -mr-2 rounded-md text-text-secondary hover:text-text-primary
+            className="2xl:hidden p-2 -mr-2 rounded-md text-text-secondary hover:text-text-primary
               hover:bg-surface-hover transition-colors"
             aria-label="Toggle navigation menu"
             aria-expanded={menuOpen}
@@ -210,7 +211,7 @@ export function Navbar() {
       {menuOpen && (
         <div
           ref={menuRef}
-          className="xl:hidden absolute top-full left-0 right-0 z-50 border-b border-border bg-surface shadow-lg"
+          className="2xl:hidden absolute top-full left-0 right-0 z-50 border-b border-border bg-surface shadow-lg"
         >
           <nav className="flex flex-col py-2">
             {NAV_LINKS.map(({ to, label, featured }) => (

@@ -260,6 +260,8 @@ Tolerances are established per case after inspecting reference precision and for
 | Complex segment current | 1% magnitude and 1 degree phase away from near-zero current; explicit absolute tolerance near zeros |
 | Sweep vs separate single-frequency runs with same solver | Text-rounding precision at common frequencies |
 
+Implementation checkpoint (2026-08-05): the frequency-analyser suite now proves its impedance/match formulas independently of the stored `swr_50` field, verifies one impedance-only `FR`/`XQ` batch, and exercises point-count parsing and real worker cancellation through local nec2c/Wasm. This is not external numerical validation. Before release, add common-frequency comparisons against individually executed decks and a reviewed identical-deck sweep in an established NEC package, including at least a matched region, a reactance zero crossing, a high-SWR point, 50/75-ohm post-processing, and free-space/perfect/real-ground models.
+
 A tolerance can be widened only with a written cause such as output rounding, known ground-kernel data differences, or documented implementation formulation. It cannot be widened merely to make a candidate pass. Near singularities, deep nulls, resonance crossings, and near-zero currents need absolute/error-domain rules rather than naive relative error.
 
 ## Comparator procedure

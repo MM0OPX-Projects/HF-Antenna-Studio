@@ -163,7 +163,8 @@ export function buildCardDeck(request: SimulateAdvancedRequest): string {
     }
   }
 
-  // Build RP card string
+  // Build RP card string. Impedance-only tools (for example the virtual
+  // analyser) use XQ instead, avoiding a large far-field grid at every point.
   const patternStep = request.pattern_step ?? 5;
   const isFreeSpace = groundType === "free_space";
   const thetaStart = isFreeSpace ? -180.0 : -90.0;
@@ -175,12 +176,12 @@ export function buildCardDeck(request: SimulateAdvancedRequest): string {
     `${thetaStart.toFixed(1)} ${(0.0).toFixed(1)} ` +
     `${patternStep.toFixed(1)} ${patternStep.toFixed(1)}`;
 
-  /** Emit FR + NE + RP cards for one frequency range */
+  /** Emit one batched FR block and the requested execution card. */
   function emitFrequencyBlock(startMhz: number, stopMhz: number, steps: number): void {
     const stepMhz = steps > 1 ? (stopMhz - startMhz) / (steps - 1) : 0;
     lines.push(`FR 0 ${steps} 0 0 ${startMhz.toFixed(6)} ${stepMhz.toFixed(6)}`);
     if (neCard) lines.push(neCard);
-    lines.push(rpCard);
+    lines.push(request.compute_pattern === false ? "XQ 0" : rpCard);
   }
 
   const freqSegments = request.frequencySegments;

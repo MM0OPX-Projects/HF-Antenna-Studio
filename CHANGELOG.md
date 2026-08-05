@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Added a local virtual frequency analyser for the current Simulator antenna with start/stop and centre/span entry, Region 1 band presets, 3–401 points, configurable reference impedance, exact cursor inspection, six impedance/match traces, an optional Smith chart, and four saved overlays
+- Added an impedance-only NEC sweep path using one batched `FR` card and `XQ` execution in the cancellable Web Worker, avoiding per-frequency far-field grids while retaining the established output parser and preventing partial or superseded result publication
+- Added CSV, active-chart PNG, and versioned analyser project-data exports plus calculation, deck, parser-contract, failure, cancellation, real-Wasm, overlay, download, and browser-console regression coverage
+- Added `docs/FREQUENCY_ANALYSER.md` with formulas, solver execution, evidence boundaries, export contracts, and unresolved independent-validation and usability checks
+
 - Added a reusable arbitrary-wire editing completion pass with numeric XYZ geometry, source/load placement, selection translation and centroid rotation, explicit all-axis mirror-copy controls, object-list source/load markers, NEC coordinate/scale labels, and existing 3D drag/snap/connect/split/duplicate/undo workflows retained alongside templates
 - Added a loss-aware NEC document import gate that retains the browser-decoded original source text and ordered card diagnostics, converts the published GW/GE/EX/LD/TL/GN/FR subset without clamping or source invention, preserves GE ground-contact semantics, blocks unsupported solver-significant cards, and distinguishes Original NEC from supported-state Generated NEC export
 - Added duplicate-tag, disconnected-group, partial-overlap, interior-intersection, ground-crossing, segmentation, source, load, and transmission-line validity checks plus exact/semantic parser round-trip, transform/undo, native-project, browser, and real-solver regression coverage

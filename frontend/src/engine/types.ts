@@ -75,6 +75,8 @@ export interface SimulateAdvancedRequest {
   transforms?: GeometryTransformDef[];
   symmetry?: CylindricalSymmetryDef;
   compute_currents?: boolean;
+  /** Request far-field radiation patterns. Defaults to true. */
+  compute_pattern?: boolean;
   near_field?: NearFieldConfig;
   pattern_step?: number;
   comment?: string;
