@@ -173,8 +173,15 @@ export function SimulatorPage() {
   );
 
   const handleProjectSave = useCallback((): ProjectFile => {
-    return createSimulatorProject(template.id, params, ground, result ?? null);
-  }, [template.id, params, ground, result]);
+    return createSimulatorProject(
+      template.id,
+      params,
+      ground,
+      result ?? null,
+      frequencyRange,
+      frequencySegments,
+    );
+  }, [template.id, params, ground, result, frequencyRange, frequencySegments]);
 
   const handleProjectLoad = useCallback(
     (project: ProjectFile) => {
@@ -196,6 +203,10 @@ export function SimulatorPage() {
         const merged = { ...store.params, ...savedParams };
         useAntennaStore.getState().setParams(merged);
         useAntennaStore.getState().setGround(savedGround);
+        if (project.simulator?.frequencyRange) {
+          useAntennaStore.getState().setFrequencyRange(project.simulator.frequencyRange);
+        }
+        useAntennaStore.getState().setFrequencySegments(project.simulator?.frequencySegments ?? []);
       });
     },
     [setTemplate]

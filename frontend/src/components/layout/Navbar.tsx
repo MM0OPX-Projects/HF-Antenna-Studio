@@ -18,6 +18,7 @@ const NAV_LINKS = [
   { to: "/parameter-sweeps", label: "Sweeps", featured: true },
   { to: "/antenna-optimiser", label: "Optimiser", featured: true },
   { to: "/measurement-comparison", label: "Measured", featured: true },
+  { to: "/projects", label: "Projects", featured: false },
   { to: "/verified-dipole", label: "Verified Dipole", featured: false },
   { to: "/dipole-height-lab", label: "Height Lab", featured: false },
   { to: "/antenna-templates", label: "Templates", featured: false },

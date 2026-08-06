@@ -19,6 +19,7 @@ const ModelComparisonPage = lazy(() => import("./pages/ModelComparisonPage").the
 const ParameterSweepsPage = lazy(() => import("./pages/ParameterSweepsPage").then((module) => ({ default: module.ParameterSweepsPage })));
 const AntennaOptimiserPage = lazy(() => import("./pages/AntennaOptimiserPage").then((module) => ({ default: module.AntennaOptimiserPage })));
 const MeasurementComparisonPage = lazy(() => import("./pages/MeasurementComparisonPage").then((module) => ({ default: module.MeasurementComparisonPage })));
+const ProjectManagementPage = lazy(() => import("./pages/ProjectManagementPage").then((module) => ({ default: module.ProjectManagementPage })));
 
 export function AppRoutes() {
   return (
@@ -37,6 +38,7 @@ export function AppRoutes() {
       <Route path="/parameter-sweeps" element={<Suspense fallback={<main className="flex min-h-64 items-center justify-center text-sm text-text-secondary">Loading parameter sweeps…</main>}><ParameterSweepsPage /></Suspense>} />
       <Route path="/antenna-optimiser" element={<Suspense fallback={<main className="flex min-h-64 items-center justify-center text-sm text-text-secondary">Loading antenna optimiser…</main>}><AntennaOptimiserPage /></Suspense>} />
       <Route path="/measurement-comparison" element={<Suspense fallback={<main className="flex min-h-64 items-center justify-center text-sm text-text-secondary">Loading measurement comparison…</main>}><MeasurementComparisonPage /></Suspense>} />
+      <Route path="/projects" element={<Suspense fallback={<main className="flex min-h-64 items-center justify-center text-sm text-text-secondary">Loading projects…</main>}><ProjectManagementPage /></Suspense>} />
       <Route path="/library" element={<LibraryPage />} />
       <Route path="/learn" element={<LearnPage />} />
       <Route path="/about" element={<AboutPage />} />

@@ -58,7 +58,7 @@ The importer does not:
 - substitute average ground for supported custom ground constants;
 - open solver-significant unsupported cards as though conversion succeeded.
 
-Multiple linear `FR` blocks are retained as the editor's multi-segment sweep and emitted as multiple generated frequency blocks. Native `.antennasim` schema version 3 stores the decoded NEC source/report, GE choice, frequency blocks, manual-segmentation/length-lock state, loads, transmission lines, and junctions.
+Multiple linear `FR` blocks are retained as the editor's multi-segment sweep and emitted as multiple generated frequency blocks. The wire-editor checkpoint introduced legacy `.antennasim` schema version 3 storage for the decoded NEC source/report, GE choice, frequency blocks, manual-segmentation/length-lock state, loads, transmission lines, and junctions. Current `.hfas` schema v4 retains those fields unchanged.
 
 Imported segment counts are marked as manual overrides. Moving geometry therefore does not silently re-segment an imported design; the user can choose **Auto** on a wire to opt into the editor's frequency-based segmentation rule.
 

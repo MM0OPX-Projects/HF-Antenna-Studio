@@ -219,6 +219,8 @@ Use versioned UTF-8 JSON with `.hfas` extension for the canonical model and run 
 - Dense arrays are inefficient in JSON and must not inflate every project by default.
 - Atomic save, schema migration, validation, and cache garbage collection are required.
 
+Implementation note (2026-08-06): browser-local schema v4 now uses `.hfas`, detached-copy migrations, a single-entry atomic local library document, optimistic record revisions, and a separate recovery journal. This is not evidence for future native filesystem atomicity or backup rotation.
+
 ## D-013 — Optimization follows validation
 
 ### Decision

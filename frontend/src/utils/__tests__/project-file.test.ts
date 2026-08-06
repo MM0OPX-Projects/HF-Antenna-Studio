@@ -1,5 +1,5 @@
 /**
- * Tests for project file save/load (.antennasim).
+ * Tests for project file save/load (.hfas plus legacy .antennasim).
  *
  * Why these tests matter:
  * - A broken round-trip means users lose their antenna designs
@@ -13,6 +13,10 @@ import {
   createSimulatorProject,
   createEditorProject,
   estimateProjectSize,
+  migrateProjectFile,
+  parseProjectText,
+  isSupportedProjectFilename,
+  MAX_PROJECT_FILE_CHARACTERS,
 } from "../project-file";
 import type { ProjectFile } from "../project-file";
 
@@ -108,6 +112,19 @@ describe("createEditorProject", () => {
     expect(project.editor!.junctions[0]!.endpoints[0]!.wireTag).toBe(1);
   });
 
+  it("records the explicit simulator frequency range and multi-band sweep intent", () => {
+    const project = createSimulatorProject(
+      "dipole",
+      { frequency: 14.1 },
+      { type: "free_space" },
+      null,
+      { start_mhz: 14, stop_mhz: 14.35, steps: 15 },
+      [{ start_mhz: 7, stop_mhz: 7.2, steps: 5 }],
+    );
+    expect(project.simulator?.frequencyRange).toEqual({ start_mhz: 14, stop_mhz: 14.35, steps: 15 });
+    expect(project.simulator?.frequencySegments).toEqual([{ start_mhz: 7, stop_mhz: 7.2, steps: 5 }]);
+  });
+
   it("preserves decoded NEC source provenance and multi-block frequency intent", () => {
     const necImport = {
       source_name: "import.nec",
@@ -177,6 +194,44 @@ describe("validateProjectFile — error cases", () => {
 
     const migrated = validateProjectFile(project);
     expect(migrated.editor!.junctions).toEqual([]);
+  });
+
+  it("migrates on a copy and leaves the older input object unchanged", () => {
+    const source = makeEditorProject();
+    source.version = 1;
+    delete (source.editor as { junctions?: unknown }).junctions;
+    delete (source.editor as { frequencySegments?: unknown }).frequencySegments;
+    const sourceText = JSON.stringify(source);
+
+    const migrated = migrateProjectFile(source);
+
+    expect(migrated.sourceVersion).toBe(1);
+    expect(migrated.project.version).toBe(PROJECT_SCHEMA_VERSION);
+    expect(migrated.project.editor?.junctions).toEqual([]);
+    expect(migrated.migrations).toHaveLength(3);
+    expect(JSON.stringify(source)).toBe(sourceText);
+  });
+
+  it("retains the exact imported source text alongside a migration", () => {
+    const source = makeSimProject();
+    source.version = 3;
+    const text = `${JSON.stringify(source, null, 4)}\r\n`;
+    const parsed = parseProjectText(text);
+
+    expect(parsed.originalText).toBe(text);
+    expect(parsed.project.version).toBe(PROJECT_SCHEMA_VERSION);
+    expect(parsed.migrations).toHaveLength(1);
+  });
+
+  it("accepts current and legacy project filenames case-insensitively", () => {
+    expect(isSupportedProjectFilename("field.HFAS")).toBe(true);
+    expect(isSupportedProjectFilename("old.antennasim")).toBe(true);
+    expect(isSupportedProjectFilename("project.json")).toBe(true);
+    expect(isSupportedProjectFilename("project.txt")).toBe(false);
+  });
+
+  it("rejects oversized source text before JSON parsing", () => {
+    expect(() => parseProjectText("x".repeat(MAX_PROJECT_FILE_CHARACTERS + 1))).toThrow("safety limit");
   });
 
   it("rejects null", () => {

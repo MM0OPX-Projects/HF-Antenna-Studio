@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Added a browser-local project library with New, Save, Save As, Open/recent, automatic named-project saves, separate crash-recovery journalling, duplicate, rename, confirmed delete, and `.hfas` import/export without a cloud account
+- Added immutable schema 1-4 migration review, future-schema rejection, optimistic revision conflicts, atomic local collection replacement, unload recovery, explicit simulator sweep persistence, lifecycle/browser regression coverage, and `docs/PROJECT_FILE_FORMAT.md`
+
 - Added experimental Touchstone `.s1p` measurement comparison with bounded RI/MA/DB S11 import, immutable source-line provenance, derived SWR/R/X, and explicit SIMULATION versus MEASUREMENT labelling
 - Added exact-frequency and labelled simulation-only linear R/X alignment, no extrapolation, reference-impedance mismatch gating, overlay/difference plots, aligned tables, CSV/project export, NanoVNA format guidance, and real-Wasm browser coverage
 

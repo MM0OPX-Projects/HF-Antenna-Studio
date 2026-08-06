@@ -1,7 +1,7 @@
 /**
- * Save/Load project files (.antennasim).
+ * Save/load HF Antenna Studio project files (.hfas) and legacy .antennasim files.
  *
- * A .antennasim file is a JSON document that captures the complete state
+ * A project file is a JSON document that captures the complete state
  * of either a simulator-mode or editor-mode session, so users don't lose
  * their work.
  */
@@ -17,10 +17,19 @@ import type { GeometryGroundFlag } from "../engine/geometry-ground";
 // ---------------------------------------------------------------------------
 
 /** Current schema version. Increment when the format changes. */
-export const PROJECT_SCHEMA_VERSION = 3;
+export const PROJECT_SCHEMA_VERSION = 4;
 
 /** File extension (without dot) */
-export const PROJECT_FILE_EXTENSION = "antennasim";
+export const PROJECT_FILE_EXTENSION = "hfas";
+export const LEGACY_PROJECT_FILE_EXTENSION = "antennasim";
+export const MAX_PROJECT_FILE_CHARACTERS = 5_000_000;
+
+export function isSupportedProjectFilename(filename: string): boolean {
+  const lowerName = filename.toLowerCase();
+  return lowerName.endsWith(`.${PROJECT_FILE_EXTENSION}`) ||
+    lowerName.endsWith(`.${LEGACY_PROJECT_FILE_EXTENSION}`) ||
+    lowerName.endsWith(".json");
+}
 
 export interface ProjectEditorWire extends WireGeometry {
   segmentsManual?: boolean;
@@ -42,6 +51,10 @@ export interface ProjectFile {
     templateId: string;
     params: Record<string, number>;
     ground: GroundConfig;
+    /** Explicit sweep intent. Absent only on files migrated from schema 1-3. */
+    frequencyRange?: FrequencyRange;
+    /** Explicit multi-band sweep intent. Absent only on files migrated from schema 1-3. */
+    frequencySegments?: FrequencySegment[];
   };
 
   /** Editor mode state */
@@ -66,12 +79,18 @@ export interface ProjectFile {
   result?: SimulationResult | null;
 }
 
+export interface ProjectMigrationResult {
+  project: ProjectFile;
+  sourceVersion: number;
+  migrations: string[];
+}
+
 // ---------------------------------------------------------------------------
 // Validation
 // ---------------------------------------------------------------------------
 
 /** Validate a parsed object looks like a ProjectFile. Throws on invalid. */
-export function validateProjectFile(data: unknown): ProjectFile {
+function validateCurrentProjectFile(data: unknown): ProjectFile {
   if (typeof data !== "object" || data === null) {
     throw new Error("Invalid project file: not an object");
   }
@@ -82,7 +101,7 @@ export function validateProjectFile(data: unknown): ProjectFile {
   }
   if (obj.version > PROJECT_SCHEMA_VERSION) {
     throw new Error(
-      `Project file version ${obj.version} is newer than supported (${PROJECT_SCHEMA_VERSION}). Please update AntennaSim.`,
+      `Project file version ${obj.version} is newer than supported (${PROJECT_SCHEMA_VERSION}). Please update HF Antenna Studio.`,
     );
   }
   if (obj.mode !== "simulator" && obj.mode !== "editor") {
@@ -108,21 +127,14 @@ export function validateProjectFile(data: unknown): ProjectFile {
       throw new Error("Invalid project file: editor must have at least one wire");
     }
 
-    // Junctions were introduced in schema v2. Treat their absence in v1 as
-    // an unlocked project so existing user files remain fully compatible.
-    if (obj.version < 2 && ed.junctions === undefined) {
-      ed.junctions = [];
-    }
     if (!Array.isArray(ed.junctions)) {
       throw new Error("Invalid project file: editor mode requires 'editor.junctions' array");
     }
     for (const collection of ["excitations", "loads", "transmissionLines"] as const) {
-      if (ed[collection] === undefined && obj.version < 3) ed[collection] = [];
       if (!Array.isArray(ed[collection])) {
         throw new Error(`Invalid project file: editor.${collection} must be an array`);
       }
     }
-    if (ed.frequencySegments === undefined && obj.version < 3) ed.frequencySegments = [];
     if (ed.frequencySegments !== undefined && !Array.isArray(ed.frequencySegments)) {
       throw new Error("Invalid project file: editor.frequencySegments must be an array");
     }
@@ -198,6 +210,66 @@ export function validateProjectFile(data: unknown): ProjectFile {
   return data as ProjectFile;
 }
 
+/**
+ * Upgrade a parsed project on a detached copy. The caller's object is never
+ * changed, which allows an imported older file to be retained byte-for-byte.
+ */
+export function migrateProjectFile(data: unknown): ProjectMigrationResult {
+  if (typeof data !== "object" || data === null) {
+    throw new Error("Invalid project file: not an object");
+  }
+  const source = data as Record<string, unknown>;
+  if (typeof source.version !== "number") {
+    throw new Error("Invalid project file: missing 'version' field");
+  }
+  if (!Number.isInteger(source.version) || source.version < 1) {
+    throw new Error("Invalid project file: 'version' must be a positive integer");
+  }
+  if (source.version > PROJECT_SCHEMA_VERSION) {
+    throw new Error(
+      `Project file version ${source.version} is newer than supported (${PROJECT_SCHEMA_VERSION}). Please update HF Antenna Studio.`,
+    );
+  }
+
+  const sourceVersion = source.version;
+  const copy = JSON.parse(JSON.stringify(data)) as Record<string, unknown>;
+  const migrations: string[] = [];
+
+  if (sourceVersion < 2 && copy.mode === "editor") {
+    const editor = copy.editor as Record<string, unknown> | undefined;
+    if (editor && editor.junctions === undefined) editor.junctions = [];
+    migrations.push("v1 to v2: added an empty editor junction list");
+  }
+  if (sourceVersion < 3 && copy.mode === "editor") {
+    const editor = copy.editor as Record<string, unknown> | undefined;
+    if (editor) {
+      if (editor.excitations === undefined) editor.excitations = [];
+      if (editor.loads === undefined) editor.loads = [];
+      if (editor.transmissionLines === undefined) editor.transmissionLines = [];
+      if (editor.frequencySegments === undefined) editor.frequencySegments = [];
+    }
+    migrations.push("v2 to v3: added explicit sources, loads, transmission lines, and sweep segments");
+  }
+  if (sourceVersion < 4) {
+    // v1-v3 simulator files did not record explicit frequency overrides. Do
+    // not invent one: restore code intentionally uses the template-derived
+    // range and the migration report explains the limitation.
+    migrations.push("v3 to v4: retained legacy simulator frequency behaviour; explicit sweep intent was unavailable");
+  }
+
+  copy.version = PROJECT_SCHEMA_VERSION;
+  return {
+    project: validateCurrentProjectFile(copy),
+    sourceVersion,
+    migrations,
+  };
+}
+
+/** Validate and migrate a parsed project without mutating the input object. */
+export function validateProjectFile(data: unknown): ProjectFile {
+  return migrateProjectFile(data).project;
+}
+
 // ---------------------------------------------------------------------------
 // Save
 // ---------------------------------------------------------------------------
@@ -210,13 +282,21 @@ export function createSimulatorProject(
   params: Record<string, number>,
   ground: GroundConfig,
   result?: SimulationResult | null,
+  frequencyRange?: FrequencyRange,
+  frequencySegments: FrequencySegment[] = [],
 ): ProjectFile {
   return {
     version: PROJECT_SCHEMA_VERSION,
     app_version: typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "unknown",
     created_at: new Date().toISOString(),
     mode: "simulator",
-    simulator: { templateId, params: { ...params }, ground: { ...ground } },
+    simulator: {
+      templateId,
+      params: { ...params },
+      ground: { ...ground },
+      ...(frequencyRange ? { frequencyRange: { ...frequencyRange } } : {}),
+      frequencySegments: frequencySegments.map((segment) => ({ ...segment })),
+    },
     result: result ?? null,
   };
 }
@@ -307,8 +387,8 @@ export function downloadProject(project: ProjectFile, filename?: string): void {
  * Returns the validated ProjectFile or throws with a user-friendly message.
  */
 export async function loadProjectFile(file: File): Promise<ProjectFile> {
-  if (!file.name.endsWith(`.${PROJECT_FILE_EXTENSION}`) && !file.name.endsWith(".json")) {
-    throw new Error(`Expected a .${PROJECT_FILE_EXTENSION} or .json file, got "${file.name}"`);
+  if (!isSupportedProjectFilename(file.name)) {
+    throw new Error(`Expected a .${PROJECT_FILE_EXTENSION}, .${LEGACY_PROJECT_FILE_EXTENSION}, or .json file, got "${file.name}"`);
   }
 
   const text = await file.text();
@@ -320,6 +400,20 @@ export async function loadProjectFile(file: File): Promise<ProjectFile> {
   }
 
   return validateProjectFile(parsed);
+}
+
+/** Parse a project while retaining the exact source text and migration report. */
+export function parseProjectText(text: string): ProjectMigrationResult & { originalText: string } {
+  if (text.length > MAX_PROJECT_FILE_CHARACTERS) {
+    throw new Error(`Project file exceeds the ${MAX_PROJECT_FILE_CHARACTERS.toLocaleString()}-character safety limit.`);
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    throw new Error("Invalid project file: not valid JSON");
+  }
+  return { ...migrateProjectFile(parsed), originalText: text };
 }
 
 /**

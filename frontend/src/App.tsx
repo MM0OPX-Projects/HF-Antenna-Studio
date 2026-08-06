@@ -3,6 +3,7 @@ import { BrowserRouter } from "react-router-dom";
 import { ChangelogPopup } from "./components/ui/ChangelogPopup";
 import { AppRoutes } from "./routes";
 import { useUIStore } from "./stores/uiStore";
+import { ProjectSessionProvider } from "./features/project-management/ProjectSessionProvider";
 
 /** Basename for the router — matches Vite's base path (e.g. "/AntennaSim/" on GitHub Pages). */
 const basename = import.meta.env.BASE_URL;
@@ -22,8 +23,10 @@ export function App() {
 
   return (
     <BrowserRouter basename={basename}>
-      <AppRoutes />
-      <ChangelogPopup />
+      <ProjectSessionProvider>
+        <AppRoutes />
+        <ChangelogPopup />
+      </ProjectSessionProvider>
     </BrowserRouter>
   );
 }
