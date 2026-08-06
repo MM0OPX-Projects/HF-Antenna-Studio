@@ -23,8 +23,10 @@ export function validateSweepConfig(config: SweepConfig): string[] {
 }
 
 export function deriveAnalyserPoint(result: FrequencyResult, referenceOhms: number): AnalyserPoint {
-  const resistance = result.impedance.real;
-  const reactance = result.impedance.imag;
+  return deriveAnalyserPointFromImpedance(result.frequency_mhz, result.impedance.real, result.impedance.imag, referenceOhms);
+}
+
+export function deriveAnalyserPointFromImpedance(frequencyMhz: number, resistance: number, reactance: number, referenceOhms: number): AnalyserPoint {
   const denominator = (resistance + referenceOhms) ** 2 + reactance ** 2;
   const reflectionReal = denominator === 0
     ? Number.POSITIVE_INFINITY
@@ -34,7 +36,7 @@ export function deriveAnalyserPoint(result: FrequencyResult, referenceOhms: numb
   const swr = reflectionMagnitude >= 1 ? Number.POSITIVE_INFINITY : (1 + reflectionMagnitude) / (1 - reflectionMagnitude);
   const returnLossDb = reflectionMagnitude === 0 ? Number.POSITIVE_INFINITY : -20 * Math.log10(reflectionMagnitude);
   return {
-    frequencyMhz: result.frequency_mhz,
+    frequencyMhz,
     resistanceOhms: resistance,
     reactanceOhms: reactance,
     impedanceMagnitudeOhms: Math.hypot(resistance, reactance),

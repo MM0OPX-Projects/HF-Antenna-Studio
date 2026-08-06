@@ -238,6 +238,8 @@ The `feature/parameter-sweeps` implementation adds original project TypeScript, 
 
 The `feature/antenna-optimiser` implementation adds an original deterministic bounded search, UI, tests, and documentation under GPL-3.0-or-later. It adds no third-party optimiser library, dependency, asset, dataset, reference model, comparator output, executable, or network service. Exported histories contain user/application-generated models and NEC decks. Existing solver, family-reference, and distribution provenance remains unchanged; best-found candidates are not externally sourced validation data.
 
+The `feature/measurement-comparison` implementation adds original project TypeScript, tests and documentation under GPL-3.0-or-later. It adds no parser dependency, NanoVNA code/software/sample measurement, Touchstone specification copy, third-party asset, analyser executable, dataset or network service. Documentation links to the public IBIS Touchstone specification and NanoVNA software repositories/pages for factual format provenance. User-imported measurement data remains user data and is embedded only in explicit local exports; users are responsible for rights and privacy in files they share.
+
 - Documentation must say GPL-3.0-or-later for HF Antenna Studio unless a later ADR changes it.
 - Do not call KJ7LNW/nec2c unambiguously public domain while its provenance is unresolved.
 - Do not describe a solver as “open-source and approved” until its exact source and bundle pass review.

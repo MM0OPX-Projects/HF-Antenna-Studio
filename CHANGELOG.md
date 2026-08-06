@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Added experimental Touchstone `.s1p` measurement comparison with bounded RI/MA/DB S11 import, immutable source-line provenance, derived SWR/R/X, and explicit SIMULATION versus MEASUREMENT labelling
+- Added exact-frequency and labelled simulation-only linear R/X alignment, no extrapolation, reference-impedance mismatch gating, overlay/difference plots, aligned tables, CSV/project export, NanoVNA format guidance, and real-Wasm browser coverage
+
 - Added an experimental bounded antenna optimiser for one or two declared dipole, vertical, Yagi, or phased-array parameters using the unchanged family NEC pipelines
 - Added seven selectable objective modes, weighted raw-unit scoring, RF constraints, deterministic coordinate-pattern search, progress/cancellation, exact-model caching, retained best-found models, history and start/final comparisons
 - Added complete optimisation JSON evidence, cautious non-global claims, simple known-task/unit coverage, real-Wasm dipole/Yagi browser runs, and `docs/ANTENNA_OPTIMISER.md`

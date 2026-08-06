@@ -33,6 +33,7 @@ Decision review date: 2026-08-02
 | D-024 | Gate cross-model overlays on complete solved-condition and model identities | Accepted, experimental |
 | D-025 | Permit only bounded, exact-model parameter grids before optimisation | Accepted, experimental |
 | D-026 | Keep the first optimiser deterministic, bounded, local, evidence-rich, and explicitly non-global | Accepted, experimental only |
+| D-027 | Preserve analyser measurements as immutable evidence and interpolate simulation only | Accepted, experimental |
 
 ## D-001 — New repository with selective AntennaSim reuse
 
@@ -405,6 +406,18 @@ Represent three vertical configurations explicitly and never convert between the
 - Determinism removes a random seed from the initial reproducibility contract but does not establish global convergence.
 - The prototype does not satisfy Phase 7 release preconditions; independent candidate sampling, convergence/discontinuity handling, tolerance robustness, native parity, and Windows performance remain blocking gates.
 
+## D-027 — Measurement is immutable evidence, not solver input
+
+**Decision:** Initially accept only a bounded, explicit one-port Touchstone S-parameter subset. Preserve the complete decoded source and original records. Derive S11/SWR/R/X with visible reference impedance. Never sort, deduplicate, clamp, fit, or resample measurement records silently. Exact alignment is always available; optional linear alignment interpolates simulation R and X onto original measurement frequencies without extrapolation. Withhold SWR differences when reference impedances differ.
+
+**Consequences:**
+
+- NanoVNA `.s1p` exports have a standards-based route; ambiguous CSV dialects remain rejected until producer/version fixtures establish a safe schema.
+- Measurement cannot mutate geometry or tune the NEC model automatically.
+- Comparison exports carry raw measurement source, simulation results, alignment method, and difference direction.
+- A visual match is not a validation certificate; calibration plane, feed line, common mode, environment, construction, ground and NEC limitations remain explicit.
+- The parser remains an untrusted-input boundary requiring fuzzing, broader encoding/Touchstone corpus work, and packaged Windows testing before release support.
+
 ## Second, adversarial architecture review
 
 The following review intentionally argues against the preferred architecture. “Resolution” means either a concrete architecture change/gate or a documented reason to retain the risk; it does not mean the issue has already passed testing.
@@ -457,7 +470,7 @@ The planning set uses the following single positions:
 | Offline/privacy | No ordinary-use network feature; disconnected installer/run test required |
 | Import | Loss-aware raw document plus explicit structured subset; no silent mutation |
 | Coordinates | NEC theta/phi internal; labelled/tested UI transformations |
-| Feature status | Experimental verified-dipole, height-lab, shared-template, vertical, Yagi, loop/quad/hex, phased-array, frequency-analyser, wire-editor, shared current-visualisation, model-comparison, parameter-sweep, and bounded optimiser slices are implemented on inherited branches; the target desktop architecture remains proposed |
+| Feature status | Experimental verified-dipole, height-lab, shared-template, vertical, Yagi, loop/quad/hex, phased-array, frequency-analyser, measurement-comparison, wire-editor, shared current-visualisation, model-comparison, parameter-sweep, and bounded optimiser slices are implemented on inherited branches; the target desktop architecture remains proposed |
 | Optimization | Experimental bounded prototype only; supported optimisation remains deferred until Phase 7 gates pass |
 
 Any future change to these positions requires an ADR update plus review of architecture, solver evaluation, roadmap, validation, risks, licensing, and product claims.

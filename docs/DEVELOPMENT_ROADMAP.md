@@ -117,6 +117,8 @@ Implementation checkpoint (2026-08-02): `feature/yagi-beam-models` implements a 
 
 Implementation checkpoint (2026-08-02): `feature/phased-arrays` implements a bounded two-element vertical laboratory with separate enforced-current calibration and ideal-TL physical-network paths. Three classic perfect-ground decks pass an exact-deck external NEC-2D comparison and interactive cancellation/cache/overlay/phase-sweep contracts are tested. This does not complete Phase 5 or 6: physical feed-network validation, line loss/common mode, finite ground/radials, convergence, package-authored reference cases, native parity, generalized parameter sweeps, and packaged Windows performance remain open.
 
+Implementation checkpoint (2026-08-06): `feature/measurement-comparison` adds a bounded immutable `.s1p` measurement boundary over the existing impedance sweep. It supports RI/MA/DB S11, derives SWR/R/X, distinguishes source labels, offers exact or simulation-only R/X interpolation without extrapolation, suppresses unlike-reference SWR differences, and exports complete source/comparison evidence. This is an experimental workflow checkpoint, not controlled physical validation. Producer-version NanoVNA fixtures, parser fuzzing, dense-resonance interpolation studies, calibrated feed-plane measurements, native parity and packaged Windows tests remain open.
+
 ## Phase 4 — Loss-aware NEC interoperability and native projects
 
 Goal: make designs portable and reproducible without silent data loss.

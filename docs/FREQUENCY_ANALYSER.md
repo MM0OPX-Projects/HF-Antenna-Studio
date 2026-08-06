@@ -10,6 +10,8 @@ The controls support start/stop and reversible centre/span entry, 3–401 linear
 
 Available views are SWR, resistance, reactance, impedance magnitude, return loss, reflection-coefficient magnitude, exact cursor values, and an optional Smith chart. Up to four immutable completed sweeps can be saved and overlaid. The active chart can be exported as PNG; active plus visible saved data can be exported as CSV. Project-data export is versioned JSON containing the antenna request snapshot, completed configuration, raw parsed frequency records, derived records, warnings, and saved overlays. Import of that analyser JSON is not implemented in this phase.
 
+The separate experimental `/measurement-comparison` route now consumes this same impedance-sweep service and compares it with immutable one-port Touchstone measurement data. It does not import analyser project JSON or alter this page's sweep/overlay state. See [`MEASUREMENT_COMPARISON.md`](MEASUREMENT_COMPARISON.md).
+
 ## Calculation definitions
 
 The NEC engine supplies frequency and complex feed impedance `Z = R + jX`. For a positive real reference impedance `Z0`, the analyser independently derives:

@@ -35,6 +35,8 @@ The `feature/parameter-sweeps` branch adds a bounded orchestration layer over th
 
 The `feature/antenna-optimiser` branch adds a deterministic bounded coordinate-pattern-search consumer over the same exact-model and family-service boundary. It scores but never changes solver results, rejects invalid/constrained candidates, caps work at 121 unique evaluations, publishes only an atomically complete run, and retains complete definition/history/model/deck evidence plus up to five feasible best-found candidates. It is an experimental contract prototype, not completion of the Phase 7 validation gates or a globally convergent solver. See [`ANTENNA_OPTIMISER.md`](ANTENNA_OPTIMISER.md).
 
+The `feature/measurement-comparison` branch adds an untrusted-file boundary and comparison consumer over the frequency-analyser service. A bounded one-port Touchstone parser retains complete UTF-8 source/line provenance, derives S11/SWR/impedance without repairing input, and rejects ambiguous NanoVNA CSV. Exact matching or labelled simulation-only R/X interpolation creates comparison rows; measurement samples are never resampled or passed into NEC. Reference-impedance mismatches suppress SWR differences, and stale simulation identity remains visible. See [`MEASUREMENT_COMPARISON.md`](MEASUREMENT_COMPARISON.md).
+
 ## Why a desktop web architecture
 
 The product requires an HTML/JavaScript interface, offline operation, private local files, and dependable local native calculation on Windows 11. A desktop webview provides the desired UI technology without introducing a loopback web server, browser-origin file workarounds, Docker, Redis, or a permanently listening port.
