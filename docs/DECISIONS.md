@@ -34,6 +34,8 @@ Decision review date: 2026-08-02
 | D-025 | Permit only bounded, exact-model parameter grids before optimisation | Accepted, experimental |
 | D-026 | Keep the first optimiser deterministic, bounded, local, evidence-rich, and explicitly non-global | Accepted, experimental only |
 | D-027 | Preserve analyser measurements as immutable evidence and interpolate simulation only | Accepted, experimental |
+| D-028 | Use an original four-region engineering workbench and preserve complete warnings/units/result currency | Accepted, experimental |
+| D-029 | Store validation as immutable exact-deck evidence with explicit discrepancy classifications | Accepted |
 
 ## D-001 — New repository with selective AntennaSim reuse
 
@@ -433,6 +435,18 @@ Represent three vertical configurations explicitly and never convert between the
 - This is an interface-architecture decision only; it does not change or validate geometry, NEC generation, solver behaviour, parsing, or RF results.
 - No commercial application's exact layout, artwork, assets, or branding is adopted.
 
+## D-029 — Validation is immutable exact-deck evidence with explicit discrepancy classifications
+
+**Decision:** A validation case is a versioned manifest entry bound to the exact NEC deck hash, SI geometry, feed and segment identity, frequency, ground formulation, pattern grid, solver/program identity, expected outputs, signed differences, tolerances, classification, and investigation note. The automated campaign fails closed on missing families, changed deck hashes, changed comparator identity, uninvestigated differences, or exceeded tolerances. Allowed classifications are `Bug`, `Numerical tolerance`, `Different solver implementation`, `Different ground model`, `Geometry difference`, and `Unknown`.
+
+**Consequences:**
+
+- Application-generated values remain regression fixtures until compared with an external result, analytic bound, or controlled measurement.
+- Same-deck agreement between related NEC-2 builds is useful integration evidence but is not described as independent proof of physical accuracy.
+- Failed or non-equivalent comparisons remain visible; code and expected values cannot be tuned without recording the model difference and technical reason.
+- Confirmed bugs require correction followed by the complete campaign, while a campaign with no confirmed bug does not authorize calculation changes.
+- The manifest is reviewable and reproducible, but raw third-party output or package-authored decks are committed only after provenance and redistribution review.
+
 ## Second, adversarial architecture review
 
 The following review intentionally argues against the preferred architecture. “Resolution” means either a concrete architecture change/gate or a documented reason to retain the risk; it does not mean the issue has already passed testing.
@@ -485,7 +499,7 @@ The planning set uses the following single positions:
 | Offline/privacy | No ordinary-use network feature; disconnected installer/run test required |
 | Import | Loss-aware raw document plus explicit structured subset; no silent mutation |
 | Coordinates | NEC theta/phi internal; labelled/tested UI transformations |
-| Feature status | Experimental verified-dipole, height-lab, shared-template, vertical, Yagi, loop/quad/hex, phased-array, frequency-analyser, measurement-comparison, wire-editor, shared current-visualisation, model-comparison, parameter-sweep, and bounded optimiser slices are implemented on inherited branches; the target desktop architecture remains proposed |
+| Feature status | Experimental verified-dipole, height-lab, shared-template, vertical, Yagi, loop/quad/hex, phased-array, frequency-analyser, measurement-comparison, wire-editor, shared current-visualisation, model-comparison, parameter-sweep, and bounded optimiser slices are implemented on inherited branches; a systematic exact-deck validation campaign now passes its bounded corpus; the target desktop architecture remains proposed |
 | Optimization | Experimental bounded prototype only; supported optimisation remains deferred until Phase 7 gates pass |
 
 Any future change to these positions requires an ADR update plus review of architecture, solver evaluation, roadmap, validation, risks, licensing, and product claims.

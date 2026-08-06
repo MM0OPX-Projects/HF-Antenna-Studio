@@ -1,0 +1,241 @@
+{
+  "schemaVersion": 1,
+  "campaignId": "hfas-validation-campaign-2026-08-06",
+  "applicationEngine": {
+    "name": "KJ7LNW nec2c WebAssembly",
+    "version": "v1.3.3",
+    "sourceCommit": "55be1e0e3fe5ee9dad4ce6050711450d19c562fd"
+  },
+  "comparatorEngine": {
+    "name": "4NEC2 merged NEC-2D",
+    "version": "2.7 (30-Jan-2008, MinGW/G77)",
+    "executableSha256": "2FB857EF4EDD15C5A46FB2FE694502E965652E71F69855151B05210DDD410ACE"
+  },
+  "allowedClassifications": [
+    "Bug",
+    "Numerical tolerance",
+    "Different solver implementation",
+    "Different ground model",
+    "Geometry difference",
+    "Unknown"
+  ],
+  "cases": [
+    {
+      "id": "free-space-dipole-published",
+      "family": "free-space-dipole",
+      "fixture": "validation/dipole/ellingson-38mhz-app-21seg.nec",
+      "deckSha256": "6CA62DF3138EF9329D6CEA51835E1D270253E0FB99CA46BB68CF5D75A8708684",
+      "frequencyMhz": 38,
+      "geometry": "3.9474 m horizontal centre-fed wire, 0.1 mm diameter, free space",
+      "segmentation": "HFAS 21 segments; published source 11 segments; centre source",
+      "ground": "GE 0 / GN -1 free space",
+      "patternGrid": "5 degree theta/phi; published peak and analytic thin-dipole shape",
+      "reference": {
+        "kind": "published-nec",
+        "label": "Ellingson, Use of NEC-2 to Calculate Collecting Area (2006)",
+        "url": "https://leo.phys.unm.edu/~lwa/memos/memo/lwa0065a.pdf",
+        "metrics": { "resistanceOhm": 77.41, "reactanceOhm": 45.09, "maximumGainDbi": 2.16 }
+      },
+      "application": {
+        "metrics": { "resistanceOhm": 77.61, "reactanceOhm": 45.41, "maximumGainDbi": 2.16, "swr50": 2.2914 }
+      },
+      "differences": { "resistanceOhm": 0.2, "reactanceOhm": 0.32, "maximumGainDbi": 0 },
+      "tolerances": { "resistanceOhm": 0.5, "reactanceOhm": 0.5, "maximumGainDbi": 0.05 },
+      "classification": "Numerical tolerance",
+      "status": "pass",
+      "investigation": "Physical dimensions match. The published deck uses 11 segments while the application policy selects 21. The application deck independently gives 77.6053 + j45.4105 ohm and 2.16 dBi in 4NEC2 NEC-2D, so the remaining published difference is consistent with discretisation rather than a parser or solver-adapter bug."
+    },
+    {
+      "id": "dipole-half-lambda-perfect-ground",
+      "family": "dipole-over-ground",
+      "fixture": "validation/dipole/half-wave-20m-half-lambda-perfect.nec",
+      "deckSha256": "7269895458812ADEB6AAD48007EB706A7CDC2BB325F17ADE80A6FEBCCEB61B2B",
+      "frequencyMhz": 14.1,
+      "geometry": "10.631 m horizontal centre-fed wire, 1 mm diameter, 10.631 m (0.5 wavelength) high",
+      "segmentation": "21 segments; centre source on segment 11",
+      "ground": "GE -1 / GN 1 infinite perfect ground",
+      "patternGrid": "5 degree upper hemisphere; take-off = 90 degrees - NEC theta",
+      "reference": {
+        "kind": "established-package",
+        "label": "4NEC2 merged NEC-2D 2.7 exact-deck run",
+        "metrics": { "resistanceOhm": 72.795, "reactanceOhm": 25.9006, "maximumGainDbi": 8.43, "takeOffAngleDeg": 30 }
+      },
+      "application": {
+        "metrics": { "resistanceOhm": 72.8, "reactanceOhm": 25.9, "maximumGainDbi": 8.43, "takeOffAngleDeg": 30, "swr50": 1.7584 }
+      },
+      "differences": { "resistanceOhm": 0.005, "reactanceOhm": -0.0006, "maximumGainDbi": 0, "takeOffAngleDeg": 0 },
+      "tolerances": { "resistanceOhm": 0.02, "reactanceOhm": 0.02, "maximumGainDbi": 0.02, "takeOffAngleDeg": 0.01 },
+      "classification": "Numerical tolerance",
+      "status": "pass",
+      "investigation": "The exact deck agrees across the two NEC-2 builds. Small R/X differences are only the application display precision. The NEC theta 60 degree peak maps to the displayed 30 degree take-off angle."
+    },
+    {
+      "id": "quarter-wave-vertical-perfect-ground",
+      "family": "quarter-wave-vertical",
+      "fixture": "validation/vertical/ideal-20m.nec",
+      "deckSha256": "D9BDDC57C2A5F1181E26AED0FED3C5041C4089668419A819581EF934343300AA",
+      "frequencyMhz": 14.1,
+      "geometry": "5.049695658 m (0.2375 wavelength) ground-contact vertical, 2 mm diameter",
+      "segmentation": "13 segments; source on first segment",
+      "ground": "GE 1 / GN 1 infinite perfect ground; no explicit radials",
+      "patternGrid": "5 degree upper hemisphere; rotational azimuth symmetry expected",
+      "reference": {
+        "kind": "established-package-and-analytic",
+        "label": "4NEC2 merged NEC-2D 2.7 exact deck; image-theory 5.15 dBi sanity",
+        "metrics": { "resistanceOhm": 34.0296, "reactanceOhm": -15.5759, "maximumGainDbi": 5.13, "takeOffAngleDeg": 0 }
+      },
+      "application": {
+        "metrics": { "resistanceOhm": 34.03, "reactanceOhm": -15.58, "maximumGainDbi": 5.13, "takeOffAngleDeg": 0, "swr50": 1.7066 }
+      },
+      "differences": { "resistanceOhm": 0.0004, "reactanceOhm": -0.0041, "maximumGainDbi": 0, "takeOffAngleDeg": 0 },
+      "tolerances": { "resistanceOhm": 0.02, "reactanceOhm": 0.02, "maximumGainDbi": 0.02, "takeOffAngleDeg": 0.01 },
+      "classification": "Numerical tolerance",
+      "status": "pass",
+      "investigation": "Exact-deck cross-build agreement and 0.02 dB agreement with the ideal image-theory gain sanity bound. Capacitive reactance is expected because the starting length is deliberately shorter than resonant length."
+    },
+    {
+      "id": "full-wave-square-loop-perfect-ground",
+      "family": "full-wave-loop",
+      "fixture": "validation/loop-beams/square-loop-20m-perfect.nec",
+      "deckSha256": "4EF5CBBDCE8DA455E0E7C23850AFEDB00B83F9B21F31AD83AC422A938510EAE2",
+      "frequencyMhz": 14.175,
+      "geometry": "5.3930918 m square vertical loop; lower conductor 5.2873449 m high; 2 mm wire",
+      "segmentation": "54 total segments including one-segment bottom-centre feed bridge",
+      "ground": "GE 1 / GN 1 infinite perfect ground",
+      "patternGrid": "2 degree upper hemisphere",
+      "reference": {
+        "kind": "established-package",
+        "label": "4NEC2 merged NEC-2D 2.7 exact-deck run",
+        "metrics": { "resistanceOhm": 106.289, "reactanceOhm": -72.509, "maximumGainDbi": 8.46, "takeOffAngleDeg": 36 }
+      },
+      "application": {
+        "metrics": { "resistanceOhm": 106.289, "reactanceOhm": -72.509, "maximumGainDbi": 8.46, "takeOffAngleDeg": 36, "swr50": 3.2807 }
+      },
+      "differences": { "resistanceOhm": 0, "reactanceOhm": 0, "maximumGainDbi": 0, "takeOffAngleDeg": 0 },
+      "tolerances": { "resistanceOhm": 0.02, "reactanceOhm": 0.02, "maximumGainDbi": 0.02, "takeOffAngleDeg": 0.01 },
+      "classification": "Numerical tolerance",
+      "status": "pass",
+      "investigation": "The two engines agree at the recorded output precision. Full-wave is a frequency-scaled starting perimeter, not a resonance claim; the non-zero reactance is retained."
+    },
+    {
+      "id": "delta-loop-bottom-feed-perfect-ground",
+      "family": "delta-loop",
+      "fixture": "validation/loop-beams/delta-loop-20m-perfect.nec",
+      "deckSha256": "3BFDA661E6827D19BA3D168DA15DAC49D4B0B99FFF1C887B25810BA1FFD6AB3E",
+      "frequencyMhz": 14.175,
+      "geometry": "7.1907892 m bottom edge, 11.514751 m apex, 5.2873449 m lower height, 2 mm wire",
+      "segmentation": "55 total segments including one-segment bottom-centre feed bridge",
+      "ground": "GE 1 / GN 1 infinite perfect ground",
+      "patternGrid": "2 degree upper hemisphere",
+      "reference": {
+        "kind": "established-package",
+        "label": "4NEC2 merged NEC-2D 2.7 exact-deck run",
+        "metrics": { "resistanceOhm": 103.861, "reactanceOhm": -77.3984, "maximumGainDbi": 7.94, "takeOffAngleDeg": 42 }
+      },
+      "application": {
+        "metrics": { "resistanceOhm": 103.861, "reactanceOhm": -77.3984, "maximumGainDbi": 7.94, "takeOffAngleDeg": 42, "swr50": 3.4198 }
+      },
+      "differences": { "resistanceOhm": 0, "reactanceOhm": 0, "maximumGainDbi": 0, "takeOffAngleDeg": 0 },
+      "tolerances": { "resistanceOhm": 0.02, "reactanceOhm": 0.02, "maximumGainDbi": 0.02, "takeOffAngleDeg": 0.01 },
+      "classification": "Numerical tolerance",
+      "status": "pass",
+      "investigation": "Exact-deck cross-build agreement. Feed orientation is derived from the explicit bridge; no polarisation is inferred from the delta-loop name."
+    },
+    {
+      "id": "two-element-yagi-perfect-ground",
+      "family": "two-element-yagi",
+      "fixture": "validation/yagi/starting-2el-20m-perfect.nec",
+      "deckSha256": "EE30C7D8DB8CA674E106A5DC4C7E8987B4092B556925CDBD246856AAE7B23F73",
+      "frequencyMhz": 14.175,
+      "geometry": "10.6592874 m reflector, 10.0671048 m driven element, 3.172407 m spacing, 10.57469 m high, 25.4 mm diameter",
+      "segmentation": "27 reflector + 25 driven = 52 segments; centre source",
+      "ground": "GE 1 / GN 1 infinite perfect ground",
+      "patternGrid": "2 degree upper hemisphere; +Y forward axis",
+      "reference": {
+        "kind": "established-package",
+        "label": "4NEC2 merged NEC-2D 2.7 exact-deck run",
+        "metrics": { "resistanceOhm": 57.7985, "reactanceOhm": 26.0063, "forwardGainDbi": 11.85, "rearGainDbi": -3.52, "frontToBackDb": 15.37, "takeOffAngleDeg": 28 }
+      },
+      "application": {
+        "metrics": { "resistanceOhm": 57.8, "reactanceOhm": 26.01, "forwardGainDbi": 11.85, "rearGainDbi": -3.52, "frontToBackDb": 15.37, "takeOffAngleDeg": 28, "swr50": 1.6485 }
+      },
+      "differences": { "resistanceOhm": 0.0015, "reactanceOhm": 0.0037, "forwardGainDbi": 0, "rearGainDbi": 0, "frontToBackDb": 0, "takeOffAngleDeg": 0 },
+      "tolerances": { "resistanceOhm": 0.02, "reactanceOhm": 0.02, "forwardGainDbi": 0.02, "rearGainDbi": 0.02, "frontToBackDb": 0.04, "takeOffAngleDeg": 0.01 },
+      "classification": "Numerical tolerance",
+      "status": "pass",
+      "investigation": "Exact-deck agreement confirms the +Y/rear axis mapping. The remaining R/X differences are only rounded application presentation."
+    },
+    {
+      "id": "three-element-yagi-perfect-ground",
+      "family": "three-element-yagi",
+      "fixture": "validation/yagi/starting-3el-20m-perfect.nec",
+      "deckSha256": "B5E807B35515AA978756B1D9DA0804F1F9E21AE39B6132D0824AAEE724CCECC9",
+      "frequencyMhz": 14.175,
+      "geometry": "10.6592874 m reflector, 10.0671048 m driven, 9.5595196 m director; spacings 3.172407/4.229876 m; 10.57469 m high; 25.4 mm diameter",
+      "segmentation": "27 + 25 + 23 = 75 segments; driven centre source",
+      "ground": "GE 1 / GN 1 infinite perfect ground",
+      "patternGrid": "2 degree upper hemisphere; +Y forward axis",
+      "reference": {
+        "kind": "established-package",
+        "label": "4NEC2 merged NEC-2D 2.7 exact-deck run",
+        "metrics": { "resistanceOhm": 20.5334, "reactanceOhm": 9.38469, "forwardGainDbi": 13.38, "rearGainDbi": -1.37, "frontToBackDb": 14.75, "takeOffAngleDeg": 26 }
+      },
+      "application": {
+        "metrics": { "resistanceOhm": 20.53, "reactanceOhm": 9.38, "forwardGainDbi": 13.38, "rearGainDbi": -1.37, "frontToBackDb": 14.75, "takeOffAngleDeg": 26, "swr50": 2.5377 }
+      },
+      "differences": { "resistanceOhm": -0.0034, "reactanceOhm": -0.00469, "forwardGainDbi": 0, "rearGainDbi": 0, "frontToBackDb": 0, "takeOffAngleDeg": 0 },
+      "tolerances": { "resistanceOhm": 0.02, "reactanceOhm": 0.02, "forwardGainDbi": 0.02, "rearGainDbi": 0.02, "frontToBackDb": 0.04, "takeOffAngleDeg": 0.01 },
+      "classification": "Numerical tolerance",
+      "status": "pass",
+      "investigation": "Exact-deck agreement confirms forward/rear extraction. A separate NBS TN 688 geometry sanity model produces 64.6 degree beamwidth and 12.1 dB axial F/B inside the publication's non-equivalent envelope; its folded driver and measurement setup are classified Geometry difference."
+    },
+    {
+      "id": "two-vertical-broadside-perfect-ground",
+      "family": "two-element-phased-vertical-array",
+      "fixture": "validation/phased-arrays/broadside-20m-perfect.nec",
+      "deckSha256": "316310BC04F1C2A354326C9184C8F8BA53749A2E0AF9AF3E7201DAA4BDEDF99D",
+      "frequencyMhz": 14.1,
+      "geometry": "two 5.0496957 m ground-contact verticals, 5.3154692 m (0.25 wavelength) spacing, 2 mm diameter",
+      "segmentation": "13 segments per element; calibrated equal-current ideal mode",
+      "ground": "GE 1 / GN 1 infinite perfect ground",
+      "patternGrid": "2 degree non-grazing upper hemisphere; opposite broadside axes",
+      "reference": {
+        "kind": "established-package-and-analytic",
+        "label": "4NEC2 merged NEC-2D 2.7 exact deck; two-source broadside symmetry",
+        "metrics": { "forwardGainDbi": 6.2, "reverseGainDbi": 6.2, "frontToBackDb": 0, "headingDeg": 0, "takeOffAngleDeg": 2 }
+      },
+      "application": {
+        "metrics": { "forwardGainDbi": 6.2, "reverseGainDbi": 6.2, "frontToBackDb": 0, "headingDeg": 0, "takeOffAngleDeg": 2 }
+      },
+      "differences": { "forwardGainDbi": 0, "reverseGainDbi": 0, "frontToBackDb": 0, "headingDeg": 0, "takeOffAngleDeg": 0 },
+      "tolerances": { "forwardGainDbi": 0.02, "reverseGainDbi": 0.02, "frontToBackDb": 0.04, "headingDeg": 0.01, "takeOffAngleDeg": 0.01 },
+      "classification": "Numerical tolerance",
+      "status": "pass",
+      "investigation": "Both opposite broadside axes are equal at output precision. The UI labels the heading as an ambiguous axis rather than inventing a unique beam direction."
+    },
+    {
+      "id": "two-vertical-endfire-perfect-ground",
+      "family": "two-element-phased-vertical-array",
+      "fixture": "validation/phased-arrays/endfire-forward-20m-perfect.nec",
+      "deckSha256": "8E71C25BFDF8F4AF8BB939BE48009E9938018248D9AC442FCC710AAD8595581B",
+      "frequencyMhz": 14.1,
+      "geometry": "two 5.0496957 m ground-contact verticals, 5.3154692 m (0.25 wavelength) spacing, 2 mm diameter",
+      "segmentation": "13 segments per element; element 2 target current phase -90 degrees after coupled-current calibration",
+      "ground": "GE 1 / GN 1 infinite perfect ground",
+      "patternGrid": "2 degree non-grazing upper hemisphere; reviewed end-fire axes",
+      "reference": {
+        "kind": "established-package-and-analytic",
+        "label": "4NEC2 merged NEC-2D 2.7 exact deck; quarter-wave end-fire reversal sanity",
+        "metrics": { "forwardGainDbi": 8.18, "reverseGainDbi": -26.72, "frontToBackDb": 34.9, "headingDeg": 90, "takeOffAngleDeg": 2 }
+      },
+      "application": {
+        "metrics": { "forwardGainDbi": 8.18, "reverseGainDbi": -26.72, "frontToBackDb": 34.9, "headingDeg": 90, "takeOffAngleDeg": 2 }
+      },
+      "differences": { "forwardGainDbi": 0, "reverseGainDbi": 0, "frontToBackDb": 0, "headingDeg": 0, "takeOffAngleDeg": 0 },
+      "tolerances": { "forwardGainDbi": 0.02, "reverseGainDbi": 0.02, "frontToBackDb": 0.04, "headingDeg": 0.01, "takeOffAngleDeg": 0.01 },
+      "classification": "Numerical tolerance",
+      "status": "pass",
+      "investigation": "The exact deck agrees at 0.01 dB/2 degree resolution. The companion +90 degree fixture reverses heading by exactly 180 degrees with equal gain and F/B; the calibrated feed currents are separately checked against the requested phasors."
+    }
+  ]
+}

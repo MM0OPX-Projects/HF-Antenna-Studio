@@ -1,0 +1,11 @@
+CM HF Antenna Studio verified centre-fed horizontal dipole
+CM SI units; one continuous wire; source on the centre segment
+CE
+GW 1 21 -1.9737 0 0 1.9737 0 0 0.00005
+GE 0
+GN -1
+PT 0 0 0 0
+EX 0 1 11 0 1 0
+FR 0 1 0 0 38 0
+RP 0 37 72 1000 0 0 5 5
+EN

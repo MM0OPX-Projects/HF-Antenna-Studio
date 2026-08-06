@@ -46,16 +46,20 @@ try {
             }
         }
         $peak = $gainRows | Sort-Object Gain -Descending | Select-Object -First 1
+        $azimuthAtPeak = $gainRows | Where-Object { [math]::Abs($_.Theta - $peak.Theta) -lt 0.01 }
+        $azimuthSpread = ($azimuthAtPeak | Measure-Object Gain -Maximum).Maximum - ($azimuthAtPeak | Measure-Object Gain -Minimum).Minimum
         $passed = [math]::Abs($resistance - $case.R) -le 0.02 -and
             [math]::Abs($reactance - $case.X) -le 0.02 -and
             [math]::Abs($peak.Gain - $case.Gain) -le 0.01 -and
-            [math]::Abs($peak.Theta - $case.Theta) -le 0.01
+            [math]::Abs($peak.Theta - $case.Theta) -le 0.01 -and
+            $azimuthSpread -le 0.01
         [pscustomobject]@{
             Case = $case.Name
             ResistanceOhm = $resistance
             ReactanceOhm = $reactance
             PeakGainDbi = $peak.Gain
             PeakThetaDeg = $peak.Theta
+            AzimuthSpreadDb = $azimuthSpread
             Pass = $passed
         }
     }

@@ -101,6 +101,7 @@ Full guides live in the [`docs/`](docs/) folder:
 | [Vertical Antennas](docs/VERTICAL_ANTENNAS.md) | Vertical configurations, ground formulations, exact-deck comparison evidence, and limitations |
 | [Yagi Beam Models](docs/YAGI_BEAMS.md) | Directional model/metric contracts, exact-deck comparison evidence, and limitations |
 | [Loop & Hexbeam Models](docs/LOOP_AND_HEXBEAM_MODELS.md) | Loop/quad/hex topology, feed/polarisation boundaries, independent comparison evidence, and limitations |
+| [Engineering Validation Report](docs/VALIDATION_REPORT.md) | Nine primary reference cases, 16 external exact-deck runs, discrepancies, and remaining validation gates |
 | [Professional UI Workbench](docs/UI_OVERHAUL.md) | Desktop panel system, keyboard/accessibility contract, usability review, and limitations |
 
 ---

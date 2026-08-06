@@ -10,6 +10,7 @@ Detailed guides for AntennaSim. New here? Start with the [project README](../REA
 | [API Reference](api.md) | REST + WebSocket endpoints and configuration (`.env`) |
 | [Verified Dipole](VERIFIED_DIPOLE.md) | Exact-deck vertical slice, numeric evidence, and claim limits |
 | [Dipole Height Lab](DIPOLE_HEIGHT_LAB.md) | Interactive height controls, cancellation/cache contract, validation, and limitations |
+| [Engineering Validation Report](VALIDATION_REPORT.md) | Systematic reference models, external NEC comparisons, discrepancies, and bounded conclusions |
 | [Professional UI Workbench](UI_OVERHAUL.md) | Desktop layout, interaction/accessibility contract, usability reviews, tests, and manual gates |
 
 See also: [Contributing](../CONTRIBUTING.md) · [Changelog](../CHANGELOG.md) · [License](../LICENSE)

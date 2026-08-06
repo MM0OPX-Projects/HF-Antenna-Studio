@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { createDefaultDipoleModel, type HorizontalDipoleModel } from "../model";
 import { adaptDipoleToNec } from "../nec-adapter";
@@ -56,6 +57,23 @@ describe("verified dipole NEC adapter", () => {
     expect(free.deck).toContain("GE 0\nGN -1");
     expect(adaptDipoleToNec(halfWaveModel({ ground: { kind: "perfect" } })).deck).toContain("GE -1\nGN 1");
     expect(free.runRequest.parse.nTheta).toBe(37);
+  });
+
+  it("keeps the independently compared campaign decks byte-identical to the adapter", () => {
+    const cases: Array<[string, HorizontalDipoleModel]> = [
+      ["ellingson-38mhz-app-21seg.nec", {
+        ...createDefaultDipoleModel(), frequencyHz: 38_000_000, totalLengthM: 3.9474,
+        wireDiameterM: 0.0001, heightM: 0, ground: { kind: "free-space" },
+      }],
+      ["half-wave-20m-half-lambda-perfect.nec", {
+        ...createDefaultDipoleModel(), frequencyHz: 14_100_000, totalLengthM: 10.631,
+        wireDiameterM: 0.001, heightM: 10.631, ground: { kind: "perfect" },
+      }],
+    ];
+    for (const [fixtureName, model] of cases) {
+      const fixture = readFileSync(new URL(`../../../../../validation/dipole/${fixtureName}`, import.meta.url), "utf8").replace(/\r\n/g, "\n");
+      expect(adaptDipoleToNec(model).deck, fixtureName).toBe(fixture);
+    }
   });
 
   it("rejects invalid geometry before NEC generation", () => {
