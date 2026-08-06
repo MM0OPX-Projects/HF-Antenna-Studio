@@ -19,7 +19,7 @@ Decision review date: 2026-08-02
 | D-010 | Gate supported-feature and accuracy claims on independent validation | Accepted |
 | D-011 | Make v1 offline and private by construction, with no ordinary-use network feature | Accepted |
 | D-012 | Start with human-readable `.hfas` JSON and optional separately keyed result cache | Accepted |
-| D-013 | Stage deterministic parameters after ordinary runs; defer optimization until objectives and constraints are validated | Accepted; parameter stage begun |
+| D-013 | Defer supported optimisation until objectives, constraints, convergence, and ordinary runs are validated | Accepted; experimental prototype allowed only under D-026 |
 | D-014 | Preserve a runnable AntennaSim baseline branch without selecting its Wasm architecture for the product | Accepted, baseline-only |
 | D-015 | Prove the first dipole slice with an exact displayed-deck boundary on the inherited branch | Accepted, experimental |
 | D-016 | Supersede interactive solver jobs by terminating the worker and key every result/cache entry to the exact SI model | Accepted, experimental |
@@ -32,6 +32,7 @@ Decision review date: 2026-08-02
 | D-023 | Bind current views to parsed segment results and label every visual normalization | Accepted, experimental |
 | D-024 | Gate cross-model overlays on complete solved-condition and model identities | Accepted, experimental |
 | D-025 | Permit only bounded, exact-model parameter grids before optimisation | Accepted, experimental |
+| D-026 | Keep the first optimiser deterministic, bounded, local, evidence-rich, and explicitly non-global | Accepted, experimental only |
 
 ## D-001 — New repository with selective AntennaSim reuse
 
@@ -223,6 +224,8 @@ Use versioned UTF-8 JSON with `.hfas` extension for the canonical model and run 
 
 Deliver deterministic parameters/sliders/sweeps only after normal calculations and cache/cancellation are proven. Deliver optimization only after objectives, constraints, warnings, and convergence can invalidate candidates correctly.
 
+An experimental optimiser may exercise and test those contracts before release only if it is visibly unsupported, cannot claim a global optimum, reuses the validated ordinary-run path, retains complete candidate evidence, and does not weaken Phase 7 release gates. D-026 governs that prototype.
+
 ### Consequences
 
 - Optimization cannot be used as a marketing shortcut in the first release.
@@ -390,6 +393,18 @@ Represent three vertical configurations explicitly and never convert between the
 - FNV deck fingerprints are convenience integrity labels; the full model/deck is authoritative.
 - Optimisation remains behind Phase 7 validation, constraint, discontinuity, persistence, and performance gates.
 
+## D-026 — The initial optimiser is a bounded local evidence consumer
+
+**Decision:** The first optimiser uses deterministic bounded coordinate pattern search over one or two declared parameters and at most 121 unique models. It evaluates candidates only through existing typed family generators, validity rules, NEC adapters, solver services, and result validators. Lower-is-better scoring and constraints are explicit. The optimiser retains complete history and up to five feasible best-found models, publishes nothing on cancellation, and fixes the global-optimum claim to false.
+
+**Consequences:**
+
+- Lowest SWR, maximum gain/F-B, target R/X/take-off, and an explicit raw-unit weighted score can exercise the workflow without adopting external optimisation code.
+- Invalid, failed, and constraint-rejected candidates cannot become best solutions and remain documented in history.
+- Results use “Best solution found”; “perfect antenna” and unqualified optimum language are prohibited.
+- Determinism removes a random seed from the initial reproducibility contract but does not establish global convergence.
+- The prototype does not satisfy Phase 7 release preconditions; independent candidate sampling, convergence/discontinuity handling, tolerance robustness, native parity, and Windows performance remain blocking gates.
+
 ## Second, adversarial architecture review
 
 The following review intentionally argues against the preferred architecture. “Resolution” means either a concrete architecture change/gate or a documented reason to retain the risk; it does not mean the issue has already passed testing.
@@ -442,7 +457,7 @@ The planning set uses the following single positions:
 | Offline/privacy | No ordinary-use network feature; disconnected installer/run test required |
 | Import | Loss-aware raw document plus explicit structured subset; no silent mutation |
 | Coordinates | NEC theta/phi internal; labelled/tested UI transformations |
-| Feature status | Experimental verified-dipole, height-lab, shared-template, vertical, Yagi, loop/quad/hex, phased-array, frequency-analyser, wire-editor, shared current-visualisation, four-slot model-comparison, and bounded parameter-sweep slices are implemented on inherited branches; the target desktop architecture remains proposed |
-| Optimization | Deferred until validated ordinary run and parameter infrastructure |
+| Feature status | Experimental verified-dipole, height-lab, shared-template, vertical, Yagi, loop/quad/hex, phased-array, frequency-analyser, wire-editor, shared current-visualisation, model-comparison, parameter-sweep, and bounded optimiser slices are implemented on inherited branches; the target desktop architecture remains proposed |
+| Optimization | Experimental bounded prototype only; supported optimisation remains deferred until Phase 7 gates pass |
 
 Any future change to these positions requires an ADR update plus review of architecture, solver evaluation, roadmap, validation, risks, licensing, and product claims.

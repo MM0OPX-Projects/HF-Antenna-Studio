@@ -236,6 +236,8 @@ The `feature/phased-arrays` implementation adds original project TypeScript, tes
 
 The `feature/parameter-sweeps` implementation adds original project TypeScript, tests, and documentation under GPL-3.0-or-later. It introduces no dependency, external artwork, dataset, reference deck, comparator output, executable, or network service. Exported result JSON contains only user/application-generated model and NEC evidence. Existing family references and solver provenance retain their current review status; orchestration tests are not represented as new independent electromagnetic validation.
 
+The `feature/antenna-optimiser` implementation adds an original deterministic bounded search, UI, tests, and documentation under GPL-3.0-or-later. It adds no third-party optimiser library, dependency, asset, dataset, reference model, comparator output, executable, or network service. Exported histories contain user/application-generated models and NEC decks. Existing solver, family-reference, and distribution provenance remains unchanged; best-found candidates are not externally sourced validation data.
+
 - Documentation must say GPL-3.0-or-later for HF Antenna Studio unless a later ADR changes it.
 - Do not call KJ7LNW/nec2c unambiguously public domain while its provenance is unresolved.
 - Do not describe a solver as “open-source and approved” until its exact source and bundle pass review.

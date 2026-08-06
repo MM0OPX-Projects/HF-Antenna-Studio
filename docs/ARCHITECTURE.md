@@ -33,6 +33,8 @@ The `feature/model-comparison` branch adds a four-slot result consumer over exis
 
 The `feature/parameter-sweeps` branch adds a bounded orchestration layer over the same family model/adapter/service contracts. Inclusive 1D lines and rectangular 2D grids generate one exact typed model per coordinate, validate the coordinate against that model, execute sequentially in the existing worker boundary, and retain full model/deck provenance. A session-only 192-entry exact-model LRU cache, abort propagation, 81-job ceiling, stale-definition gating, and versioned JSON evidence prevent the sweep view from becoming a second compiler or an unbounded job system. See [`PARAMETER_SWEEPS.md`](PARAMETER_SWEEPS.md).
 
+The `feature/antenna-optimiser` branch adds a deterministic bounded coordinate-pattern-search consumer over the same exact-model and family-service boundary. It scores but never changes solver results, rejects invalid/constrained candidates, caps work at 121 unique evaluations, publishes only an atomically complete run, and retains complete definition/history/model/deck evidence plus up to five feasible best-found candidates. It is an experimental contract prototype, not completion of the Phase 7 validation gates or a globally convergent solver. See [`ANTENNA_OPTIMISER.md`](ANTENNA_OPTIMISER.md).
+
 ## Why a desktop web architecture
 
 The product requires an HTML/JavaScript interface, offline operation, private local files, and dependable local native calculation on Windows 11. A desktop webview provides the desired UI technology without introducing a loopback web server, browser-origin file workarounds, Docker, Redis, or a permanently listening port.

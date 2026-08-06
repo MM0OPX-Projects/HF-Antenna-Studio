@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Added an experimental bounded antenna optimiser for one or two declared dipole, vertical, Yagi, or phased-array parameters using the unchanged family NEC pipelines
+- Added seven selectable objective modes, weighted raw-unit scoring, RF constraints, deterministic coordinate-pattern search, progress/cancellation, exact-model caching, retained best-found models, history and start/final comparisons
+- Added complete optimisation JSON evidence, cautious non-global claims, simple known-task/unit coverage, real-Wasm dipole/Yagi browser runs, and `docs/ANTENNA_OPTIMISER.md`
+
 - Added bounded one-dimensional and two-dimensional parameter sweeps for dipole height/length, vertical length/radial count, Yagi director spacing/height, and phased-array spacing/phase
 - Added sequential cancellable worker orchestration, exact-model LRU caching, 81-job protection, metric line plots, numeric heat maps, full point lineage, and versioned local reproducibility JSON export
 - Added pure grid/model/cache/cancellation/evidence tests, real-Wasm dipole and vertical browser studies, and `docs/PARAMETER_SWEEPS.md`

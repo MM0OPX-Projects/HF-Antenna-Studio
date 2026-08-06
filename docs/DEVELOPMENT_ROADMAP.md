@@ -195,6 +195,8 @@ Goal: support rapid exploration through the same validated model compiler and so
 
 ## Phase 7 — Optimization
 
+Implementation checkpoint (2026-08-06): `feature/antenna-optimiser` implements an explicitly experimental bounded local-search prototype for one/two declared dimensions across dipole, elevated vertical, three-element Yagi, and ideal-current phased-array models. It reuses exact family runs, enforces existing validity checks and optional RF constraints, caps work at 121 unique evaluations, retains complete history/decks/settings and five best-found candidates, and never claims a global optimum. This does not pass the Phase 7 preconditions or exit evidence: multi-frequency/robust objectives, arbitrary constraints, topology/segmentation discontinuities, convergence, multistart/Pareto methods, persisted resume, native/established-package candidate sampling, construction tolerances, and packaged Windows performance remain open.
+
 Goal: add constrained optimization without turning numerical or modelling defects into confident designs.
 
 ### Preconditions
