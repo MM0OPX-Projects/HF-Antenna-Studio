@@ -420,6 +420,19 @@ Represent three vertical configurations explicitly and never convert between the
 - A visual match is not a validation certificate; calibration plane, feed line, common mode, environment, construction, ground and NEC limitations remain explicit.
 - The parser remains an untrusted-input boundary requiring fuzzing, broader encoding/Touchstone corpus work, and packaged Windows testing before release support.
 
+## D-028 — The main Simulator uses a four-region engineering workbench
+
+**Decision:** At desktop widths, separate editable model inputs, interactive geometry, calculated key values, and detailed analysis into distinct resizable/collapsible regions. Calculated values are rendered only for the current successful simulation state and repeat their key input conditions. Use one responsive layout state rather than mounting duplicate Three.js viewers. Specialist laboratories keep their task-specific layouts while inheriting the global original visual system.
+
+**Consequences:**
+
+- Inputs cannot be visually mistaken for calculated output, and stale results remain withheld after model/ground changes.
+- The centre viewer takes remaining space while bounded side/bottom regions accommodate different Windows screen sizes.
+- Resizers and tabs need complete keyboard and accessibility semantics, not pointer-only affordances.
+- Panel dimensions are not persisted until application preferences have a versioned schema.
+- This is an interface-architecture decision only; it does not change or validate geometry, NEC generation, solver behaviour, parsing, or RF results.
+- No commercial application's exact layout, artwork, assets, or branding is adopted.
+
 ## Second, adversarial architecture review
 
 The following review intentionally argues against the preferred architecture. “Resolution” means either a concrete architecture change/gate or a documented reason to retain the risk; it does not mean the issue has already passed testing.

@@ -151,7 +151,7 @@ export function ChangelogPopup() {
               id="changelog-title"
               className="text-lg font-semibold text-text-primary sm:text-xl"
             >
-              What’s new in AntennaSim
+              What’s new in HF Antenna Studio
             </h2>
             <p
               id="changelog-summary"
@@ -266,7 +266,7 @@ export function ChangelogPopup() {
 
         <footer className="flex shrink-0 flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-4">
           <p className="text-[10px] leading-relaxed text-text-secondary sm:max-w-sm">
-            AntennaSim stores one first-party timestamp on this device for 30
+            HF Antenna Studio stores one first-party timestamp on this device for 30
             days so this notice does not keep reopening. It is not used for
             tracking.
           </p>

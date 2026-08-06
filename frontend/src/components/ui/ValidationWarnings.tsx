@@ -54,7 +54,7 @@ export function ValidationWarnings({ validation, className = "" }: ValidationWar
   const styles = SEVERITY_STYLES[overallSeverity];
 
   return (
-    <div className={`${styles.bg} border ${styles.border} rounded-md p-2 ${className}`}>
+    <div className={`${styles.bg} border ${styles.border} rounded-md p-2 ${className}`} role={errors.length > 0 ? "alert" : "status"}>
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-start gap-1.5 min-w-0">
           <svg
@@ -94,9 +94,11 @@ export function ValidationWarnings({ validation, className = "" }: ValidationWar
           </div>
         </div>
         <button
+          type="button"
           onClick={() => setDismissed(true)}
           className="text-text-secondary hover:text-text-primary shrink-0"
           title="Dismiss"
+          aria-label="Dismiss modelling warnings"
         >
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M18 6L6 18M6 6l12 12" />

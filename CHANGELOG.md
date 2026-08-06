@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Added an original Windows-first Simulator workbench with independently resizable/collapsible model-input, geometry, calculated-summary, and analysis regions; compact tablet/mobile layouts mount only one WebGL viewer
+- Added explicit result-currency and input-condition summaries, modelling/solver diagnostics, contextual help, keyboard panel shortcuts, accessible resizers/tabs/dialogs, locally rendered light/dark design tokens, browser usability coverage, and `docs/UI_OVERHAUL.md`
+
 - Added a browser-local project library with New, Save, Save As, Open/recent, automatic named-project saves, separate crash-recovery journalling, duplicate, rename, confirmed delete, and `.hfas` import/export without a cloud account
 - Added immutable schema 1-4 migration review, future-schema rejection, optimistic revision conflicts, atomic local collection replacement, unload recovery, explicit simulator sweep persistence, lifecycle/browser regression coverage, and `docs/PROJECT_FILE_FORMAT.md`
 

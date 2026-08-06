@@ -90,12 +90,12 @@ for (const [name, baseline] of Object.entries(BASELINES)) {
     expect(bounds?.width ?? 0).toBeGreaterThan(100);
     expect(bounds?.height ?? 0).toBeGreaterThan(100);
 
-    await page.getByRole("button", { name: "Pattern", exact: true }).click();
+    await page.getByRole("tab", { name: "Pattern", exact: true }).click();
     await expect(page.getByText("Radiation Pattern")).toBeVisible();
     await expect(page.getByText("Azimuth")).toBeVisible();
     await expect(page.getByText("Elevation")).toBeVisible();
 
-    await page.getByRole("button", { name: "Z", exact: true }).click();
+    await page.getByRole("tab", { name: "Z", exact: true }).click();
     await expect(page.getByText("Impedance vs Frequency")).toBeVisible();
 
     expect(consoleErrors, "browser console errors").toEqual([]);

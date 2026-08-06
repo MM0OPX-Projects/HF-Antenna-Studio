@@ -44,6 +44,10 @@ import type { AntennaTemplate, FrequencyRange } from "../templates/types";
 import { bandToSegment, hasBandSegment, removeBandSegment } from "../utils/ham-bands";
 import type { HamBand } from "../utils/ham-bands";
 import type { ViewToggles } from "../components/three/types";
+import { PanelResizeHandle } from "../components/workspace/PanelResizeHandle";
+import { InspectorSection } from "../components/workspace/InspectorSection";
+import { EngineeringSummaryPanel, CalculationStatus } from "../components/workspace/EngineeringSummaryPanel";
+import { HelpTip } from "../components/workspace/HelpTip";
 
 /** Mobile bottom sheet tabs */
 const MOBILE_SEGMENTS = [
@@ -213,6 +217,55 @@ export function SimulatorPage() {
   );
 
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [leftWidth, setLeftWidth] = useState(310);
+  const [rightWidth, setRightWidth] = useState(292);
+  const [analysisHeight, setAnalysisHeight] = useState(220);
+  const [leftCollapsed, setLeftCollapsed] = useState(false);
+  const [rightCollapsed, setRightCollapsed] = useState(false);
+  const [analysisCollapsed, setAnalysisCollapsed] = useState(false);
+  const [desktopWorkbench, setDesktopWorkbench] = useState(
+    () => window.matchMedia?.("(min-width: 1280px)").matches ?? false,
+  );
+
+  useEffect(() => {
+    const query = window.matchMedia("(min-width: 1280px)");
+    const updateLayout = (event: MediaQueryListEvent) => setDesktopWorkbench(event.matches);
+    query.addEventListener("change", updateLayout);
+    return () => query.removeEventListener("change", updateLayout);
+  }, []);
+
+  useEffect(() => {
+    const handleWorkspaceKey = (event: KeyboardEvent) => {
+      const target = event.target;
+      const editing = target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement;
+      if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+        event.preventDefault();
+        handleRunSimulation();
+        return;
+      }
+      if (editing) return;
+      if (event.key === "?") {
+        event.preventDefault();
+        setShortcutsOpen(true);
+      }
+      if ((event.ctrlKey || event.metaKey) && event.shiftKey) {
+        if (event.key.toLowerCase() === "l") {
+          event.preventDefault();
+          setLeftCollapsed((value) => !value);
+        }
+        if (event.key.toLowerCase() === "r") {
+          event.preventDefault();
+          setRightCollapsed((value) => !value);
+        }
+        if (event.key.toLowerCase() === "b") {
+          event.preventDefault();
+          setAnalysisCollapsed((value) => !value);
+        }
+      }
+    };
+    window.addEventListener("keydown", handleWorkspaceKey);
+    return () => window.removeEventListener("keydown", handleWorkspaceKey);
+  }, [handleRunSimulation]);
 
   const isLoading = simStatus === "loading";
 
@@ -237,10 +290,101 @@ export function SimulatorPage() {
     <div className="flex flex-col h-dvh bg-background">
       <Navbar />
 
+      {/* Desktop Windows workbench: resizable input, viewport, summary and analysis regions. */}
+      {desktopWorkbench && <div className="flex min-h-0 flex-1 overflow-hidden" data-testid="professional-workbench">
+        {leftCollapsed ? (
+          <aside className="flex w-9 shrink-0 flex-col items-center border-r border-border bg-surface py-3" aria-label="Inputs panel collapsed">
+            <button type="button" className="rounded-md p-2 text-text-secondary hover:bg-surface-hover hover:text-accent" onClick={() => setLeftCollapsed(false)} title="Show antenna inputs (Ctrl+Shift+L)" aria-label="Show antenna inputs">›</button>
+            <span className="mt-3 [writing-mode:vertical-rl] text-[9px] font-semibold uppercase tracking-[0.18em] text-text-secondary">Inputs</span>
+          </aside>
+        ) : (
+          <aside className="flex shrink-0 flex-col overflow-hidden border-r border-border bg-surface" style={{ width: leftWidth }} aria-label="Antenna and project inputs" data-testid="workbench-inputs">
+            <div className="flex items-center justify-between border-b border-border px-4 py-3">
+              <div><p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-accent">Model inputs</p><h2 className="text-sm font-semibold">Antenna setup</h2></div>
+              <button type="button" className="rounded-md px-2 py-1 text-xs text-text-secondary hover:bg-surface-hover hover:text-text-primary" onClick={() => setLeftCollapsed(true)} title="Collapse inputs (Ctrl+Shift+L)" aria-label="Collapse antenna inputs">‹</button>
+            </div>
+            <div className="border-b border-border px-4 py-3"><ProjectActions onSave={handleProjectSave} onLoad={handleProjectLoad} /></div>
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              <InspectorSection title="Antenna model" eyebrow="01 · Geometry" help="Choose a parametric antenna and edit its physical dimensions. Geometry updates immediately; NEC results do not update until calculation.">
+                <WireEditorPromo />
+                <TemplatePicker selectedId={template.id} onSelect={handleTemplateSelect} />
+                <ParameterPanel parameters={template.parameters} values={params} onParamChange={setParam} />
+              </InspectorSection>
+              <InspectorSection title="Environment and feed" eyebrow="02 · Installation" help="Ground and matching choices are model or feed-system inputs, not calculated values." defaultOpen={false}>
+                <GroundEditor ground={ground} onChange={setGround} />
+                <div className="border-t border-border" />
+                <BalunEditor matching={matching} onChange={setMatching} />
+              </InspectorSection>
+              <InspectorSection title="Frequency study" eyebrow="03 · Solver request" help="Define the frequencies and angular resolution requested from NEC. Every editable number is shown with its engineering unit.">
+                <BandPresets currentRange={frequencyRange} onSelectBand={handleBandSelect} segments={frequencySegments} onToggleBand={handleToggleBand} hfOnly />
+                <div className="border-t border-border" />
+                <FrequencySegmentEditor frequencyRange={frequencyRange} onFrequencyRangeChange={setFrequencyRange} segments={frequencySegments} onSegmentsChange={setFrequencySegments} />
+                <label className="block space-y-1 text-xs text-text-secondary">
+                  <span className="font-medium uppercase tracking-wider">Pattern resolution</span>
+                  <select aria-label="Radiation pattern angular resolution" value={patternStep} onChange={(event) => setPatternStep(parseInt(event.target.value, 10))} className="w-full rounded-md border border-border bg-background px-2 py-2 font-mono text-xs text-text-primary">
+                    <option value="1">1° angular step · very fine</option><option value="2">2° angular step · fine</option><option value="5">5° angular step · standard</option><option value="10">10° angular step · fast</option>
+                  </select>
+                </label>
+                {patternStep <= 2 && <p className="rounded-md border border-swr-warning/30 bg-swr-warning/5 p-2 text-[10px] leading-4"><strong className="text-swr-warning">Longer calculation:</strong> fine angular resolution substantially increases NEC output size and run time.</p>}
+              </InspectorSection>
+              {template.tips.length > 0 && <InspectorSection title="Context help" eyebrow="Model guidance" help="Educational guidance is separate from solver output and does not replace a validity review." defaultOpen={false}><ul className="space-y-2">{template.tips.slice(0, 4).map((tip, index) => <li key={index} className="border-l-2 border-accent/40 pl-3 text-xs leading-5 text-text-secondary">{tip}</li>)}</ul></InspectorSection>}
+            </div>
+            <div className="space-y-2 border-t border-border bg-surface-elevated p-3">
+              <ValidationWarnings validation={validation} />
+              <Button onClick={handleRunSimulation} loading={isLoading} disabled={isLoading || !validation.valid} className="w-full" size="md">{isLoading ? "Calculating with NEC-2…" : "Run Simulation"}</Button>
+              <p className="text-center text-[10px] text-text-secondary">Ctrl+Enter · results clear when inputs change</p>
+              {simError && <p role="alert" className="text-xs text-swr-bad">{simError}</p>}
+            </div>
+          </aside>
+        )}
+
+        {!leftCollapsed && <PanelResizeHandle orientation="horizontal" value={leftWidth} min={260} max={440} label="Resize antenna inputs" onChange={setLeftWidth} onReset={() => setLeftWidth(310)} />}
+
+        <main className="flex min-w-0 flex-1 flex-col bg-background" aria-label="Antenna design workbench">
+          <header className="flex h-12 shrink-0 items-center justify-between gap-3 border-b border-border bg-surface px-3">
+            <div className="min-w-0"><p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-text-secondary">Design workspace</p><h1 className="truncate text-sm font-semibold">{template.name} <span className="font-normal text-text-secondary">· interactive geometry</span></h1></div>
+            <div className="flex items-center gap-3">
+              <CalculationStatus status={simStatus} compact />
+              <div className="h-6 w-px bg-border" />
+              <button type="button" aria-pressed={!leftCollapsed} className="rounded-md border border-border px-2 py-1 text-[10px] text-text-secondary hover:border-accent hover:text-text-primary" onClick={() => setLeftCollapsed((value) => !value)}>Inputs</button>
+              <button type="button" aria-pressed={!analysisCollapsed} className="rounded-md border border-border px-2 py-1 text-[10px] text-text-secondary hover:border-accent hover:text-text-primary" onClick={() => setAnalysisCollapsed((value) => !value)}>Analysis</button>
+              <button type="button" aria-pressed={!rightCollapsed} className="rounded-md border border-border px-2 py-1 text-[10px] text-text-secondary hover:border-accent hover:text-text-primary" onClick={() => setRightCollapsed((value) => !value)}>Summary</button>
+              <HelpTip label="Workbench help">Drag dividers to resize panels. Use Ctrl+Shift+L, R, or B to toggle Inputs, Summary, or Analysis. Press ? for every shortcut.</HelpTip>
+              <Button onClick={handleRunSimulation} loading={isLoading} disabled={isLoading || !validation.valid} size="sm">Calculate</Button>
+            </div>
+          </header>
+
+          <div className="relative min-h-0 flex-1" data-testid="geometry-viewport">
+            <ErrorBoundary label="3D Viewport"><SceneRoot wires={wireData} feedpoints={feedpoints} viewToggles={viewToggles} nonRadiatingLines={feederLines} patternData={patternData} currents={currents} nearField={nearField} measurementActive={measurementActive} measurementSelectedTags={measurementSelectedTags} measurementPointMode={measurementPointMode} onMeasurementWireSelect={selectMeasurementWire} /></ErrorBoundary>
+            <ViewToggleToolbar toggles={viewToggles} onToggle={handleToggle} />
+            <WireMeasurementTool wires={wireData} active={measurementActive} selectedTags={measurementSelectedTags} pointMode={measurementPointMode} onToggle={handleMeasurementToggle} onPointModeChange={setMeasurementPointMode} onClear={clearWireMeasurement} />
+            {(viewToggles.pattern || viewToggles.volumetric) && patternData && <div className="absolute left-1/2 top-2 z-10 -translate-x-1/2"><ColorScale minLabel="Minimum" maxLabel="Maximum" unit="dBi" /></div>}
+            {simStatus === "success" && result && result.frequency_data.length > 1 && <div className="absolute bottom-2 left-1/2 z-10 w-64 -translate-x-1/2"><PatternFrequencySlider /></div>}
+          </div>
+
+          {analysisCollapsed ? (
+            <button type="button" className="flex h-8 shrink-0 items-center justify-center gap-2 border-t border-border bg-surface text-[10px] font-semibold uppercase tracking-[0.14em] text-text-secondary hover:text-accent" onClick={() => setAnalysisCollapsed(false)} aria-label="Show analysis panel">Analysis and plots <span aria-hidden="true">⌃</span></button>
+          ) : (
+            <div className="flex shrink-0 flex-col" style={{ height: analysisHeight }} data-testid="workbench-analysis">
+              <PanelResizeHandle orientation="vertical" value={analysisHeight} min={180} max={420} direction={-1} label="Resize analysis panel" onChange={setAnalysisHeight} onReset={() => setAnalysisHeight(220)} />
+              <div className="flex min-h-0 flex-1 flex-col bg-surface"><div className="flex h-8 shrink-0 items-center justify-between border-b border-border px-3"><span className="text-[9px] font-semibold uppercase tracking-[0.16em] text-text-secondary">Analysis · solver outputs</span><button type="button" className="rounded px-2 py-1 text-[10px] text-text-secondary hover:bg-surface-hover hover:text-text-primary" onClick={() => setAnalysisCollapsed(true)} aria-label="Collapse analysis panel">Collapse</button></div><div className="min-h-0 flex-1"><ErrorBoundary label="Analysis results"><ResultsPanel showSummary={false} /></ErrorBoundary></div></div>
+            </div>
+          )}
+        </main>
+
+        {!rightCollapsed && <PanelResizeHandle orientation="horizontal" value={rightWidth} min={250} max={420} direction={-1} label="Resize calculated results" onChange={setRightWidth} onReset={() => setRightWidth(292)} />}
+        {rightCollapsed ? (
+          <aside className="flex w-9 shrink-0 flex-col items-center border-l border-border bg-surface py-3" aria-label="Calculated results collapsed"><button type="button" className="rounded-md p-2 text-text-secondary hover:bg-surface-hover hover:text-accent" onClick={() => setRightCollapsed(false)} title="Show calculated results (Ctrl+Shift+R)" aria-label="Show calculated results">‹</button><span className="mt-3 [writing-mode:vertical-rl] text-[9px] font-semibold uppercase tracking-[0.18em] text-text-secondary">Calculated</span></aside>
+        ) : (
+          <aside className="shrink-0 overflow-hidden border-l border-border bg-surface" style={{ width: rightWidth }} aria-label="Calculated results" data-testid="workbench-summary"><EngineeringSummaryPanel templateName={template.name} frequencyRange={frequencyRange} ground={ground} modelSegments={wireGeometry.reduce((sum, wire) => sum + wire.segments, 0)} validation={validation} /></aside>
+        )}
+      </div>}
+
       {/* Main content area */}
-      <div className="flex-1 flex overflow-hidden">
+      {!desktopWorkbench && <>
+      <div className="flex min-h-0 flex-1 overflow-hidden">
         {/* === LEFT PANEL (desktop only) === */}
-        <aside className="hidden lg:flex flex-col w-80 xl:w-96 border-r border-border bg-surface overflow-y-auto shrink-0">
+        <aside className="hidden lg:flex w-72 shrink-0 flex-col overflow-y-auto border-r border-border bg-surface">
           <div className="p-3 space-y-4 flex-1">
             <ProjectActions
               onSave={handleProjectSave}
@@ -410,7 +554,7 @@ export function SimulatorPage() {
         </main>
 
         {/* === RIGHT PANEL (desktop only) === */}
-        <aside className="hidden lg:flex flex-col w-80 xl:w-96 border-l border-border bg-surface overflow-hidden shrink-0">
+        <aside className="hidden lg:flex w-72 shrink-0 flex-col overflow-hidden border-l border-border bg-surface">
           <ErrorBoundary label="Results">
             <ResultsPanel />
           </ErrorBoundary>
@@ -504,6 +648,7 @@ export function SimulatorPage() {
           {mobileTab === "results" && <ResultsPanel />}
         </div>
       </div>
+      </>}
 
       {/* StatusBar (desktop only — mobile has essential info in overlays) */}
       <div className="hidden lg:block">

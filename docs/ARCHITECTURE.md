@@ -295,6 +295,10 @@ HF-Antenna-Studio/
 
 The tree remains a proposed destination. The experimental verified-dipole components currently live under the inherited `frontend/src/features/verified-dipole/` structure and provide migration evidence; they are not the proposed package tree.
 
+## Implemented UI-workbench checkpoint
+
+The inherited browser baseline now has an original Windows-first Simulator shell with four explicit regions: typed/model inputs, a flexible interactive geometry viewport, calculated key values, and detailed analysis tabs. Bounded resizers, collapse controls, status provenance, keyboard operation, responsive single-viewer selection, and light/dark design tokens are reusable UI infrastructure under `frontend/src/components/workspace/`. This checkpoint intentionally leaves electromagnetic contracts unchanged and does not replace the proposed packaged desktop/solver architecture below. See `docs/UI_OVERHAUL.md` and D-028.
+
 ## Reuse assessment from AntennaSim
 
 The audited AntennaSim snapshot is commit [`96e153ceefffd25819e42142d591ca811b4790d3`](https://github.com/EA1FUO/AntennaSim/tree/96e153ceefffd25819e42142d591ca811b4790d3), reviewed on 2026-08-02.

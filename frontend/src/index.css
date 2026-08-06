@@ -3,40 +3,49 @@
 @theme {
   --color-background: var(--color-background);
   --color-surface: var(--color-surface);
+  --color-surface-elevated: var(--color-surface-elevated);
   --color-surface-hover: var(--color-surface-hover);
   --color-border: var(--color-border);
   --color-text-primary: var(--color-text-primary);
   --color-text-secondary: var(--color-text-secondary);
-  --color-accent: #3B82F6;
-  --color-accent-hover: #2563EB;
-  --color-accent-glow: rgba(59, 130, 246, 0.2);
+  --color-accent: var(--app-accent);
+  --color-accent-hover: var(--app-accent-hover);
+  --color-accent-glow: var(--app-accent-glow);
   --color-swr-excellent: #10B981;
   --color-swr-good: #22C55E;
   --color-swr-warning: #F59E0B;
   --color-swr-bad: #EF4444;
-  --font-sans: "Inter", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", monospace;
+  --font-sans: "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
 }
 
 @layer base {
   /* Light theme (default) */
   :root {
-    --color-background: #F5F5F7;
-    --color-surface: #FFFFFF;
-    --color-surface-hover: #F0F0F3;
-    --color-border: #D4D4D8;
-    --color-text-primary: #18181B;
-    --color-text-secondary: #71717A;
+    --color-background: #EAF0F3;
+    --color-surface: #F8FAFB;
+    --color-surface-elevated: #FFFFFF;
+    --color-surface-hover: #E3EBEF;
+    --color-border: #B8C7D0;
+    --color-text-primary: #10212C;
+    --color-text-secondary: #526A78;
+    --app-accent: #006FAE;
+    --app-accent-hover: #005A8E;
+    --app-accent-glow: rgba(0, 111, 174, 0.2);
   }
 
   /* Dark theme */
   .dark {
-    --color-background: #0A0A0F;
-    --color-surface: #13131A;
-    --color-surface-hover: #1A1A24;
-    --color-border: #2A2A35;
-    --color-text-primary: #E8E8ED;
-    --color-text-secondary: #8888A0;
+    --color-background: #07121A;
+    --color-surface: #0D1A24;
+    --color-surface-elevated: #142632;
+    --color-surface-hover: #172A36;
+    --color-border: #29404E;
+    --color-text-primary: #EEF6FA;
+    --color-text-secondary: #9DB1BD;
+    --app-accent: #45BEF3;
+    --app-accent-hover: #68CBF6;
+    --app-accent-glow: rgba(69, 190, 243, 0.2);
   }
 
   * {
@@ -45,7 +54,7 @@
   }
 
   body {
-    font-family: "Inter", system-ui, -apple-system, sans-serif;
+    font-family: "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, sans-serif;
     background-color: var(--color-background);
     color: var(--color-text-primary);
     overflow: hidden;
@@ -53,7 +62,16 @@
 
   /* Monospace numbers */
   .font-mono {
-    font-family: "JetBrains Mono", "Fira Code", monospace;
+    font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
     font-variant-numeric: tabular-nums;
+  }
+
+  :where(button, a, input, select, textarea, [tabindex]):focus-visible {
+    outline: 2px solid var(--app-accent);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--app-accent-glow);
   }
 }

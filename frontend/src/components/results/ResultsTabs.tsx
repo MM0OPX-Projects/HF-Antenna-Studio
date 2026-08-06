@@ -29,7 +29,11 @@ const TABS = [
   { key: "match", label: "Match" },
 ];
 
-export function ResultsPanel() {
+interface ResultsPanelProps {
+  showSummary?: boolean;
+}
+
+export function ResultsPanel({ showSummary = true }: ResultsPanelProps = {}) {
   const status = useSimulationStore((s) => s.status);
   const result = useSimulationStore((s) => s.result);
   const error = useSimulationStore((s) => s.error);
@@ -144,7 +148,7 @@ export function ResultsPanel() {
         {status === "success" && result && (
           <div className="space-y-3">
             {/* Quick summary — always visible */}
-            {selectedFreqResult && (() => {
+            {showSummary && selectedFreqResult && (() => {
               const m = applyMatching(
                 selectedFreqResult.impedance.real,
                 selectedFreqResult.impedance.imag,

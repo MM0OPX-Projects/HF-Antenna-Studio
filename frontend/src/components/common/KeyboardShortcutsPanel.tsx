@@ -29,6 +29,15 @@ const SIMULATOR_SHORTCUTS: ShortcutGroup[] = [
       { keys: ["Ctrl", "Enter"], description: "Run simulation" },
     ],
   },
+  {
+    title: "Workspace",
+    shortcuts: [
+      { keys: ["Ctrl", "Shift", "L"], description: "Toggle input panel" },
+      { keys: ["Ctrl", "Shift", "R"], description: "Toggle calculated summary" },
+      { keys: ["Ctrl", "Shift", "B"], description: "Toggle analysis panel" },
+      { keys: ["?"], description: "Show keyboard shortcuts" },
+    ],
+  },
 ];
 
 const EDITOR_SHORTCUTS: ShortcutGroup[] = [
@@ -95,19 +104,25 @@ export function KeyboardShortcutsPanel({
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
       onClick={onClose}
+      role="presentation"
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="keyboard-shortcuts-title"
         className="bg-surface border border-border rounded-xl shadow-xl max-w-md w-full mx-4 max-h-[80vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between p-4 border-b border-border">
-          <h2 className="text-sm font-semibold text-text-primary">
+          <h2 id="keyboard-shortcuts-title" className="text-sm font-semibold text-text-primary">
             Keyboard Shortcuts
           </h2>
           <button
+            type="button"
             onClick={onClose}
             className="p-1 rounded-md text-text-secondary hover:text-text-primary
               hover:bg-surface-hover transition-colors"
+            aria-label="Close keyboard shortcuts"
           >
             <svg
               width="16"
@@ -161,7 +176,7 @@ export function KeyboardShortcutsPanel({
 
         <div className="p-3 border-t border-border">
           <p className="text-[10px] text-text-secondary text-center">
-            Press <kbd className="px-1 py-0.5 text-[10px] font-mono bg-background border border-border rounded">?</kbd> or <kbd className="px-1 py-0.5 text-[10px] font-mono bg-background border border-border rounded">Esc</kbd> to close
+            Press <kbd className="px-1 py-0.5 text-[10px] font-mono bg-background border border-border rounded">Esc</kbd> to close
           </p>
         </div>
       </div>

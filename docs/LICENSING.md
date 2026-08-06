@@ -240,6 +240,8 @@ The `feature/antenna-optimiser` implementation adds an original deterministic bo
 
 The `feature/measurement-comparison` implementation adds original project TypeScript, tests and documentation under GPL-3.0-or-later. It adds no parser dependency, NanoVNA code/software/sample measurement, Touchstone specification copy, third-party asset, analyser executable, dataset or network service. Documentation links to the public IBIS Touchstone specification and NanoVNA software repositories/pages for factual format provenance. User-imported measurement data remains user data and is embedded only in explicit local exports; users are responsible for rights and privacy in files they share.
 
+The `feature/ui-overhaul` implementation adds original project TypeScript, CSS, tests, documentation, and a project-authored inline waveform mark under GPL-3.0-or-later. It adds no dependency, remote font, image, artwork, icon pack, commercial screenshot, interface asset, comparator output, or network service. Windows system-font names are fallback requests rather than bundled font files. References to commercial modelling packages remain factual product context only; no exact layout, trade dress, branding, or artwork is reproduced.
+
 - Documentation must say GPL-3.0-or-later for HF Antenna Studio unless a later ADR changes it.
 - Do not call KJ7LNW/nec2c unambiguously public domain while its provenance is unresolved.
 - Do not describe a solver as “open-source and approved” until its exact source and bundle pass review.
