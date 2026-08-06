@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Added a four-slot model-comparison laboratory for dipole height, explicit-radial verticals, ideal-current phased-array phase, and three-element Yagi height under shared frequency, ground, reference-impedance, cut-plane, and sweep conditions
+- Added condition-safe compass-coordinate azimuth/elevation overlays, side-by-side gain/take-off/F-B/beamwidth/R/X/SWR metrics, three-family batched impedance sweeps, stale-result warnings, cancellable sequential calculation, and standalone offline HTML reports with exact NEC evidence
+- Added four-state example presets, stop-frequency segmentation warnings, pure comparison/report tests, and real-Wasm mixed-family browser coverage
+- Added `docs/MODEL_COMPARISON.md` with metric definitions, compatibility rules, solver lineage, report contents, critical review, and validation limitations
+
 - Added a shared segment-resolved NEC current visualisation for the Simulator, Wire Editor, verified dipole, vertical, loop/quad/hex, Yagi, and phased-array workflows, with magnitude, phase, combined, and slowed per-segment phasor modes
 - Added exact wire/tag and segment inspection with parsed XYZ position, engineering current units, phase, accessible selection, explicit normalised-scale legends, and five-family real-Wasm browser coverage
 - Added `docs/CURRENT_VISUALISATION.md` with data lineage, coordinate/animation semantics, evidence limits, test coverage, and outstanding complex-current validation work

@@ -29,6 +29,8 @@ The `feature/frequency-analyser` branch adds an impedance-only client of the sam
 
 The `feature/current-visualisation` branch makes parsed complex segment currents a shared view contract. Generic scenes consume `SegmentCurrent[]` directly, while specialist validators retain the parser's XYZ/magnitude/phase fields and adapt them without generating samples. One shared renderer provides magnitude, phase, combined, and slowed phasor-time modes plus exact segment inspection. It removes the inherited whole-wire average-flow metaphor. This is renderer-lineage evidence, not independent numerical validation of current values. See [`CURRENT_VISUALISATION.md`](CURRENT_VISUALISATION.md).
 
+The `feature/model-comparison` branch adds a four-slot result consumer over existing family models/adapters rather than another NEC compiler. One immutable condition identity covers frequency, ground constants/formulation, reference impedance, exact common cut planes, and sweep settings. Only current model/condition identities enter overlays; full grids are cut on the common 10-degree subset and transformed to compass coordinates at the view boundary. Single-port pattern decks are mechanically converted to batched `FR`/`XQ` impedance runs, while ideal two-port current excitation remains explicitly without a single input impedance. See [`MODEL_COMPARISON.md`](MODEL_COMPARISON.md).
+
 ## Why a desktop web architecture
 
 The product requires an HTML/JavaScript interface, offline operation, private local files, and dependable local native calculation on Windows 11. A desktop webview provides the desired UI technology without introducing a loopback web server, browser-origin file workarounds, Docker, Redis, or a permanently listening port.

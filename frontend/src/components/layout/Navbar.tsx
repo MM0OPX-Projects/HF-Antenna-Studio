@@ -14,6 +14,7 @@ const NAV_LINKS = [
   { to: "/", label: "Simulator", featured: false },
   { to: "/editor", label: "Wire Editor", featured: true },
   { to: "/frequency-analyser", label: "Analyser", featured: true },
+  { to: "/model-comparison", label: "Compare", featured: true },
   { to: "/verified-dipole", label: "Verified Dipole", featured: false },
   { to: "/dipole-height-lab", label: "Height Lab", featured: false },
   { to: "/antenna-templates", label: "Templates", featured: false },

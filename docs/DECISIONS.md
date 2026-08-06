@@ -30,6 +30,7 @@ Decision review date: 2026-08-02
 | D-021 | Treat initial hexbeam support as a disclosed single-band broadband-style topology | Accepted, experimental |
 | D-022 | Keep enforced ideal currents and physical TL feed networks as distinct phased-array modes | Accepted, experimental |
 | D-023 | Bind current views to parsed segment results and label every visual normalization | Accepted, experimental |
+| D-024 | Gate cross-model overlays on complete solved-condition and model identities | Accepted, experimental |
 
 ## D-001 — New repository with selective AntennaSim reuse
 
@@ -362,6 +363,19 @@ Represent three vertical configurations explicitly and never convert between the
 - Normalised geometry cannot be read as absolute current. Inspector values retain their engineering units and excitation dependency.
 - Current-specific external comparisons remain a validation gate; correct lineage alone does not establish solver accuracy.
 
+## D-024 — Cross-model overlays require complete compatibility
+
+**Decision:** A comparison result is an immutable solved snapshot whose identity includes family model, frequency, ground formulation/constants, reference impedance, and requested cut planes. A shared overlay accepts only snapshots whose current model and condition identities match exactly. Heterogeneous families reuse their existing model/adapter/result pipelines; the comparison layer may extract labelled common cuts but may not rebuild or tune their electromagnetic models.
+
+**Consequences:**
+
+- Four slots can compare families or parameter states without creating a second NEC compiler.
+- The common 10-degree cut subset prevents nominally equal controls from selecting different 2-degree/5-degree grid samples.
+- Stale and differently conditioned results remain inspectable but are visibly excluded from overlays.
+- Ideal-current phased arrays cannot acquire synthetic single-port R/X/SWR or sweep values.
+- HTML evidence records each result’s solved conditions and plots only a compatible group.
+- Comparison is a result presentation contract, not additional physical validation of its inputs.
+
 ## Second, adversarial architecture review
 
 The following review intentionally argues against the preferred architecture. “Resolution” means either a concrete architecture change/gate or a documented reason to retain the risk; it does not mean the issue has already passed testing.
@@ -414,7 +428,7 @@ The planning set uses the following single positions:
 | Offline/privacy | No ordinary-use network feature; disconnected installer/run test required |
 | Import | Loss-aware raw document plus explicit structured subset; no silent mutation |
 | Coordinates | NEC theta/phi internal; labelled/tested UI transformations |
-| Feature status | Experimental verified-dipole, height-lab, shared-template, vertical, Yagi, loop/quad/hex, phased-array, frequency-analyser, wire-editor, and shared current-visualisation slices are implemented on inherited branches; the target desktop architecture remains proposed |
+| Feature status | Experimental verified-dipole, height-lab, shared-template, vertical, Yagi, loop/quad/hex, phased-array, frequency-analyser, wire-editor, shared current-visualisation, and four-slot model-comparison slices are implemented on inherited branches; the target desktop architecture remains proposed |
 | Optimization | Deferred until validated ordinary run and parameter infrastructure |
 
 Any future change to these positions requires an ADR update plus review of architecture, solver evaluation, roadmap, validation, risks, licensing, and product claims.

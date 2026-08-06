@@ -87,6 +87,8 @@ Goal: make the validated vertical slice usable for common straight-wire antenna 
 
 Implementation checkpoint (2026-08-05): `feature/current-visualisation` implements a shared experimental segment-current renderer and inspector across the inherited browser/Wasm Simulator, Wire Editor, dipole, vertical, loop/compact-beam, Yagi, and phased-array views. It removes a whole-wire average-flow metaphor and tests real-solver segment selection in five antenna families. Phase 2 remains open: complex currents still need byte-identical external reference/package comparison, near-null phase treatment, accessibility/perception review, and packaged Windows GPU/DPI/manual testing.
 
+Implementation checkpoint (2026-08-06): `feature/model-comparison` implements a four-slot controlled-comparison consumer across dipole, explicit-radial vertical, ideal-current phased-array, and three-element Yagi models. It reuses family solver paths, gates overlays on complete condition/model identities, extracts common compass-coordinate cuts, batches single-port sweeps, and exports reproducible HTML evidence. This does not complete the generic Phase 6 comparison system: arbitrary project snapshots, persistence/import, physical-feed arrays, multi-parameter selection, per-frequency re-segmentation, packaged Windows performance, and new independent numeric references remain open.
+
 ## Phase 3 — Ground and frequency sweeps
 
 Goal: support the central HF workflows without concealing ground/model limitations.
