@@ -19,7 +19,7 @@ Decision review date: 2026-08-02
 | D-010 | Gate supported-feature and accuracy claims on independent validation | Accepted |
 | D-011 | Make v1 offline and private by construction, with no ordinary-use network feature | Accepted |
 | D-012 | Start with human-readable `.hfas` JSON and optional separately keyed result cache | Accepted |
-| D-013 | Defer parameters/optimization until the ordinary run path and metrics are validated | Accepted |
+| D-013 | Stage deterministic parameters after ordinary runs; defer optimization until objectives and constraints are validated | Accepted; parameter stage begun |
 | D-014 | Preserve a runnable AntennaSim baseline branch without selecting its Wasm architecture for the product | Accepted, baseline-only |
 | D-015 | Prove the first dipole slice with an exact displayed-deck boundary on the inherited branch | Accepted, experimental |
 | D-016 | Supersede interactive solver jobs by terminating the worker and key every result/cache entry to the exact SI model | Accepted, experimental |
@@ -31,6 +31,7 @@ Decision review date: 2026-08-02
 | D-022 | Keep enforced ideal currents and physical TL feed networks as distinct phased-array modes | Accepted, experimental |
 | D-023 | Bind current views to parsed segment results and label every visual normalization | Accepted, experimental |
 | D-024 | Gate cross-model overlays on complete solved-condition and model identities | Accepted, experimental |
+| D-025 | Permit only bounded, exact-model parameter grids before optimisation | Accepted, experimental |
 
 ## D-001 — New repository with selective AntennaSim reuse
 
@@ -376,6 +377,19 @@ Represent three vertical configurations explicitly and never convert between the
 - HTML evidence records each result’s solved conditions and plots only a compatible group.
 - Comparison is a result presentation contract, not additional physical validation of its inputs.
 
+## D-025 — Parameter exploration is a bounded exact-model job, not optimisation
+
+**Decision:** Initial parameter exploration is limited to declared same-family parameters, inclusive 1D lines, and rectangular 2D grids capped at 81 exact models. Every coordinate must regenerate and validate the existing typed family model, pass through its established NEC adapter/service/result validator, and retain the complete model key and generated deck. Jobs are sequential, cancellable, session-cached by exact model, and publish only atomically complete results. No optimiser, adaptive search, or synthetic ideal-array impedance is included.
+
+**Consequences:**
+
+- Eight parameters across dipole, elevated vertical, three-element Yagi, and ideal-current phased-array families can be explored without a second electromagnetic compiler.
+- A 192-entry memory cache improves repeated studies but is intentionally not persisted across solver/application versions.
+- Two-dimensional computation cannot exceed 9×9 or 81 jobs; these ceilings remain provisional pending packaged Windows measurements.
+- Result JSON carries the definition, every point’s parameter map/model key/deck/fingerprint, solver engine, warnings, and metrics.
+- FNV deck fingerprints are convenience integrity labels; the full model/deck is authoritative.
+- Optimisation remains behind Phase 7 validation, constraint, discontinuity, persistence, and performance gates.
+
 ## Second, adversarial architecture review
 
 The following review intentionally argues against the preferred architecture. “Resolution” means either a concrete architecture change/gate or a documented reason to retain the risk; it does not mean the issue has already passed testing.
@@ -428,7 +442,7 @@ The planning set uses the following single positions:
 | Offline/privacy | No ordinary-use network feature; disconnected installer/run test required |
 | Import | Loss-aware raw document plus explicit structured subset; no silent mutation |
 | Coordinates | NEC theta/phi internal; labelled/tested UI transformations |
-| Feature status | Experimental verified-dipole, height-lab, shared-template, vertical, Yagi, loop/quad/hex, phased-array, frequency-analyser, wire-editor, shared current-visualisation, and four-slot model-comparison slices are implemented on inherited branches; the target desktop architecture remains proposed |
+| Feature status | Experimental verified-dipole, height-lab, shared-template, vertical, Yagi, loop/quad/hex, phased-array, frequency-analyser, wire-editor, shared current-visualisation, four-slot model-comparison, and bounded parameter-sweep slices are implemented on inherited branches; the target desktop architecture remains proposed |
 | Optimization | Deferred until validated ordinary run and parameter infrastructure |
 
 Any future change to these positions requires an ADR update plus review of architecture, solver evaluation, roadmap, validation, risks, licensing, and product claims.

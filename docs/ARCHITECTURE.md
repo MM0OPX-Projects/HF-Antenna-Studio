@@ -31,6 +31,8 @@ The `feature/current-visualisation` branch makes parsed complex segment currents
 
 The `feature/model-comparison` branch adds a four-slot result consumer over existing family models/adapters rather than another NEC compiler. One immutable condition identity covers frequency, ground constants/formulation, reference impedance, exact common cut planes, and sweep settings. Only current model/condition identities enter overlays; full grids are cut on the common 10-degree subset and transformed to compass coordinates at the view boundary. Single-port pattern decks are mechanically converted to batched `FR`/`XQ` impedance runs, while ideal two-port current excitation remains explicitly without a single input impedance. See [`MODEL_COMPARISON.md`](MODEL_COMPARISON.md).
 
+The `feature/parameter-sweeps` branch adds a bounded orchestration layer over the same family model/adapter/service contracts. Inclusive 1D lines and rectangular 2D grids generate one exact typed model per coordinate, validate the coordinate against that model, execute sequentially in the existing worker boundary, and retain full model/deck provenance. A session-only 192-entry exact-model LRU cache, abort propagation, 81-job ceiling, stale-definition gating, and versioned JSON evidence prevent the sweep view from becoming a second compiler or an unbounded job system. See [`PARAMETER_SWEEPS.md`](PARAMETER_SWEEPS.md).
+
 ## Why a desktop web architecture
 
 The product requires an HTML/JavaScript interface, offline operation, private local files, and dependable local native calculation on Windows 11. A desktop webview provides the desired UI technology without introducing a loopback web server, browser-origin file workarounds, Docker, Redis, or a permanently listening port.

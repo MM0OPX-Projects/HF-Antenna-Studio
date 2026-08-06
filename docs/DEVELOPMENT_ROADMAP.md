@@ -173,6 +173,8 @@ The subsequent `feature/antenna-template-system` checkpoint adds a declarative p
 
 The `feature/yagi-beam-models` checkpoint applies the same immutable-run contract to multiple coupled element dimensions and four saved comparison traces. Geometry changes immediately, solver work is debounced for 450 ms, the active worker is terminated when superseded, stale outputs are withheld, and exact SI models key a bounded cache. It remains a single-page in-memory experiment rather than the generic persisted sweep system required by this phase.
 
+Implementation checkpoint (2026-08-06): `feature/parameter-sweeps` implements a bounded generic orchestration slice for eight declared parameters across dipole, elevated-vertical, three-element-Yagi, and ideal-current phased-array family models. It adds inclusive 1D lines, rectangular 2D grids, a strict 81-job ceiling, exact-model/deck lineage, session caching, progress, cancellation, plots/heat maps, and versioned JSON evidence. Phase 6 remains open for arbitrary template/editor parameter registration, persistent/resumable jobs, expression/dependency rules, topology/segmentation discontinuity detection, native-runner parity, established-package point sampling, and measured Windows workload budgets. Optimisation remains deferred.
+
 Goal: support rapid exploration through the same validated model compiler and solver API.
 
 ### Work
@@ -180,7 +182,7 @@ Goal: support rapid exploration through the same validated model compiler and so
 - Define a small deterministic expression language with units, dependency-cycle detection, finite bounds, and stable evaluation.
 - Add named dimensions/parameters to canonical geometry rather than UI-only mutations.
 - Add sliders with debounce, cancellation of obsolete jobs, result provenance, and visible discretization changes.
-- Add one- and multi-parameter sweep jobs, bounded grids, resumption, export, and comparison views.
+- Extend bounded one- and two-parameter jobs with resumption, persistence, arbitrary registered models, and comparison views.
 - Validate selected parameter points by independent ordinary runs and detect changes in topology/tag/segment mapping.
 
 ### Exit evidence

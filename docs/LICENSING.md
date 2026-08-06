@@ -234,6 +234,8 @@ The `feature/loop-and-hexbeam-models` implementation adds original project TypeS
 
 The `feature/phased-arrays` implementation adds original project TypeScript, tests, documentation, three application-generated exact NEC decks, and an original comparator script under GPL-3.0-or-later. The repository does not contain the 4NEC2 executable, its packaged examples, proprietary interface assets, or copied raw output. Documentation links to the public NEC-2 EX/TL/GN card reference for factual solver semantics. The recorded executable description, hashes, and short numeric results are factual validation metadata and do not imply 4NEC2 endorsement. A future package-authored model or published result must receive a separate provenance/copyright review before inclusion.
 
+The `feature/parameter-sweeps` implementation adds original project TypeScript, tests, and documentation under GPL-3.0-or-later. It introduces no dependency, external artwork, dataset, reference deck, comparator output, executable, or network service. Exported result JSON contains only user/application-generated model and NEC evidence. Existing family references and solver provenance retain their current review status; orchestration tests are not represented as new independent electromagnetic validation.
+
 - Documentation must say GPL-3.0-or-later for HF Antenna Studio unless a later ADR changes it.
 - Do not call KJ7LNW/nec2c unambiguously public domain while its provenance is unresolved.
 - Do not describe a solver as “open-source and approved” until its exact source and bundle pass review.

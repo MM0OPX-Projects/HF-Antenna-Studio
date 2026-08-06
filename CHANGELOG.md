@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Added bounded one-dimensional and two-dimensional parameter sweeps for dipole height/length, vertical length/radial count, Yagi director spacing/height, and phased-array spacing/phase
+- Added sequential cancellable worker orchestration, exact-model LRU caching, 81-job protection, metric line plots, numeric heat maps, full point lineage, and versioned local reproducibility JSON export
+- Added pure grid/model/cache/cancellation/evidence tests, real-Wasm dipole and vertical browser studies, and `docs/PARAMETER_SWEEPS.md`
+
 - Added a four-slot model-comparison laboratory for dipole height, explicit-radial verticals, ideal-current phased-array phase, and three-element Yagi height under shared frequency, ground, reference-impedance, cut-plane, and sweep conditions
 - Added condition-safe compass-coordinate azimuth/elevation overlays, side-by-side gain/take-off/F-B/beamwidth/R/X/SWR metrics, three-family batched impedance sweeps, stale-result warnings, cancellable sequential calculation, and standalone offline HTML reports with exact NEC evidence
 - Added four-state example presets, stop-frequency segmentation warnings, pure comparison/report tests, and real-Wasm mixed-family browser coverage
