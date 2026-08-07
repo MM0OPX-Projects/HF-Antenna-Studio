@@ -33,7 +33,7 @@
     "targets": ["nsis"],
     "publisher": "MM0OPX Projects",
     "copyright": "Copyright HF Antenna Studio contributors",
-    "category": "Science",
+    "category": "Utility",
     "shortDescription": "Local NEC-based HF antenna modelling",
     "longDescription": "HF Antenna Studio is an offline-capable antenna modelling application for Windows 11 using a bundled, validated nec2c WebAssembly solver.",
     "license": "GPL-3.0-or-later",

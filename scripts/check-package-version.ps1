@@ -23,4 +23,29 @@ foreach ($entry in $versions.GetEnumerator()) {
     }
 }
 
+$validBundleCategories = @(
+    "Business", "DeveloperTool", "Education", "Entertainment", "Finance", "Game",
+    "ActionGame", "AdventureGame", "ArcadeGame", "BoardGame", "CardGame", "CasinoGame",
+    "DiceGame", "EducationalGame", "FamilyGame", "KidsGame", "MusicGame", "PuzzleGame",
+    "RacingGame", "RolePlayingGame", "SimulationGame", "SportsGame", "StrategyGame",
+    "TriviaGame", "WordGame", "GraphicsAndDesign", "HealthcareAndFitness", "Lifestyle",
+    "Medical", "Music", "News", "Photography", "Productivity", "Reference",
+    "SocialNetworking", "Sports", "Travel", "Utility", "Video", "Weather"
+)
+if ($tauri.bundle.category -notin $validBundleCategories) {
+    throw "Unsupported Tauri bundle category: $($tauri.bundle.category)."
+}
+
+foreach ($hookName in @("beforeBuildCommand", "beforeDevCommand")) {
+    $hook = [string]$tauri.build.$hookName
+    $pathMatch = [regex]::Match($hook, '-File\s+(?:"([^"]+)"|([^\s]+))')
+    if (-not $pathMatch.Success) {
+        throw "$hookName must invoke a repository-local PowerShell file."
+    }
+    $hookPath = if ($pathMatch.Groups[1].Success) { $pathMatch.Groups[1].Value } else { $pathMatch.Groups[2].Value }
+    if (-not (Test-Path -LiteralPath (Join-Path $repoRoot $hookPath) -PathType Leaf)) {
+        throw "$hookName path does not resolve from the repository root: $hookPath"
+    }
+}
+
 Write-Host "Package versions are synchronized at $expected."
