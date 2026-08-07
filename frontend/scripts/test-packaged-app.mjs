@@ -9,9 +9,19 @@ const storageKey = "hfas-package-uninstall-preservation-sentinel";
 const storageValue = "preserve-project-profile-data";
 
 const browser = await chromium.connectOverCDP(cdpUrl);
-const context = browser.contexts()[0];
-if (!context) throw new Error("The packaged WebView2 runtime exposed no browser context.");
-const page = context.pages()[0] ?? await context.waitForEvent("page");
+const pageDeadline = Date.now() + 15_000;
+let page;
+do {
+  page = browser.contexts()
+    .flatMap((candidate) => candidate.pages())
+    .find((candidate) => candidate.url() !== "about:blank");
+  if (!page) await new Promise((resolve) => setTimeout(resolve, 100));
+} while (!page && Date.now() < pageDeadline);
+if (!page) {
+  const targets = browser.contexts().flatMap((candidate) => candidate.pages()).map((candidate) => candidate.url());
+  throw new Error(`The packaged WebView2 runtime exposed no application page; targets: ${targets.join(", ") || "none"}.`);
+}
+const context = page.context();
 const externalRequests = [];
 page.on("request", (request) => {
   const url = new URL(request.url());
