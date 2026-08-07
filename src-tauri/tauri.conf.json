@@ -4,8 +4,8 @@
   "version": "1.4.2",
   "identifier": "uk.co.mm0opx.hfantennastudio",
   "build": {
-    "beforeBuildCommand": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File ../scripts/build-desktop-frontend.ps1",
-    "beforeDevCommand": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File ../scripts/start-desktop-frontend.ps1",
+    "beforeBuildCommand": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/build-desktop-frontend.ps1",
+    "beforeDevCommand": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/start-desktop-frontend.ps1",
     "devUrl": "http://127.0.0.1:5173",
     "frontendDist": "../frontend/dist"
   },
