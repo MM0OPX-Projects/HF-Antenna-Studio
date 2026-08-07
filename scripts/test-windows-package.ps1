@@ -19,6 +19,8 @@ $startMenuRoots = @(
     (Join-Path $env:APPDATA "Microsoft\Windows\Start Menu\Programs"),
     (Join-Path $env:ProgramData "Microsoft\Windows\Start Menu\Programs")
 )
+$debugPolicyPath = "HKCU:\Software\Policies\Microsoft\Edge\WebView2\AdditionalBrowserArguments"
+$debugPolicyName = "hf-antenna-studio.exe"
 $appProcess = $null
 
 function Find-UninstallEntry {
@@ -50,6 +52,8 @@ function Find-StartMenuShortcut {
 function Invoke-PackagedWebViewTest([string]$applicationPath, [string]$phase) {
     $script:appProcess = $null
     $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = "--remote-debugging-port=9222"
+    New-Item -Path $debugPolicyPath -Force | Out-Null
+    New-ItemProperty -Path $debugPolicyPath -Name $debugPolicyName -Value "--remote-debugging-port=9222" -PropertyType String -Force | Out-Null
     $script:appProcess = Start-Process -FilePath $applicationPath -PassThru
     $deadline = (Get-Date).AddSeconds(30)
     $debugReady = $false
@@ -62,7 +66,21 @@ function Invoke-PackagedWebViewTest([string]$applicationPath, [string]$phase) {
             $debugReady = $false
         }
     } while (-not $debugReady -and (Get-Date) -lt $deadline -and -not $script:appProcess.HasExited)
-    if (-not $debugReady) { throw "The packaged WebView2 application did not expose its test debugging endpoint." }
+    if (-not $debugReady) {
+        $processState = if ($script:appProcess.HasExited) {
+            "host exited with code $($script:appProcess.ExitCode)"
+        } else {
+            "host remained running"
+        }
+        $logPath = Join-Path $dataRoot "logs\hf-antenna-studio.log"
+        $logTail = if (Test-Path -LiteralPath $logPath -PathType Leaf) {
+            (Get-Content -LiteralPath $logPath -Tail 12) -join " | "
+        } else {
+            "no native diagnostic log was created"
+        }
+        $webViewCount = @(Get-Process -Name "msedgewebview2" -ErrorAction SilentlyContinue).Count
+        throw "The packaged WebView2 application did not expose its test debugging endpoint; $processState; WebView2 process count $webViewCount; log: $logTail"
+    }
 
     $env:HFAS_CDP_URL = "http://127.0.0.1:9222"
     $env:HFAS_PACKAGE_PHASE = $phase
@@ -75,6 +93,7 @@ function Invoke-PackagedWebViewTest([string]$applicationPath, [string]$phase) {
         $script:appProcess.WaitForExit()
     }
     $script:appProcess = $null
+    Remove-ItemProperty -Path $debugPolicyPath -Name $debugPolicyName -ErrorAction SilentlyContinue
     Start-Sleep -Seconds 1
 }
 
@@ -139,6 +158,7 @@ try {
 
     Write-Host "Packaged Windows test passed: install, launch, offline solver, logs, uninstall, reinstall, and WebView project-profile preservation."
 } finally {
+    Remove-ItemProperty -Path $debugPolicyPath -Name $debugPolicyName -ErrorAction SilentlyContinue
     if ($appProcess -and -not $appProcess.HasExited) {
         Stop-Process -Id $appProcess.Id -Force -ErrorAction SilentlyContinue
     }

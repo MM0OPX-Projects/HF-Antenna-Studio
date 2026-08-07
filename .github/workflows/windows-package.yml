@@ -59,6 +59,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
+          cache-on-failure: true
 
       - name: Build Windows NSIS test installer
         shell: powershell
@@ -71,6 +72,7 @@ jobs:
           & .\scripts\test-windows-package.ps1 -InstallerPath $installer
 
       - name: Upload distributable test build
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: hf-antenna-studio-${{ github.sha }}-windows-x64-test
