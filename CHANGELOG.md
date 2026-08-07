@@ -99,6 +99,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Changed
 
 - Replaced the four 3D compass labels' runtime font worker/CDN fallback with local canvas textures so strict-CSP Windows packages render them offline without generating an unhandled worker error
+- Pinned tracked NEC validation decks to LF line endings so their reviewed SHA-256 identities remain byte-exact on Windows checkouts
 
 - Replaced the legacy wire-average “Flow” particles with animation derived independently from each parsed NEC segment-current phasor, avoiding an unsupported travelling-current implication
 
