@@ -8,7 +8,7 @@ if (!expectedVersion) throw new Error("HFAS_EXPECTED_VERSION is required.");
 const storageKey = "hfas-package-uninstall-preservation-sentinel";
 const storageValue = "preserve-project-profile-data";
 
-const browser = await chromium.connectOverCDP(cdpUrl);
+const browser = await chromium.connectOverCDP(cdpUrl, { timeout: 60_000 });
 const pageDeadline = Date.now() + 15_000;
 let page;
 do {

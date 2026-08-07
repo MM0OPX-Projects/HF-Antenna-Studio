@@ -108,13 +108,19 @@ function Invoke-PackagedWebViewTest([string]$applicationPath, [string]$phase) {
     $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = "--remote-debugging-port=9222"
     Enable-WebViewDebugPolicy
     $script:appProcess = Start-Process -FilePath $applicationPath -PassThru
-    $deadline = (Get-Date).AddSeconds(30)
+    $deadline = (Get-Date).AddSeconds(60)
     $debugReady = $false
+    $targetSummary = "no debugging targets"
     do {
         Start-Sleep -Milliseconds 500
         try {
-            $null = Invoke-RestMethod -Uri "http://127.0.0.1:9222/json/version" -TimeoutSec 2
-            $debugReady = $true
+            $targets = @(Invoke-RestMethod -Uri "http://127.0.0.1:9222/json/list" -TimeoutSec 2)
+            $targetSummary = ($targets | ForEach-Object { "$($_.type):$($_.url)" }) -join ", "
+            $debugReady = @($targets | Where-Object {
+                $_.type -eq "page" -and
+                $_.url -ne "about:blank" -and
+                ($_.url -match "tauri" -or $_.url -match "localhost")
+            }).Count -gt 0
         } catch {
             $debugReady = $false
         }
@@ -131,7 +137,7 @@ function Invoke-PackagedWebViewTest([string]$applicationPath, [string]$phase) {
             "no native diagnostic log was created"
         }
         $webViewCount = @(Get-Process -Name "msedgewebview2" -ErrorAction SilentlyContinue).Count
-        throw "The packaged WebView2 application did not expose its test debugging endpoint; $processState; WebView2 process count $webViewCount; log: $logTail"
+        throw "The packaged WebView2 application did not expose a ready application target; $processState; WebView2 process count $webViewCount; targets: $targetSummary; log: $logTail"
     }
 
     $env:HFAS_CDP_URL = "http://127.0.0.1:9222"
