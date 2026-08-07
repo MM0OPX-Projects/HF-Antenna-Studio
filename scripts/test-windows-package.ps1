@@ -15,6 +15,10 @@ $uninstallRoots = @(
 )
 $dataRoot = Join-Path $env:LOCALAPPDATA "uk.co.mm0opx.hfantennastudio"
 $sentinel = Join-Path $dataRoot "package-uninstall-preservation-sentinel.txt"
+$startMenuRoots = @(
+    (Join-Path $env:APPDATA "Microsoft\Windows\Start Menu\Programs"),
+    (Join-Path $env:ProgramData "Microsoft\Windows\Start Menu\Programs")
+)
 $appProcess = $null
 
 function Find-UninstallEntry {
@@ -31,6 +35,16 @@ function Executable-FromCommand([string]$command) {
     $quoted = [regex]::Match($command, '^"([^"]+)"')
     if ($quoted.Success) { return $quoted.Groups[1].Value }
     return ($command -split '\s+')[0]
+}
+
+function Find-StartMenuShortcut {
+    foreach ($root in $startMenuRoots) {
+        if (-not (Test-Path -LiteralPath $root -PathType Container)) { continue }
+        $shortcut = Get-ChildItem -LiteralPath $root -Filter "HF Antenna Studio.lnk" -File -Recurse |
+            Select-Object -First 1
+        if ($shortcut) { return $shortcut }
+    }
+    return $null
 }
 
 function Invoke-PackagedWebViewTest([string]$applicationPath, [string]$phase) {
@@ -84,8 +98,10 @@ try {
         throw "Registered uninstaller does not exist: $uninstaller"
     }
     $installDirectory = Split-Path -Parent $uninstaller
-    $application = Get-ChildItem -LiteralPath $installDirectory -Filter "HF Antenna Studio.exe" -File -Recurse | Select-Object -First 1
+    $application = Get-ChildItem -LiteralPath $installDirectory -Filter "hf-antenna-studio.exe" -File -Recurse | Select-Object -First 1
     if (-not $application) { throw "Installed application launcher was not found below $installDirectory." }
+    $startMenuShortcut = Find-StartMenuShortcut
+    if (-not $startMenuShortcut) { throw "HF Antenna Studio Start-menu shortcut was not created." }
 
     New-Item -ItemType Directory -Path $dataRoot -Force | Out-Null
     Set-Content -LiteralPath $sentinel -Value "Preserve user project data across uninstall." -Encoding utf8
@@ -100,6 +116,7 @@ try {
     $uninstall = Start-Process -FilePath $uninstaller -ArgumentList "/S" -Wait -PassThru
     if ($uninstall.ExitCode -ne 0) { throw "Uninstaller exited with code $($uninstall.ExitCode)." }
     if (Test-Path -LiteralPath $application.FullName) { throw "Application launcher remains after uninstall." }
+    if (Test-Path -LiteralPath $startMenuShortcut.FullName) { throw "Start-menu shortcut remains after uninstall." }
     if (-not (Test-Path -LiteralPath $sentinel -PathType Leaf)) {
         throw "Uninstall removed the user-data preservation sentinel."
     }
@@ -110,12 +127,15 @@ try {
     if (-not $secondEntry) { throw "Reinstall did not restore uninstall registration." }
     $secondUninstaller = Executable-FromCommand ([string]$secondEntry.UninstallString)
     $secondInstallDirectory = Split-Path -Parent $secondUninstaller
-    $secondApplication = Get-ChildItem -LiteralPath $secondInstallDirectory -Filter "HF Antenna Studio.exe" -File -Recurse | Select-Object -First 1
+    $secondApplication = Get-ChildItem -LiteralPath $secondInstallDirectory -Filter "hf-antenna-studio.exe" -File -Recurse | Select-Object -First 1
     if (-not $secondApplication) { throw "Reinstalled application launcher was not found." }
+    $secondStartMenuShortcut = Find-StartMenuShortcut
+    if (-not $secondStartMenuShortcut) { throw "Reinstall did not restore the Start-menu shortcut." }
     Invoke-PackagedWebViewTest $secondApplication.FullName "verify-preserved"
     $secondUninstall = Start-Process -FilePath $secondUninstaller -ArgumentList "/S" -Wait -PassThru
     if ($secondUninstall.ExitCode -ne 0) { throw "Second uninstaller exited with code $($secondUninstall.ExitCode)." }
     if (Test-Path -LiteralPath $secondApplication.FullName) { throw "Application launcher remains after final uninstall." }
+    if (Test-Path -LiteralPath $secondStartMenuShortcut.FullName) { throw "Start-menu shortcut remains after final uninstall." }
 
     Write-Host "Packaged Windows test passed: install, launch, offline solver, logs, uninstall, reinstall, and WebView project-profile preservation."
 } finally {
