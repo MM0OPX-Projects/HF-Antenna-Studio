@@ -19,7 +19,16 @@ $startMenuRoots = @(
     (Join-Path $env:APPDATA "Microsoft\Windows\Start Menu\Programs"),
     (Join-Path $env:ProgramData "Microsoft\Windows\Start Menu\Programs")
 )
-$debugPolicyPath = "HKCU:\Software\Policies\Microsoft\Edge\WebView2\AdditionalBrowserArguments"
+$debugPolicySubpath = "Software\Policies\Microsoft\Edge\WebView2\AdditionalBrowserArguments"
+$isAdministrator = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole(
+    [Security.Principal.WindowsBuiltInRole]::Administrator
+)
+$debugPolicyPaths = @("HKCU:\$debugPolicySubpath")
+if ($isAdministrator) {
+    # WebView2 checks HKLM before HKCU. Elevated GitHub runners therefore need
+    # the same temporary override at the machine-policy precedence level.
+    $debugPolicyPaths = @("HKLM:\$debugPolicySubpath") + $debugPolicyPaths
+}
 $debugPolicyNames = @(
     "uk.co.mm0opx.hfantennastudio",
     "hf-antenna-studio.exe",
@@ -31,26 +40,32 @@ $appProcess = $null
 
 function Enable-WebViewDebugPolicy {
     $script:debugPolicyOriginal = @{}
-    New-Item -Path $debugPolicyPath -Force | Out-Null
-    foreach ($debugPolicyName in $debugPolicyNames) {
-        try {
-            $value = Get-ItemPropertyValue -Path $debugPolicyPath -Name $debugPolicyName -ErrorAction Stop
-            $script:debugPolicyOriginal[$debugPolicyName] = @{ Exists = $true; Value = [string]$value }
-        } catch {
-            $script:debugPolicyOriginal[$debugPolicyName] = @{ Exists = $false; Value = $null }
+    foreach ($debugPolicyPath in $debugPolicyPaths) {
+        New-Item -Path $debugPolicyPath -Force | Out-Null
+        foreach ($debugPolicyName in $debugPolicyNames) {
+            $stateKey = "$debugPolicyPath|$debugPolicyName"
+            try {
+                $value = Get-ItemPropertyValue -Path $debugPolicyPath -Name $debugPolicyName -ErrorAction Stop
+                $script:debugPolicyOriginal[$stateKey] = @{ Exists = $true; Value = [string]$value }
+            } catch {
+                $script:debugPolicyOriginal[$stateKey] = @{ Exists = $false; Value = $null }
+            }
+            New-ItemProperty -Path $debugPolicyPath -Name $debugPolicyName -Value "--remote-debugging-port=9222" -PropertyType String -Force | Out-Null
         }
-        New-ItemProperty -Path $debugPolicyPath -Name $debugPolicyName -Value "--remote-debugging-port=9222" -PropertyType String -Force | Out-Null
     }
 }
 
 function Restore-WebViewDebugPolicy {
     if ($script:debugPolicyOriginal.Count -eq 0) { return }
-    foreach ($debugPolicyName in $debugPolicyNames) {
-        $original = $script:debugPolicyOriginal[$debugPolicyName]
-        if ($original -and $original.Exists) {
-            New-ItemProperty -Path $debugPolicyPath -Name $debugPolicyName -Value $original.Value -PropertyType String -Force | Out-Null
-        } else {
-            Remove-ItemProperty -Path $debugPolicyPath -Name $debugPolicyName -ErrorAction SilentlyContinue
+    foreach ($debugPolicyPath in $debugPolicyPaths) {
+        foreach ($debugPolicyName in $debugPolicyNames) {
+            $stateKey = "$debugPolicyPath|$debugPolicyName"
+            $original = $script:debugPolicyOriginal[$stateKey]
+            if ($original -and $original.Exists) {
+                New-ItemProperty -Path $debugPolicyPath -Name $debugPolicyName -Value $original.Value -PropertyType String -Force | Out-Null
+            } else {
+                Remove-ItemProperty -Path $debugPolicyPath -Name $debugPolicyName -ErrorAction SilentlyContinue
+            }
         }
     }
     $script:debugPolicyOriginal = @{}
