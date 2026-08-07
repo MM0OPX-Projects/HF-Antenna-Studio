@@ -100,7 +100,7 @@ Build requirements are for maintainers/CI only, never end users:
 - Windows 11 x64;
 - Node.js 24.14.0 and npm 11;
 - Rust 1.90.0 with the MSVC target and Visual Studio C++ Build Tools;
-- Tauri CLI 2.11.2;
+- Tauri CLI 2.11.2, installed from the exact npm lockfile by `npm ci`;
 - Emscripten 3.1.56; and
 - recursively checked-out solver submodule.
 
@@ -111,7 +111,6 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\build-wasm.ps1
 Set-Location .\frontend
 npm ci
 Set-Location ..
-cargo install tauri-cli --version 2.11.2 --locked
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\package-windows.ps1 -SkipDependencyInstall
 ```
 
@@ -145,3 +144,4 @@ The workflow artifact is a test build, retained for 14 days. It is unsigned. Sma
 - Logs are bounded operational diagnostics, not a complete raw solver-output archive.
 - Automatic updating is deliberately absent; normal operation makes no update/network request.
 - Installer repair, in-place downgrade, multi-user installation, and ARM64 packages are not yet supported claims.
+- `npm audit` currently reports the React Router RSC-mode CSRF advisory (GHSA-qwww-vcr4-c8h2). This package is a client-only `BrowserRouter` application with no RSC/action server, so the affected execution path is absent; update to a fixed compatible v7 release when the vendor publishes one instead of downgrading to versions with older client-routing advisories.

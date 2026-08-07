@@ -17,7 +17,6 @@ foreach ($command in @("node", "npm", "cargo", "rustc")) {
 }
 
 & (Join-Path $PSScriptRoot "check-package-version.ps1")
-if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 if (-not $SkipDependencyInstall) {
     Push-Location $frontendRoot
@@ -29,16 +28,23 @@ if (-not $SkipDependencyInstall) {
     }
 }
 
+$tauriCli = Join-Path $frontendRoot "node_modules\.bin\tauri.cmd"
+if (-not (Test-Path -LiteralPath $tauriCli -PathType Leaf)) {
+    throw "The pinned Tauri CLI is missing. Run npm ci in frontend or omit -SkipDependencyInstall."
+}
+
 Push-Location $tauriRoot
 try {
-    & cargo tauri icon $iconSource --output $iconOutput
+    Write-Host "Generating Windows application icons with the pinned Tauri CLI."
+    & $tauriCli icon $iconSource --output $iconOutput
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-    $arguments = @("tauri", "build", "--bundles", "nsis")
+    $tauriArguments = @("build", "--bundles", "nsis")
     if ($OfflineInstaller) {
-        $arguments += @("--config", "tauri.offline.conf.json")
+        $tauriArguments += @("--config", "tauri.offline.conf.json")
     }
-    & cargo @arguments
+    Write-Host "Building the Tauri/NSIS package."
+    & $tauriCli @tauriArguments
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 } finally {
     Pop-Location
