@@ -15,7 +15,7 @@ const page = context.pages()[0] ?? await context.waitForEvent("page");
 const externalRequests = [];
 page.on("request", (request) => {
   const url = new URL(request.url());
-  if (["http:", "https:"].includes(url.protocol) && !["tauri.localhost", "127.0.0.1"].includes(url.hostname)) {
+  if (["http:", "https:"].includes(url.protocol) && !["tauri.localhost", "ipc.localhost", "127.0.0.1"].includes(url.hostname)) {
     externalRequests.push(request.url());
   }
 });
@@ -33,10 +33,10 @@ const runtime = await page.evaluate(async () => window.__TAURI__.core.invoke("ge
 if (!runtime.packaged || runtime.version !== expectedVersion) {
   throw new Error(`Unexpected packaged runtime identity: ${JSON.stringify(runtime)}`);
 }
-await page.evaluate(async () => window.__TAURI__.core.invoke("append_diagnostic_log", {
+await page.evaluate(async (testPhase) => window.__TAURI__.core.invoke("append_diagnostic_log", {
   level: "info",
-  message: `Packaged application smoke test phase: ${phase}`,
-}));
+  message: `Packaged application smoke test phase: ${testPhase}`,
+}), phase);
 
 if (phase === "initial") {
   await page.evaluate(({ key, value }) => localStorage.setItem(key, value), { key: storageKey, value: storageValue });

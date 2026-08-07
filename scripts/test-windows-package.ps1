@@ -20,8 +20,41 @@ $startMenuRoots = @(
     (Join-Path $env:ProgramData "Microsoft\Windows\Start Menu\Programs")
 )
 $debugPolicyPath = "HKCU:\Software\Policies\Microsoft\Edge\WebView2\AdditionalBrowserArguments"
-$debugPolicyName = "hf-antenna-studio.exe"
+$debugPolicyNames = @(
+    "uk.co.mm0opx.hfantennastudio",
+    "hf-antenna-studio.exe",
+    "*"
+)
+$debugPolicyOriginal = @{}
+$originalWebViewArguments = [Environment]::GetEnvironmentVariable("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS", "Process")
 $appProcess = $null
+
+function Enable-WebViewDebugPolicy {
+    $script:debugPolicyOriginal = @{}
+    New-Item -Path $debugPolicyPath -Force | Out-Null
+    foreach ($debugPolicyName in $debugPolicyNames) {
+        try {
+            $value = Get-ItemPropertyValue -Path $debugPolicyPath -Name $debugPolicyName -ErrorAction Stop
+            $script:debugPolicyOriginal[$debugPolicyName] = @{ Exists = $true; Value = [string]$value }
+        } catch {
+            $script:debugPolicyOriginal[$debugPolicyName] = @{ Exists = $false; Value = $null }
+        }
+        New-ItemProperty -Path $debugPolicyPath -Name $debugPolicyName -Value "--remote-debugging-port=9222" -PropertyType String -Force | Out-Null
+    }
+}
+
+function Restore-WebViewDebugPolicy {
+    if ($script:debugPolicyOriginal.Count -eq 0) { return }
+    foreach ($debugPolicyName in $debugPolicyNames) {
+        $original = $script:debugPolicyOriginal[$debugPolicyName]
+        if ($original -and $original.Exists) {
+            New-ItemProperty -Path $debugPolicyPath -Name $debugPolicyName -Value $original.Value -PropertyType String -Force | Out-Null
+        } else {
+            Remove-ItemProperty -Path $debugPolicyPath -Name $debugPolicyName -ErrorAction SilentlyContinue
+        }
+    }
+    $script:debugPolicyOriginal = @{}
+}
 
 function Find-UninstallEntry {
     foreach ($root in $uninstallRoots) {
@@ -51,9 +84,14 @@ function Find-StartMenuShortcut {
 
 function Invoke-PackagedWebViewTest([string]$applicationPath, [string]$phase) {
     $script:appProcess = $null
+    $logPath = Join-Path $dataRoot "logs\hf-antenna-studio.log"
+    $logLinesBeforeLaunch = if (Test-Path -LiteralPath $logPath -PathType Leaf) {
+        @(Get-Content -LiteralPath $logPath).Count
+    } else {
+        0
+    }
     $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = "--remote-debugging-port=9222"
-    New-Item -Path $debugPolicyPath -Force | Out-Null
-    New-ItemProperty -Path $debugPolicyPath -Name $debugPolicyName -Value "--remote-debugging-port=9222" -PropertyType String -Force | Out-Null
+    Enable-WebViewDebugPolicy
     $script:appProcess = Start-Process -FilePath $applicationPath -PassThru
     $deadline = (Get-Date).AddSeconds(30)
     $debugReady = $false
@@ -72,7 +110,6 @@ function Invoke-PackagedWebViewTest([string]$applicationPath, [string]$phase) {
         } else {
             "host remained running"
         }
-        $logPath = Join-Path $dataRoot "logs\hf-antenna-studio.log"
         $logTail = if (Test-Path -LiteralPath $logPath -PathType Leaf) {
             (Get-Content -LiteralPath $logPath -Tail 12) -join " | "
         } else {
@@ -88,12 +125,22 @@ function Invoke-PackagedWebViewTest([string]$applicationPath, [string]$phase) {
     & $NodePath (Join-Path $repoRoot "frontend\scripts\test-packaged-app.mjs")
     if ($LASTEXITCODE -ne 0) { throw "Packaged application $phase test failed with exit code $LASTEXITCODE." }
 
+    $newLogLines = if (Test-Path -LiteralPath $logPath -PathType Leaf) {
+        @(Get-Content -LiteralPath $logPath | Select-Object -Skip $logLinesBeforeLaunch)
+    } else {
+        @()
+    }
+    $newErrors = @($newLogLines | Where-Object { $_ -match '\[ERROR\]' })
+    if ($newErrors.Count -gt 0) {
+        throw "Packaged application $phase emitted diagnostic errors: $($newErrors -join ' | ')"
+    }
+
     if (-not $script:appProcess.HasExited) {
         Stop-Process -Id $script:appProcess.Id -Force
         $script:appProcess.WaitForExit()
     }
     $script:appProcess = $null
-    Remove-ItemProperty -Path $debugPolicyPath -Name $debugPolicyName -ErrorAction SilentlyContinue
+    Restore-WebViewDebugPolicy
     Start-Sleep -Seconds 1
 }
 
@@ -158,7 +205,8 @@ try {
 
     Write-Host "Packaged Windows test passed: install, launch, offline solver, logs, uninstall, reinstall, and WebView project-profile preservation."
 } finally {
-    Remove-ItemProperty -Path $debugPolicyPath -Name $debugPolicyName -ErrorAction SilentlyContinue
+    Restore-WebViewDebugPolicy
+    [Environment]::SetEnvironmentVariable("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS", $originalWebViewArguments, "Process")
     if ($appProcess -and -not $appProcess.HasExited) {
         Stop-Process -Id $appProcess.Id -Force -ErrorAction SilentlyContinue
     }

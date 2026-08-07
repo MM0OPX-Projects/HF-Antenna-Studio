@@ -1,6 +1,42 @@
-import { Text } from "@react-three/drei";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
+import { CanvasTexture } from "three";
 import { useUIStore } from "../../stores/uiStore";
+
+function CardinalLabel({
+  text,
+  color,
+  position,
+  size,
+}: {
+  text: string;
+  color: string;
+  position: [number, number, number];
+  size: number;
+}) {
+  const texture = useMemo(() => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 128;
+    canvas.height = 128;
+    const context = canvas.getContext("2d");
+    if (!context) return null;
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = color;
+    context.font = "700 88px system-ui, sans-serif";
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+    context.fillText(text, canvas.width / 2, canvas.height / 2 + 3);
+    return new CanvasTexture(canvas);
+  }, [color, text]);
+
+  useEffect(() => () => texture?.dispose(), [texture]);
+  if (!texture) return null;
+
+  return (
+    <sprite position={position} scale={[size * 1.8, size * 1.8, 1]} renderOrder={2}>
+      <spriteMaterial map={texture} transparent depthWrite={false} />
+    </sprite>
+  );
+}
 
 /**
  * Compass rose on the ground plane showing N/S/E/W with degree markings.
@@ -46,18 +82,13 @@ export function CompassRose({ radius = 20 }: CompassRoseProps) {
         const x = Math.sin(rad) * (radius + labelOffset);
         const z = -Math.cos(rad) * (radius + labelOffset);
         return (
-          <Text
+          <CardinalLabel
             key={text}
             position={[x, radius * 0.0025, z]}
-            rotation={[-Math.PI / 2, 0, 0]}
-            fontSize={fontSize}
+            size={fontSize}
             color={color}
-            anchorX="center"
-            anchorY="middle"
-            font={undefined}
-          >
-            {text}
-          </Text>
+            text={text}
+          />
         );
       })}
 

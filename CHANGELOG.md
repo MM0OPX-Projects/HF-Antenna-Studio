@@ -98,6 +98,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- Replaced the four 3D compass labels' runtime font worker/CDN fallback with local canvas textures so strict-CSP Windows packages render them offline without generating an unhandled worker error
+
 - Replaced the legacy wire-average “Flow” particles with animation derived independently from each parsed NEC segment-current phasor, avoiding an unsupported travelling-current implication
 
 - Updated compatible frontend dependencies and declared the directly imported `three-stdlib` package
