@@ -2,12 +2,21 @@
 
 # Deployment
 
+> HF Antenna Studio's supported Windows test-distribution path is the local Tauri/NSIS package described in [Windows 11 Packaging](WINDOWS_PACKAGING.md). The inherited Docker and GitHub Pages material below is retained for AntennaSim provenance and compatibility testing; it is not the preferred single-user Windows installation.
+
 AntennaSim runs two ways: self-hosted with Docker (backend + Redis) or fully static via WebAssembly on GitHub Pages.
 
 ## Table of Contents
 
+- [Windows 11 application package](#windows-11-application-package)
 - [GitHub Pages (WebAssembly)](#github-pages-webassembly)
 - [Production Deployment](#production-deployment)
+
+---
+
+## Windows 11 application package
+
+The package embeds the same production Wasm frontend in a small Tauri host, creates a Start-menu launcher, registers a per-user uninstaller, writes local diagnostic logs, and requires no service or normal-use network connection. End users install only the generated `HF Antenna Studio_*_x64-setup.exe`. Maintainer commands, clean-runner acceptance, WebView2 options, project-data policy, and troubleshooting are documented in [WINDOWS_PACKAGING.md](WINDOWS_PACKAGING.md).
 
 ---
 

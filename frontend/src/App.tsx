@@ -4,6 +4,7 @@ import { ChangelogPopup } from "./components/ui/ChangelogPopup";
 import { AppRoutes } from "./routes";
 import { useUIStore } from "./stores/uiStore";
 import { ProjectSessionProvider } from "./features/project-management/ProjectSessionProvider";
+import { initialiseDesktopDiagnostics } from "./platform/desktop-runtime";
 
 /** Basename for the router — matches Vite's base path (e.g. "/AntennaSim/" on GitHub Pages). */
 const basename = import.meta.env.BASE_URL;
@@ -20,6 +21,8 @@ export function App() {
       root.classList.remove("dark");
     }
   }, [theme]);
+
+  useEffect(() => initialiseDesktopDiagnostics(), []);
 
   return (
     <BrowserRouter basename={basename}>

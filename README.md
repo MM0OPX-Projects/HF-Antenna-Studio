@@ -1,4 +1,4 @@
-> **HF Antenna Studio application baseline:** this branch preserves the AntennaSim 1.4.2 application as a reproducible reference before redevelopment. Use [`docs/BASELINE.md`](docs/BASELINE.md) for the tested Windows 11 source-build and startup procedure, [`docs/PROJECT_FILE_FORMAT.md`](docs/PROJECT_FILE_FORMAT.md) for local project storage/migration boundaries, [`docs/ANTENNA_TEMPLATE_SYSTEM.md`](docs/ANTENNA_TEMPLATE_SYSTEM.md) for the experimental shared template contract, [`docs/VERTICAL_ANTENNAS.md`](docs/VERTICAL_ANTENNAS.md) for vertical-model ground distinctions, [`docs/YAGI_BEAMS.md`](docs/YAGI_BEAMS.md) for the dedicated directional-array workflow, and [`docs/LOOP_AND_HEXBEAM_MODELS.md`](docs/LOOP_AND_HEXBEAM_MODELS.md) for the loop/quad/hex geometry and validation evidence. The upstream README is retained below for provenance; its Docker/live-demo instructions are not the supported HF Antenna Studio baseline.
+> **HF Antenna Studio Windows test package:** the application now has a reproducible per-user NSIS test installer containing the local interface and pinned nec2c/WebAssembly solver. Normal users do not install Node.js, Python, compilers, Docker, or an NEC executable. See [`docs/WINDOWS_PACKAGING.md`](docs/WINDOWS_PACKAGING.md) for installation, offline boundaries, logs, uninstall/data preservation, build evidence, and limitations. The upstream README remains below for provenance; its Docker/live-demo instructions are not the supported Windows path.
 
 > The original Windows-first application workspace, interaction/accessibility contract, review evidence, and remaining manual gates are documented in [`docs/UI_OVERHAUL.md`](docs/UI_OVERHAUL.md).
 
@@ -102,6 +102,7 @@ Full guides live in the [`docs/`](docs/) folder:
 | [Yagi Beam Models](docs/YAGI_BEAMS.md) | Directional model/metric contracts, exact-deck comparison evidence, and limitations |
 | [Loop & Hexbeam Models](docs/LOOP_AND_HEXBEAM_MODELS.md) | Loop/quad/hex topology, feed/polarisation boundaries, independent comparison evidence, and limitations |
 | [Engineering Validation Report](docs/VALIDATION_REPORT.md) | Nine primary reference cases, 16 external exact-deck runs, discrepancies, and remaining validation gates |
+| [Windows 11 Packaging](docs/WINDOWS_PACKAGING.md) | Installer architecture, offline operation, solver/runtime identity, logs, uninstall policy, tests, and troubleshooting |
 | [Professional UI Workbench](docs/UI_OVERHAUL.md) | Desktop panel system, keyboard/accessibility contract, usability review, and limitations |
 
 ---

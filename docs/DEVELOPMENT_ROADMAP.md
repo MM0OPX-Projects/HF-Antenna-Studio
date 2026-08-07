@@ -39,6 +39,8 @@ Goal: remove the assumptions that could invalidate the rest of the architecture.
 
 If neither solver passes, stop product implementation and investigate another open-source NEC implementation through the same adapter criteria.
 
+Implementation checkpoint (2026-08-07): `feature/windows-packaging` produces a per-user Tauri 2/NSIS test installer containing the production frontend and rebuilt pinned nec2c/Wasm solver. A clean Windows runner installs it, launches the installed WebView2 application, performs a real dipole solve with networking forced offline, checks logs and absence of external requests, uninstalls, and verifies user-data preservation. This is meaningful packaging evidence, but Phase 0 remains open for the native solver bake-off, solver/provenance release approval, signed artifacts, air-gapped offline-WebView installation, upgrade/repair, endpoint-security, non-ASCII paths, ARM64, and representative clean Windows 11 VM/manual testing.
+
 ## Phase 1 — Trustworthy vertical slice
 
 Goal: calculate and inspect one simple wire model end to end with complete evidence.

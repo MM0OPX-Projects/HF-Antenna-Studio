@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Added a minimal Windows 11 Tauri 2 host and per-user NSIS packaging workflow that embeds the production HTML interface and pinned nec2c/WebAssembly solver without Node.js, Python, Docker, or a separate NEC install for end users
+- Added local-only CSP/capability boundaries, synchronized package-version checks, bounded native diagnostic logs, About-page runtime/log information, deterministic icon generation, preferred small and optional fully offline WebView2 installer configurations, and `docs/WINDOWS_PACKAGING.md`
+- Added clean Windows-runner acceptance covering installer registration, launcher startup, installed-app package identity, a real offline WebView2 dipole calculation, external-request rejection, log creation, uninstall, preserved user data, checksums, and a 14-day distributable test artifact
+
 - Added a systematic validation campaign covering a free-space dipole, dipole over ground, quarter-wave vertical, full-wave square loop, delta loop, two- and three-element Yagis, and broadside/end-fire two-element phased vertical arrays
 - Added a SHA-256-pinned machine-readable reference manifest, exact dipole fixtures, application-deck identity tests, a fail-closed unified Windows comparator runner, and 16 exact-deck executions through a separately installed 4NEC2 NEC-2D build
 - Added `docs/VALIDATION_REPORT.md` with complete model/settings/result records, signed differences, honest discrepancy classifications, investigation notes, unresolved release gates, and reproducible commands; no RF calculation behaviour was changed because no new calculation bug was confirmed

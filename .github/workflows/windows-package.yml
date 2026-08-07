@@ -1,0 +1,84 @@
+name: Windows package
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/windows-packaging
+    paths:
+      - ".github/workflows/windows-package.yml"
+      - "frontend/**"
+      - "scripts/build-desktop-frontend.ps1"
+      - "scripts/build-wasm.ps1"
+      - "scripts/check-package-version.ps1"
+      - "scripts/package-windows.ps1"
+      - "scripts/test-windows-package.ps1"
+      - "src-tauri/**"
+      - "VERSION"
+      - "wasm/**"
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: NSIS install and offline solver test
+    runs-on: windows-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout source and solver
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.0
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Setup Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 3.1.56
+
+      - name: Build pinned nec2c WebAssembly
+        shell: powershell
+        run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\build-wasm.ps1 -EmsdkPath $env:EMSDK
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Install pinned Rust toolchain
+        uses: dtolnay/rust-toolchain@1.90.0
+
+      - name: Cache Rust build inputs
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install pinned Tauri CLI
+        run: cargo install tauri-cli --version 2.11.2 --locked
+
+      - name: Build Windows NSIS test installer
+        shell: powershell
+        run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\package-windows.ps1 -SkipDependencyInstall
+
+      - name: Test installed application
+        shell: powershell
+        run: |
+          $installer = (Get-ChildItem .\src-tauri\target\release\bundle\nsis\*-setup.exe | Select-Object -First 1).FullName
+          & .\scripts\test-windows-package.ps1 -InstallerPath $installer
+
+      - name: Upload distributable test build
+        uses: actions/upload-artifact@v4
+        with:
+          name: hf-antenna-studio-${{ github.sha }}-windows-x64-test
+          path: |
+            src-tauri/target/release/bundle/nsis/*-setup.exe
+            src-tauri/target/release/bundle/nsis/package-manifest.json
+          if-no-files-found: error
+          retention-days: 14

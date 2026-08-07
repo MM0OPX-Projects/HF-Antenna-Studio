@@ -2,18 +2,20 @@
  * About page — project info, credits, and links.
  */
 
+import { useEffect, useState } from "react";
 import { Navbar } from "../components/layout/Navbar";
+import { getRuntimeInfo, openLogDirectory, type DesktopRuntimeInfo } from "../platform/desktop-runtime";
 
 const FEATURES = [
   {
     title: "NEC2 Engine",
     description:
-      "Powered by nec2c, the industry-standard Numerical Electromagnetics Code. More accurate than MININEC-based tools.",
+      "Uses the repository's pinned nec2c/WebAssembly NEC-2 build. Validation scope and known limitations are published with the project.",
   },
   {
-    title: "15 Antenna Templates",
+    title: "Parametric antenna workflows",
     description:
-      "From simple dipoles to Yagis, Moxons, LPDAs, and multiband designs. Each with adjustable parameters and real-time 3D preview.",
+      "Dipoles, verticals, loops, Yagis, phased arrays, and other templates share adjustable parameters and an interactive 3D preview.",
   },
   {
     title: "3D Visualization",
@@ -26,14 +28,14 @@ const FEATURES = [
       "Full-featured wire editor with undo/redo, snap grid, loads, transmission lines, and .nec/.maa import/export.",
   },
   {
-    title: "Optimizer",
+    title: "Engineering exploration",
     description:
-      "Built-in Nelder-Mead optimizer to minimize SWR, maximize gain, or optimize front-to-back ratio automatically.",
+      "Comparison, measurement, sweep, and bounded best-solution tools retain exact NEC model evidence and limitations.",
   },
   {
-    title: "Works Everywhere",
+    title: "Local and private",
     description:
-      "No installs, no Wine, no Java. Runs in any modern browser on desktop, tablet, or phone.",
+      "The Windows package contains the interface and verified nec2c/WebAssembly engine. Normal calculations require no account or network connection.",
   },
 ];
 
@@ -57,6 +59,24 @@ const LINKS = [
 ];
 
 export function AboutPage() {
+  const [runtime, setRuntime] = useState<DesktopRuntimeInfo | null>(null);
+  const [logError, setLogError] = useState<string | null>(null);
+
+  useEffect(() => {
+    void getRuntimeInfo().then(setRuntime).catch((error: unknown) => {
+      setLogError(error instanceof Error ? error.message : "Runtime information is unavailable.");
+    });
+  }, []);
+
+  async function showLogs() {
+    setLogError(null);
+    try {
+      await openLogDirectory();
+    } catch (error) {
+      setLogError(error instanceof Error ? error.message : "The log directory could not be opened.");
+    }
+  }
+
   return (
     <div className="flex flex-col h-dvh bg-background">
       <Navbar />
@@ -66,16 +86,27 @@ export function AboutPage() {
           {/* Hero */}
           <div>
             <h1 className="text-3xl font-bold text-text-primary mb-2">
-              About AntennaSim
+              About HF Antenna Studio
             </h1>
             <p className="text-text-secondary leading-relaxed">
-              AntennaSim is a modern, free, open-source web-based antenna simulator
-              powered by the NEC2 electromagnetic engine. It replaces outdated
-              desktop tools like MMANA-GAL, 4NEC2, and EZNEC with a beautiful,
-              accessible web experience that works on any device without
-              installation.
+              HF Antenna Studio is a free, open-source, locally operated antenna
+              modelling workspace built around a pinned NEC-2 calculation engine.
+              It provides an original interface and does not copy commercial
+              application source, artwork, or layouts.
             </p>
           </div>
+
+          <section className="rounded-lg border border-border bg-surface p-4" aria-labelledby="runtime-heading">
+            <h2 id="runtime-heading" className="text-lg font-semibold text-text-primary">Installed runtime</h2>
+            <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
+              <div><dt className="text-text-secondary">Version</dt><dd className="font-mono text-text-primary" data-testid="about-version">{runtime?.version ?? __APP_VERSION__}</dd></div>
+              <div><dt className="text-text-secondary">Mode</dt><dd className="text-text-primary" data-testid="about-runtime-mode">{runtime?.packaged ? "Installed Windows application" : "Browser development application"}</dd></div>
+              <div className="sm:col-span-2"><dt className="text-text-secondary">Project storage</dt><dd className="text-text-primary">{runtime?.projectStorage ?? "Loading runtime information…"}</dd></div>
+              <div className="sm:col-span-2"><dt className="text-text-secondary">Troubleshooting logs</dt><dd className="break-all font-mono text-xs text-text-primary" data-testid="about-log-directory">{runtime?.logDirectory ?? "Loading…"}</dd></div>
+            </dl>
+            {runtime?.packaged && <button type="button" onClick={() => void showLogs()} className="mt-4 rounded-md border border-border bg-background px-3 py-2 text-sm font-medium text-text-primary hover:border-accent/50">Open log folder</button>}
+            {logError && <p role="alert" className="mt-3 text-sm text-red-600 dark:text-red-300">{logError}</p>}
+          </section>
 
           {/* Features */}
           <div>
@@ -106,15 +137,16 @@ export function AboutPage() {
             </h2>
             <div className="space-y-3 text-sm text-text-secondary leading-relaxed">
               <p>
-                AntennaSim uses the <strong className="text-text-primary">Method of Moments (MoM)</strong> via
+                HF Antenna Studio uses the <strong className="text-text-primary">Method of Moments (MoM)</strong> via
                 the NEC2 engine to solve Maxwell's equations for thin-wire structures.
                 Your antenna geometry is broken into segments, and NEC2 computes the
                 current distribution, impedance, radiation pattern, and other parameters.
               </p>
               <p>
-                The simulation runs on a server-side <code className="px-1 py-0.5 bg-background rounded text-xs font-mono">nec2c</code> process
-                (the C translation of the original Fortran NEC2 code). Results are
-                cached for performance, and the entire pipeline is sandboxed for security.
+                In the supported Windows package, simulation runs through the bundled
+                <code className="mx-1 rounded bg-background px-1 py-0.5 font-mono text-xs">nec2c/WebAssembly</code>
+                build inside a dedicated worker. Parameters, project data, generated
+                NEC decks, and results remain on this computer during normal use.
               </p>
               <p>
                 The 3D visualization is powered by <strong className="text-text-primary">Three.js</strong> via
@@ -158,11 +190,10 @@ export function AboutPage() {
                 "Tailwind CSS",
                 "Zustand",
                 "Recharts",
-                "FastAPI",
+                "Tauri 2",
+                "WebView2",
+                "WebAssembly",
                 "nec2c",
-                "Redis",
-                "Docker",
-                "scipy",
               ].map((tech) => (
                 <span
                   key={tech}
@@ -177,7 +208,7 @@ export function AboutPage() {
           {/* Footer */}
           <div className="border-t border-border pt-6 pb-4">
             <p className="text-xs text-text-secondary">
-              License: GPL-3.0 | Engine: nec2c (NEC2 Method of Moments)
+              HF Antenna Studio v{__APP_VERSION__} · GPL-3.0-or-later · bundled nec2c/WebAssembly NEC-2 engine
             </p>
             <p className="text-xs text-text-secondary mt-1">
               Made for amateur radio operators who deserve modern tools. 73!

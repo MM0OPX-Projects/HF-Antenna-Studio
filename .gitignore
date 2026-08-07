@@ -11,6 +11,9 @@ dist/
 build/
 *.tsbuildinfo
 *.egg-info/
+src-tauri/target/
+src-tauri/icons/*
+!src-tauri/icons/README.md
 
 # Environment
 .env

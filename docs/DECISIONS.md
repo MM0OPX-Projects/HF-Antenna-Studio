@@ -36,6 +36,7 @@ Decision review date: 2026-08-02
 | D-027 | Preserve analyser measurements as immutable evidence and interpolate simulation only | Accepted, experimental |
 | D-028 | Use an original four-region engineering workbench and preserve complete warnings/units/result currency | Accepted, experimental |
 | D-029 | Store validation as immutable exact-deck evidence with explicit discrepancy classifications | Accepted |
+| D-030 | Package the current verified Wasm application in a minimal Tauri/NSIS Windows shell | Accepted as a tested distribution checkpoint; product solver remains conditional |
 
 ## D-001 — New repository with selective AntennaSim reuse
 
@@ -447,6 +448,20 @@ Represent three vertical configurations explicitly and never convert between the
 - Confirmed bugs require correction followed by the complete campaign, while a campaign with no confirmed bug does not authorize calculation changes.
 - The manifest is reviewable and reproducible, but raw third-party output or package-authored decks are committed only after provenance and redistribution review.
 
+## D-030 — Minimal Tauri/NSIS package around the verified Wasm path
+
+**Decision:** Build the first Windows 11 distributable as a per-user Tauri 2 NSIS installer containing the production React assets and pinned nec2c/WebAssembly solver. Use the system-serviced Evergreen WebView2 supplied with Windows 11 and embed its small bootstrapper/check in the preferred package. Maintain a separate `offlineInstaller` configuration for an explicitly larger air-gapped-install candidate. Do not add the inherited Python/Docker service or a localhost listener. Limit native IPC to package information, bounded diagnostic logging, and opening the log directory.
+
+**Consequences:**
+
+- Normal users install one application and do not install development tools or a solver.
+- The preferred installer is small and ordinary use is offline, but a stripped machine missing WebView2 can need connectivity during installation; only the larger offline variant can make a disconnected-install claim after testing.
+- Program files are removed by NSIS while local projects/logs are deliberately preserved; full data deletion remains an explicit user operation.
+- Electron remains a fallback if WebView2/Tauri fails representative Windows testing, not a parallel package to maintain now.
+- PWA and local-service packaging remain possible distribution modes but do not meet the same controlled installer/diagnostic boundary.
+- This checkpoint packages the best-validated current executable path. It does not select Wasm as the final product solver, approve every model, or replace the native solver bake-off in D-005/D-006.
+- Unsigned test installers are engineering artifacts only; signing, reputation, upgrades, repair, ARM64, enterprise policies, accessibility, endpoint-security, and air-gapped VM testing remain release gates.
+
 ## Second, adversarial architecture review
 
 The following review intentionally argues against the preferred architecture. “Resolution” means either a concrete architecture change/gate or a documented reason to retain the risk; it does not mean the issue has already passed testing.
@@ -454,7 +469,7 @@ The following review intentionally argues against the preferred architecture. �
 | Issue raised against the preferred design | Assessment | Resolution or documented disposition |
 |---|---|---|
 | **The preferred solver is fiction until a Windows binary runs.** KJ7LNW/nec2c has weak Windows evidence, so basing the system on it could strand the project. | Valid. The first draft language could have been read as a final selection. | Solver selection is now explicitly undecided. Native nec2c is only the baseline; NEC2++ is an equal challenger; Phase 0 can reject both. The UI depends only on the adapter contract. |
-| **Tauri does not guarantee offline use.** WebView2 may download at install/run time, defeating a core promise. | Valid. Windows 11 often includes WebView2, but presence/update cannot be assumed. | Phase 0 compares Tauri's embedded offline installer and fixed runtime in a disconnected clean VM. No release uses the download bootstrapper as its only path. Electron remains a fallback if this gate fails. |
+| **Tauri does not guarantee offline use.** WebView2 may download at install/run time, defeating a core promise. | Valid. Windows 11 distributes Evergreen WebView2, but presence/update cannot be assumed on every modified image. | The test package uses an embedded bootstrapper/check and proves offline operation after install; a separate ~127 MB offline-installer configuration remains the disconnected-install candidate. Air-gapped VM evidence is still required. Electron remains a fallback if this gate fails. |
 | **A new repository throws away years of UI work and contributor history.** | Valid cost, but not decisive. | Keep the new repository because the calculation/storage/deployment contracts differ. Create an explicit reuse inventory and preserve file history/notices for selected ports. Reassess effort after the vertical slice. |
 | **GPL-3.0-or-later may deter contributors and integrations.** A permissive UI with a separate solver could have broader reach. | Valid tradeoff. | GPL is retained because planned AntennaSim reuse is GPLv3+ and solver provenance is conservative. A permissive clean-room alternative would require no GPL reuse, a resolved solver-distribution theory, contributor agreement, and a new decision. |
 | **A native executable is inelegant and hostile to browser portability.** | True for portability; less important than initial correctness/isolation. | Retain native process for Windows v1. Keep a byte-deck adapter so Wasm can be added after native parity. Browser portability is not a first-release goal. |
@@ -493,13 +508,13 @@ The planning set uses the following single positions:
 | Repository | New repository, selective attributed AntennaSim reuse |
 | Application license | GPL-3.0-or-later applied; exact dependency/release review still required |
 | Initial platform | Windows 11 x64 desktop with bundled HTML/TypeScript UI |
-| Runtime boundary | Tauri IPC to isolated native child process; no localhost server |
-| Solver | Native nec2c baseline and NEC2++ challenger; final choice pending Phase 0 |
+| Runtime boundary | Current package: WebView worker/Wasm plus three diagnostic IPC commands. Proposed final native option: Tauri IPC to an isolated child process. No localhost server. |
+| Solver | Current test package: pinned nec2c/Wasm. Proposed final native path: nec2c baseline and NEC2++ challenger; final product choice pending Phase 0. |
 | Wasm | Experimental dipole slice works; product selection/parity validation remains deferred |
 | Offline/privacy | No ordinary-use network feature; disconnected installer/run test required |
 | Import | Loss-aware raw document plus explicit structured subset; no silent mutation |
 | Coordinates | NEC theta/phi internal; labelled/tested UI transformations |
-| Feature status | Experimental verified-dipole, height-lab, shared-template, vertical, Yagi, loop/quad/hex, phased-array, frequency-analyser, measurement-comparison, wire-editor, shared current-visualisation, model-comparison, parameter-sweep, and bounded optimiser slices are implemented on inherited branches; a systematic exact-deck validation campaign now passes its bounded corpus; the target desktop architecture remains proposed |
+| Feature status | Experimental verified-dipole, height-lab, shared-template, vertical, Yagi, loop/quad/hex, phased-array, frequency-analyser, measurement-comparison, wire-editor, shared current-visualisation, model-comparison, parameter-sweep, and bounded optimiser slices are implemented on inherited branches; a systematic exact-deck validation campaign passes its bounded corpus; a Tauri/NSIS test package exercises that Wasm application offline; the final native solver/filesystem architecture remains proposed |
 | Optimization | Experimental bounded prototype only; supported optimisation remains deferred until Phase 7 gates pass |
 
 Any future change to these positions requires an ADR update plus review of architecture, solver evaluation, roadmap, validation, risks, licensing, and product claims.

@@ -1,0 +1,27 @@
+[package]
+name = "hf-antenna-studio"
+version = "1.4.2"
+description = "Local NEC-based HF antenna modelling for Windows"
+authors = ["HF Antenna Studio contributors"]
+license = "GPL-3.0-or-later"
+repository = "https://github.com/MM0OPX-Projects/HF-Antenna-Studio"
+edition = "2021"
+rust-version = "1.85"
+
+[lib]
+name = "hf_antenna_studio_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "=2.6.2", features = [] }
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+tauri = { version = "=2.11.2", features = [] }
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = true

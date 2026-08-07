@@ -1,0 +1,56 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "HF Antenna Studio",
+  "version": "1.4.2",
+  "identifier": "uk.co.mm0opx.hfantennastudio",
+  "build": {
+    "beforeBuildCommand": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File ../scripts/build-desktop-frontend.ps1",
+    "beforeDevCommand": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File ../scripts/start-desktop-frontend.ps1",
+    "devUrl": "http://127.0.0.1:5173",
+    "frontendDist": "../frontend/dist"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "label": "main",
+        "title": "HF Antenna Studio",
+        "width": 1440,
+        "height": 900,
+        "minWidth": 1024,
+        "minHeight": 700,
+        "center": true,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; connect-src 'self' ipc: http://ipc.localhost; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; worker-src 'self' blob:; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self'"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "publisher": "MM0OPX Projects",
+    "copyright": "Copyright HF Antenna Studio contributors",
+    "category": "Science",
+    "shortDescription": "Local NEC-based HF antenna modelling",
+    "longDescription": "HF Antenna Studio is an offline-capable antenna modelling application for Windows 11 using a bundled, validated nec2c WebAssembly solver.",
+    "license": "GPL-3.0-or-later",
+    "licenseFile": "../LICENSE",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "webviewInstallMode": {
+        "type": "embedBootstrapper"
+      },
+      "nsis": {
+        "installMode": "currentUser"
+      }
+    }
+  }
+}
