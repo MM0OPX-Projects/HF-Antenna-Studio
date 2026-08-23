@@ -26,6 +26,7 @@ This document distinguishes release-blocking defects from accepted, visible boun
 - The small installer expects a serviceable Evergreen WebView2 runtime. If it is missing, installation may require internet access. Normal calculations are offline after installation. The larger fully air-gapped installer variant is not a v1.0.0 claim.
 - Local user projects/logs are intentionally preserved on ordinary uninstall. Complete data removal is manual after exporting needed projects.
 - Automatic updating and code signing are not included.
+- The cross-platform Rust lockfile includes unmaintained Linux GTK3 and older build/parser transitive crates. RustSec also identifies `glib 0.18.5` as unsound, but that GTK/glib path is not compiled into the supported Windows x64 package. This acceptance is Windows-specific and must not be reused as evidence for a Linux release.
 
 ## Licence/provenance limitations
 

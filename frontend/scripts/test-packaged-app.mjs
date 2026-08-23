@@ -32,7 +32,13 @@ page.on("request", (request) => {
 
 await page.waitForLoadState("domcontentloaded");
 const changelog = page.getByRole("button", { name: "Got it" });
-if (await changelog.isVisible().catch(() => false)) await changelog.click();
+if (await changelog.isVisible().catch(() => false)) {
+  // Native CDP input dispatch can intermittently stall in a background
+  // WebView2 window even after Playwright reports the button actionable.
+  // Dispatch the button's real DOM click handler, then prove the modal closed.
+  await changelog.evaluate((button) => button.click());
+  await changelog.waitFor({ state: "hidden", timeout: 5_000 });
+}
 await page.evaluate(() => {
   history.pushState({}, "", "/verified-dipole");
   dispatchEvent(new PopStateEvent("popstate"));

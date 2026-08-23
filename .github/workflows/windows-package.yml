@@ -10,6 +10,12 @@ on:
       - "v*"
     paths:
       - ".github/workflows/windows-package.yml"
+      - "CHANGELOG.md"
+      - "LICENSE"
+      - "README.md"
+      - "SBOM.frontend.cdx.json"
+      - "THIRD_PARTY_NOTICES.md"
+      - "docs/**"
       - "frontend/**"
       - "scripts/build-desktop-frontend.ps1"
       - "scripts/build-wasm.ps1"
