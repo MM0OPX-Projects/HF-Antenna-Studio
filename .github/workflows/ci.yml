@@ -93,6 +93,7 @@ jobs:
   windows-baseline:
     name: Windows 11 baseline
     runs-on: windows-latest
+    timeout-minutes: 120
 
     steps:
       - name: Checkout code

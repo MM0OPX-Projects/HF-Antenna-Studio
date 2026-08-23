@@ -1,5 +1,5 @@
-import { Canvas } from "@react-three/fiber";
 import { Grid, OrbitControls } from "@react-three/drei";
+import { SafeCanvas } from "../../components/three/SafeCanvas";
 
 interface HeightGeometry3DProps {
   heightWavelengths: number;
@@ -33,9 +33,9 @@ export function HeightGeometry3D(props: HeightGeometry3DProps) {
   return (
     <div className="relative h-64 overflow-hidden rounded-md bg-[#07111f]" data-testid="geometry-3d" data-height-wavelengths={props.heightWavelengths.toFixed(2)}>
       <span className="sr-only">Interactive three-dimensional dipole geometry. Drag to orbit and scroll to zoom.</span>
-      <Canvas camera={{ position: [4.8, 3.1, 5.2], fov: 42 }} dpr={[1, 1.5]}>
+      <SafeCanvas camera={{ position: [4.8, 3.1, 5.2], fov: 42 }} dpr={[1, 1.5]}>
         <Geometry {...props} />
-      </Canvas>
+      </SafeCanvas>
       <div className="pointer-events-none absolute bottom-2 left-2 rounded bg-black/55 px-2 py-1 text-[10px] text-slate-200">Drag to orbit · scroll to zoom · geometry updates immediately</div>
     </div>
   );

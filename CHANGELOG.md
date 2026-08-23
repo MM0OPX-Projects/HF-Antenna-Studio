@@ -19,6 +19,7 @@ No changes yet.
 ### Navigation fixes
 
 - Restored the shared application header on Frequency Analyser, Model Comparison, Parameter Sweeps, Antenna Optimiser, and Measurement Comparison so every tool has a visible, tested return path in the chromeless Windows application
+- Guarded asynchronous Three.js canvas event setup across every 3D viewer so rapidly leaving a feature cannot attach controls to an already-unmounted route; added repeated Height Lab enter/return coverage with console and page-error assertions
 
 ### Added
 

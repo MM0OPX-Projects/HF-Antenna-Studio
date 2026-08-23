@@ -1,6 +1,6 @@
 import { Grid, Line, OrbitControls } from "@react-three/drei";
-import { Canvas } from "@react-three/fiber";
 import { useMemo } from "react";
+import { SafeCanvas } from "../../components/three/SafeCanvas";
 import type { YagiWire } from "./schema";
 
 function Scene({ wires }: { wires: YagiWire[] }) {
@@ -32,7 +32,7 @@ function Scene({ wires }: { wires: YagiWire[] }) {
 export function YagiGeometry3D({ wires, modelKey }: { wires: YagiWire[]; modelKey: string }) {
   return <div className="relative h-80 overflow-hidden rounded-md bg-[#07111f]" data-testid="yagi-geometry-3d" data-model-key={modelKey} data-wire-count={wires.length}>
     <span className="sr-only">Interactive Yagi geometry. Purple is the reflector, orange is the driven element, cyan marks directors, and yellow shows the intended forward direction.</span>
-    <Canvas camera={{ position: [7, 6, 7], fov: 43 }} dpr={[1, 1.5]}><Scene wires={wires} /></Canvas>
+    <SafeCanvas camera={{ position: [7, 6, 7], fov: 43 }} dpr={[1, 1.5]}><Scene wires={wires} /></SafeCanvas>
     <div className="pointer-events-none absolute bottom-2 left-2 rounded bg-black/60 px-2 py-1 text-[10px] text-slate-200">Reflector: purple · driven: orange · directors: cyan · forward +Y: yellow</div>
   </div>;
 }

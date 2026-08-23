@@ -1,6 +1,6 @@
-import { Canvas } from "@react-three/fiber";
 import { Grid, Line, OrbitControls } from "@react-three/drei";
 import { useMemo } from "react";
+import { SafeCanvas } from "../../components/three/SafeCanvas";
 import type { TemplateAntennaModel } from "./schema";
 import { feedPointCoordinates } from "./model";
 
@@ -40,7 +40,7 @@ export function TemplateGeometry3D({ model }: { model: TemplateAntennaModel }) {
   ), 0);
   return <div className="relative h-80 overflow-hidden rounded-md bg-[#07111f]" data-testid="template-geometry-3d" data-template-id={model.template.id} data-total-wire-length-m={totalWireLengthM.toFixed(4)}>
     <span className="sr-only">Interactive three-dimensional geometry for {model.name}. The blue marker is the feed point.</span>
-    <Canvas camera={{ position: [5, 4, 6], fov: 43 }} dpr={[1, 1.5]}><Geometry model={model} /></Canvas>
+    <SafeCanvas camera={{ position: [5, 4, 6], fov: 43 }} dpr={[1, 1.5]}><Geometry model={model} /></SafeCanvas>
     <div className="pointer-events-none absolute bottom-2 left-2 rounded bg-black/55 px-2 py-1 text-[10px] text-slate-200">Orange: wire · blue: feed · drag to orbit</div>
   </div>;
 }

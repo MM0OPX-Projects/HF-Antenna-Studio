@@ -76,6 +76,25 @@ test.describe("application navigation regression", () => {
     });
   }
 
+  test("rapid Height Lab mount and return remains free of 3D lifecycle errors", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    const consoleErrors: string[] = [];
+    const pageErrors: string[] = [];
+    page.on("console", (message) => {
+      if (message.type() === "error") consoleErrors.push(message.text());
+    });
+    page.on("pageerror", (error) => pageErrors.push(error.stack ?? error.message));
+
+    for (let cycle = 0; cycle < 12; cycle += 1) {
+      await navigateFromStart(page, "/dipole-height-lab", false);
+      await expect(page.getByTestId("geometry-3d")).toBeVisible();
+      await expectApplicationReturn(page);
+    }
+
+    expect(consoleErrors, "rapid Height Lab browser console errors").toEqual([]);
+    expect(pageErrors, "rapid Height Lab uncaught page errors").toEqual([]);
+  });
+
   test("retains an explicit recovery path for an unknown route", async ({ page }) => {
     await page.goto("/not-a-real-feature");
     await dismissChangelog(page);

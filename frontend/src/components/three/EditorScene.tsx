@@ -11,7 +11,7 @@
  * - Whole-wire drag (translate entire wire)
  */
 
-import { Canvas, useThree, ThreeEvent } from "@react-three/fiber";
+import { useThree, ThreeEvent } from "@react-three/fiber";
 import { Suspense, useMemo, useCallback, useState, useRef, useEffect, type RefObject } from "react";
 import { ACESFilmicToneMapping, SRGBColorSpace, Vector3, Plane, LineCurve3, TubeGeometry, MeshBasicMaterial } from "three";
 import { GroundPlane } from "./GroundPlane";
@@ -39,6 +39,7 @@ import { useEditorStore, snap } from "../../stores/editorStore";
 import { findEndpointJunction, sameEndpoint, type EndpointRef } from "../../utils/editor-junctions";
 import type { WireMeasurementPointMode } from "../../utils/wire-measurement";
 import { CurrentVisualisationControls } from "../../features/current-visualisation/CurrentVisualisationControls";
+import { SafeCanvas } from "./SafeCanvas";
 import type { CurrentVisualMode } from "../../features/current-visualisation/types";
 
 interface EditorSceneProps {
@@ -862,7 +863,7 @@ export function EditorScene({
 
   return (
     <>
-    <Canvas
+    <SafeCanvas
       gl={glConfig}
       camera={{ position: [15, 12, 15], fov: 50, near: 0.1, far: 500 }}
       style={{
@@ -890,7 +891,7 @@ export function EditorScene({
         />
         {!measurementActive && <SceneRaycaster tooltipRef={tooltipRef} />}
       </Suspense>
-    </Canvas>
+    </SafeCanvas>
     {viewToggles.current && currents && currents.length > 0 && (
       <div className="absolute left-2 top-2 z-20 max-w-[min(620px,calc(100%-1rem))]" data-testid="editor-current-visualisation">
         <CurrentVisualisationControls currents={currents} mode={currentMode} animated={currentAnimated} selected={effectiveSelectedCurrent} onModeChange={setCurrentMode} onAnimatedChange={setCurrentAnimated} onSelect={setSelectedCurrent} compact />

@@ -1,6 +1,6 @@
 import { Grid, Line, OrbitControls } from "@react-three/drei";
-import { Canvas } from "@react-three/fiber";
 import { useMemo } from "react";
+import { SafeCanvas } from "../../components/three/SafeCanvas";
 import type { GeneratedPhasedArray, PhasedPoint3M } from "./schema";
 
 function Scene({ generated }: { generated: GeneratedPhasedArray }) {
@@ -26,7 +26,7 @@ function Scene({ generated }: { generated: GeneratedPhasedArray }) {
 export function PhasedArrayGeometry3D({ generated, modelKey }: { generated: GeneratedPhasedArray; modelKey: string }) {
   return <div className="relative h-96 overflow-hidden rounded-md bg-[#07111f]" data-testid="phased-array-geometry-3d" data-model-key={modelKey} data-wire-count={generated.wires.length}>
     <span className="sr-only">Interactive phased vertical array geometry. Orange is element one, cyan is element two, gray wires are explicit radials, yellow is the physical source junction, and dashed magenta paths are non-radiating ideal transmission lines.</span>
-    <Canvas camera={{ position: [7, 5, 8], fov: 43 }} dpr={[1, 1.5]}><Scene generated={generated} /></Canvas>
+    <SafeCanvas camera={{ position: [7, 5, 8], fov: 43 }} dpr={[1, 1.5]}><Scene generated={generated} /></SafeCanvas>
     <div className="pointer-events-none absolute bottom-2 left-2 rounded bg-black/60 px-2 py-1 text-[10px] text-slate-200">E1 orange · E2 cyan · radials gray · TL paths dashed magenta</div>
   </div>;
 }

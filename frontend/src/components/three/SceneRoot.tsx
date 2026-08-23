@@ -1,4 +1,3 @@
-import { Canvas } from "@react-three/fiber";
 import { Suspense, useMemo, useRef, useState } from "react";
 import { ACESFilmicToneMapping, SRGBColorSpace } from "three";
 import { GroundPlane } from "./GroundPlane";
@@ -25,6 +24,7 @@ import { createVisualScale } from "./visualScale";
 import type { WireMeasurementPointMode } from "../../utils/wire-measurement";
 import { CurrentVisualisationControls } from "../../features/current-visualisation/CurrentVisualisationControls";
 import type { CurrentVisualMode } from "../../features/current-visualisation/types";
+import { SafeCanvas } from "./SafeCanvas";
 
 interface SceneRootProps {
   wires: WireData[];
@@ -103,7 +103,7 @@ export function SceneRoot({
 
   return (
     <>
-    <Canvas
+    <SafeCanvas
       gl={glConfig}
       camera={{ position: [15, 12, 15], fov: 50, near: 0.1, far: 500 }}
       style={{ background: sceneBg, cursor: measurementActive ? "crosshair" : undefined }}
@@ -244,7 +244,7 @@ export function SceneRoot({
         {/* 3D hover measurement raycaster */}
         {!measurementActive && <SceneRaycaster tooltipRef={tooltipRef} />}
       </Suspense>
-    </Canvas>
+    </SafeCanvas>
     {viewToggles.current && currents && currents.length > 0 && (
       <div className="absolute left-2 top-2 z-20 max-w-[min(620px,calc(100%-1rem))]" data-testid="viewport-current-visualisation">
         <CurrentVisualisationControls currents={currents} mode={currentMode} animated={currentAnimated} selected={effectiveSelectedCurrent} onModeChange={setCurrentMode} onAnimatedChange={setCurrentAnimated} onSelect={setSelectedCurrent} compact />

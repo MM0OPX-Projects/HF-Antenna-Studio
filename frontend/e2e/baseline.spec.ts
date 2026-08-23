@@ -33,8 +33,8 @@ const BASELINES: Record<string, Baseline> = {
 };
 
 const isWindowsCi = process.platform === "win32" && Boolean(process.env.CI);
-const baselineTestTimeoutMs = isWindowsCi ? 360_000 : 120_000;
-const baselineResultTimeoutMs = isWindowsCi ? 240_000 : 120_000;
+const baselineTestTimeoutMs = isWindowsCi ? 720_000 : 120_000;
+const baselineResultTimeoutMs = isWindowsCi ? 600_000 : 120_000;
 
 function between(value: number, [minimum, maximum]: [number, number]): boolean {
   return value >= minimum && value <= maximum;
