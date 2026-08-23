@@ -62,6 +62,23 @@ async function dismissChangelog(page: Page): Promise<void> {
   if (await button.isVisible().catch(() => false)) await button.click();
 }
 
+async function configureBoundedBaselineRequest(page: Page): Promise<void> {
+  // Keep the sample's complete 21-point impedance sweep. Only select the
+  // public 10° pattern option; dedicated pattern suites cover finer grids.
+  await page.getByLabel("Radiation pattern angular resolution").selectOption("10");
+}
+
+async function waitForBaselineResult(page: Page): Promise<void> {
+  const result = page.getByText(/freq pts/i);
+  const solverError = page.locator('p[role="alert"]');
+  const outcome = await Promise.race([
+    result.waitFor({ state: "visible", timeout: baselineResultTimeoutMs }).then(() => null),
+    solverError.waitFor({ state: "visible", timeout: baselineResultTimeoutMs }).then(() => solverError.innerText()),
+  ]);
+
+  if (outcome) throw new Error(`Simulation failed before publishing the baseline result: ${outcome}`);
+}
+
 for (const [name, baseline] of Object.entries(BASELINES)) {
   test(`${name} example calculates within the recorded regression envelope`, async ({ page }) => {
     test.setTimeout(baselineTestTimeoutMs);
@@ -80,8 +97,9 @@ for (const [name, baseline] of Object.entries(BASELINES)) {
       await page.getByRole("button", { name: baseline.template }).click();
     }
 
+    await configureBoundedBaselineRequest(page);
     await page.getByRole("button", { name: /Run Simulation/i }).click();
-    await expect(page.getByText(/freq pts/i)).toBeVisible({ timeout: baselineResultTimeoutMs });
+    await waitForBaselineResult(page);
 
     const summary = readSummary(await page.locator("body").innerText());
     expect(between(summary.swr, baseline.swr), `SWR ${summary.swr}`).toBeTruthy();
