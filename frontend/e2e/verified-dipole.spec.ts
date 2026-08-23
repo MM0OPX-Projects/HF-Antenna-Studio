@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { isKnownNonApplicationConsoleWarning } from "../src/test-support/browser-console";
 
 async function dismissChangelog(page: import("@playwright/test").Page): Promise<void> {
   const button = page.getByRole("button", { name: "Got it" });
@@ -9,7 +10,7 @@ test("verified dipole executes the displayed NEC deck through local WASM", async
   const consoleProblems: string[] = [];
   page.on("console", (message) => {
     if (message.type() === "error" || message.type() === "warning") {
-      if (message.type() === "warning" && message.text().includes("THREE.THREE.Clock: This module has been deprecated")) return;
+      if (message.type() === "warning" && isKnownNonApplicationConsoleWarning(message.text())) return;
       consoleProblems.push(`${message.type()}: ${message.text()}`);
     }
   });

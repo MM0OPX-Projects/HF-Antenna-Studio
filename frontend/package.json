@@ -24,7 +24,8 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "pretest:smoke": "node scripts/check-wasm.mjs",
-    "test:smoke": "playwright test"
+    "test:smoke": "playwright test",
+    "test:smoke:isolated": "node scripts/run-playwright-isolated.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",
