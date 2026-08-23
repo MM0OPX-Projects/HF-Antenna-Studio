@@ -32,6 +32,10 @@ const BASELINES: Record<string, Baseline> = {
   },
 };
 
+const isWindowsCi = process.platform === "win32" && Boolean(process.env.CI);
+const baselineTestTimeoutMs = isWindowsCi ? 360_000 : 120_000;
+const baselineResultTimeoutMs = isWindowsCi ? 240_000 : 120_000;
+
 function between(value: number, [minimum, maximum]: [number, number]): boolean {
   return value >= minimum && value <= maximum;
 }
@@ -60,6 +64,7 @@ async function dismissChangelog(page: Page): Promise<void> {
 
 for (const [name, baseline] of Object.entries(BASELINES)) {
   test(`${name} example calculates within the recorded regression envelope`, async ({ page }) => {
+    test.setTimeout(baselineTestTimeoutMs);
     const consoleErrors: string[] = [];
     const pageErrors: string[] = [];
     page.on("console", (message) => {
@@ -76,7 +81,7 @@ for (const [name, baseline] of Object.entries(BASELINES)) {
     }
 
     await page.getByRole("button", { name: /Run Simulation/i }).click();
-    await expect(page.getByText(/freq pts/i)).toBeVisible({ timeout: 120_000 });
+    await expect(page.getByText(/freq pts/i)).toBeVisible({ timeout: baselineResultTimeoutMs });
 
     const summary = readSummary(await page.locator("body").innerText());
     expect(between(summary.swr, baseline.swr), `SWR ${summary.swr}`).toBeTruthy();

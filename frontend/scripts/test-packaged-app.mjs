@@ -51,7 +51,14 @@ await page.waitForLoadState("domcontentloaded");
 await page.evaluate(({ key, contentId }) => {
   localStorage.setItem(key, JSON.stringify({ contentId, seenAt: Date.now() }));
 }, { key: changelogStorageKey, contentId: expectedVersion });
-await page.reload({ waitUntil: "domcontentloaded" });
+// WebView2 can commit the custom tauri.localhost navigation without forwarding a
+// DOMContentLoaded lifecycle event through CDP.  Resolve on the committed
+// navigation, then prove that React has hydrated before interacting with it.
+await page.reload({ waitUntil: "commit", timeout: 30_000 });
+await page.getByRole("link", { name: /^HF Antenna Studio/ }).waitFor({
+  state: "visible",
+  timeout: 30_000,
+});
 const changelog = page.getByRole("button", { name: "Got it" });
 await changelog.waitFor({ state: "hidden", timeout: 15_000 });
 await page.evaluate(() => {
