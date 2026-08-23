@@ -7,39 +7,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { APP_NAV_LINKS, MODULE_NAV_LINKS, PRIMARY_NAV_LINKS } from "../../navigation";
 import { useUIStore } from "../../stores/uiStore";
-
-/** Shared nav link definitions */
-const NAV_LINKS = [
-  { to: "/", label: "Simulator", featured: false },
-  { to: "/editor", label: "Wire Editor", featured: true },
-  { to: "/frequency-analyser", label: "Analyser", featured: true },
-  { to: "/model-comparison", label: "Compare", featured: true },
-  { to: "/parameter-sweeps", label: "Sweeps", featured: true },
-  { to: "/antenna-optimiser", label: "Optimiser", featured: true },
-  { to: "/measurement-comparison", label: "Measured", featured: true },
-  { to: "/projects", label: "Projects", featured: false },
-  { to: "/verified-dipole", label: "Verified Dipole", featured: false },
-  { to: "/dipole-height-lab", label: "Height Lab", featured: false },
-  { to: "/antenna-templates", label: "Templates", featured: false },
-  { to: "/vertical-antennas", label: "Verticals", featured: false },
-  { to: "/yagi-beams", label: "Yagi Beams", featured: false },
-  { to: "/loop-and-hexbeam-models", label: "Loops & Hex", featured: false },
-  { to: "/phased-arrays", label: "Phased Arrays", featured: false },
-  { to: "/library", label: "Library", featured: false },
-  { to: "/learn", label: "Learn", featured: false },
-  { to: "/about", label: "About", featured: false },
-] as const;
-
-const PRIMARY_LINKS = [
-  { to: "/", label: "Design" },
-  { to: "/editor", label: "Wire Editor" },
-  { to: "/frequency-analyser", label: "Analyse" },
-  { to: "/model-comparison", label: "Compare" },
-  { to: "/projects", label: "Projects" },
-] as const;
-
-const MODULE_LINKS = NAV_LINKS.filter(({ to }) => !PRIMARY_LINKS.some((primary) => primary.to === to));
 
 export function Navbar() {
   const theme = useUIStore((s) => s.theme);
@@ -90,7 +59,7 @@ export function Navbar() {
   }
 
   return (
-    <header className="relative shrink-0">
+    <header className="relative z-[100] shrink-0">
       <div className="flex h-12 items-center justify-between border-b border-border bg-surface/95 px-3 shadow-sm backdrop-blur sm:px-4">
         <div className="flex min-w-0 items-center gap-5">
           {/* Logo */}
@@ -106,7 +75,7 @@ export function Navbar() {
 
           {/* Desktop nav links */}
           <nav className="hidden items-center gap-1 text-xs xl:flex" aria-label="Primary application navigation">
-            {PRIMARY_LINKS.map(({ to, label }) => (
+            {PRIMARY_NAV_LINKS.map(({ to, label }) => (
               <Link key={to} to={to} className={linkClass(to)} aria-current={location.pathname === to ? "page" : undefined}>
                 {label}
               </Link>
@@ -117,7 +86,7 @@ export function Navbar() {
               </button>
               {modulesOpen && (
                 <div role="menu" className="absolute left-0 top-full z-50 mt-2 grid w-[34rem] grid-cols-2 gap-1 rounded-xl border border-border bg-surface-elevated p-2 shadow-2xl">
-                  {MODULE_LINKS.map(({ to, label }) => (
+                  {MODULE_NAV_LINKS.map(({ to, label }) => (
                     <Link key={to} to={to} role="menuitem" onClick={() => setModulesOpen(false)} className="rounded-lg px-3 py-2 text-xs text-text-secondary transition-colors hover:bg-surface-hover hover:text-text-primary">
                       {label}
                     </Link>
@@ -230,7 +199,7 @@ export function Navbar() {
           className="xl:hidden absolute top-full left-0 right-0 z-50 border-b border-border bg-surface shadow-lg"
         >
           <nav className="flex flex-col py-2">
-            {NAV_LINKS.map(({ to, label, featured }) => (
+            {APP_NAV_LINKS.map(({ to, label, featured }) => (
               <Link
                 key={to}
                 to={to}

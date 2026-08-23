@@ -14,6 +14,7 @@ import { YagiBeamModelsPage } from "./pages/YagiBeamModelsPage";
 import { LoopAndHexbeamModelsPage } from "./pages/LoopAndHexbeamModelsPage";
 import { PhasedArraysPage } from "./pages/PhasedArraysPage";
 import { FrequencyAnalyserPage } from "./pages/FrequencyAnalyserPage";
+import { ApplicationPageShell } from "./components/layout/ApplicationPageShell";
 
 const ModelComparisonPage = lazy(() => import("./pages/ModelComparisonPage").then((module) => ({ default: module.ModelComparisonPage })));
 const ParameterSweepsPage = lazy(() => import("./pages/ParameterSweepsPage").then((module) => ({ default: module.ParameterSweepsPage })));
@@ -33,11 +34,11 @@ export function AppRoutes() {
       <Route path="/yagi-beams" element={<YagiBeamModelsPage />} />
       <Route path="/loop-and-hexbeam-models" element={<LoopAndHexbeamModelsPage />} />
       <Route path="/phased-arrays" element={<PhasedArraysPage />} />
-      <Route path="/frequency-analyser" element={<FrequencyAnalyserPage />} />
-      <Route path="/model-comparison" element={<Suspense fallback={<main className="flex min-h-64 items-center justify-center text-sm text-text-secondary">Loading model comparison…</main>}><ModelComparisonPage /></Suspense>} />
-      <Route path="/parameter-sweeps" element={<Suspense fallback={<main className="flex min-h-64 items-center justify-center text-sm text-text-secondary">Loading parameter sweeps…</main>}><ParameterSweepsPage /></Suspense>} />
-      <Route path="/antenna-optimiser" element={<Suspense fallback={<main className="flex min-h-64 items-center justify-center text-sm text-text-secondary">Loading antenna optimiser…</main>}><AntennaOptimiserPage /></Suspense>} />
-      <Route path="/measurement-comparison" element={<Suspense fallback={<main className="flex min-h-64 items-center justify-center text-sm text-text-secondary">Loading measurement comparison…</main>}><MeasurementComparisonPage /></Suspense>} />
+      <Route path="/frequency-analyser" element={<ApplicationPageShell><FrequencyAnalyserPage /></ApplicationPageShell>} />
+      <Route path="/model-comparison" element={<ApplicationPageShell><Suspense fallback={<main className="flex min-h-64 flex-1 items-center justify-center text-sm text-text-secondary">Loading model comparison…</main>}><ModelComparisonPage /></Suspense></ApplicationPageShell>} />
+      <Route path="/parameter-sweeps" element={<ApplicationPageShell><Suspense fallback={<main className="flex min-h-64 flex-1 items-center justify-center text-sm text-text-secondary">Loading parameter sweeps…</main>}><ParameterSweepsPage /></Suspense></ApplicationPageShell>} />
+      <Route path="/antenna-optimiser" element={<ApplicationPageShell><Suspense fallback={<main className="flex min-h-64 flex-1 items-center justify-center text-sm text-text-secondary">Loading antenna optimiser…</main>}><AntennaOptimiserPage /></Suspense></ApplicationPageShell>} />
+      <Route path="/measurement-comparison" element={<ApplicationPageShell><Suspense fallback={<main className="flex min-h-64 flex-1 items-center justify-center text-sm text-text-secondary">Loading measurement comparison…</main>}><MeasurementComparisonPage /></Suspense></ApplicationPageShell>} />
       <Route path="/projects" element={<Suspense fallback={<main className="flex min-h-64 items-center justify-center text-sm text-text-secondary">Loading projects…</main>}><ProjectManagementPage /></Suspense>} />
       <Route path="/library" element={<LibraryPage />} />
       <Route path="/learn" element={<LearnPage />} />

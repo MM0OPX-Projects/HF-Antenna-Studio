@@ -7,7 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Restored the shared application header on Frequency Analyser, Model Comparison, Parameter Sweeps, Antenna Optimiser, and Measurement Comparison so every tool has a visible, tested return path in the chromeless Windows application
+
 ### Added
+
+- Added exhaustive desktop and compact-window navigation regression coverage for every feature route and the unknown-route recovery path
 
 - Added a minimal Windows 11 Tauri 2 host and per-user NSIS packaging workflow that embeds the production HTML interface and pinned nec2c/WebAssembly solver without Node.js, Python, Docker, or a separate NEC install for end users
 - Added local-only CSP/capability boundaries, synchronized package-version checks, bounded native diagnostic logs, About-page runtime/log information, deterministic icon generation, preferred small and optional fully offline WebView2 installer configurations, and `docs/WINDOWS_PACKAGING.md`
