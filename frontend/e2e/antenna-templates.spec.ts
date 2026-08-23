@@ -9,12 +9,13 @@ async function openStudio(page: Page) {
   if (await changelog.isVisible().catch(() => false)) await changelog.click();
 }
 
-const aggregateTemplateTimeoutMs = process.platform === "win32" && process.env.CI
-  ? 600_000
-  : 120_000;
+const isWindowsCi = process.platform === "win32" && Boolean(process.env.CI);
+const aggregateTemplateSolverTimeoutMs = isWindowsCi ? 1_200_000 : 120_000;
+const aggregateTemplateUiTimeoutMs = isWindowsCi ? 600_000 : 120_000;
+const templateResultTimeoutMs = isWindowsCi ? 120_000 : 30_000;
 
 test("all eight templates generate geometry, feed/segments, NEC, and solve locally", async ({ page }) => {
-  test.setTimeout(aggregateTemplateTimeoutMs);
+  test.setTimeout(aggregateTemplateSolverTimeoutMs);
   await openStudio(page);
   for (const reference of TEMPLATE_REGRESSION_CASES) {
     const definition = antennaTemplateDefinitions.find((item) => item.id === reference.id)!;
@@ -30,7 +31,7 @@ test("all eight templates generate geometry, feed/segments, NEC, and solve local
     expect(deck, definition.id).toContain("Generated dimensions are starting points");
 
     await page.getByTestId("run-template-nec").click();
-    await expect(page.getByTestId("template-results"), `${definition.id} solver result`).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("template-results"), `${definition.id} solver result`).toBeVisible({ timeout: templateResultTimeoutMs });
     await expect(page.getByTestId("template-solver-error"), definition.id).toHaveCount(0);
     const impedanceText = (await page.getByTestId("template-result-impedance").innerText()).replace("−", "-");
     const impedance = impedanceText.match(/^([+-]?\d+(?:\.\d+)?)\s+([+-])\s+j(\d+(?:\.\d+)?)/);
@@ -47,7 +48,7 @@ test("all eight templates generate geometry, feed/segments, NEC, and solve local
 });
 
 test("the common parameter UI enforces every declared range", async ({ page }) => {
-  test.setTimeout(aggregateTemplateTimeoutMs);
+  test.setTimeout(aggregateTemplateUiTimeoutMs);
   await openStudio(page);
   for (const definition of antennaTemplateDefinitions) {
     await page.getByTestId(`template-${definition.id}`).click();
