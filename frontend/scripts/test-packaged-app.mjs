@@ -5,6 +5,7 @@ if (!cdpUrl) throw new Error("HFAS_CDP_URL is required.");
 const phase = process.env.HFAS_PACKAGE_PHASE ?? "initial";
 const expectedVersion = process.env.HFAS_EXPECTED_VERSION;
 if (!expectedVersion) throw new Error("HFAS_EXPECTED_VERSION is required.");
+const changelogStorageKey = "antennasim:changelog-seen";
 const storageKey = "hfas-package-uninstall-preservation-sentinel";
 const storageValue = "preserve-project-profile-data";
 
@@ -31,14 +32,12 @@ page.on("request", (request) => {
 });
 
 await page.waitForLoadState("domcontentloaded");
+await page.evaluate(({ key, contentId }) => {
+  localStorage.setItem(key, JSON.stringify({ contentId, seenAt: Date.now() }));
+}, { key: changelogStorageKey, contentId: expectedVersion });
+await page.reload({ waitUntil: "domcontentloaded" });
 const changelog = page.getByRole("button", { name: "Got it" });
-if (await changelog.isVisible().catch(() => false)) {
-  // Native CDP input dispatch can intermittently stall in a background
-  // WebView2 window even after Playwright reports the button actionable.
-  // Dispatch the button's real DOM click handler, then prove the modal closed.
-  await changelog.evaluate((button) => button.click());
-  await changelog.waitFor({ state: "hidden", timeout: 5_000 });
-}
+await changelog.waitFor({ state: "hidden", timeout: 15_000 });
 await page.evaluate(() => {
   history.pushState({}, "", "/verified-dipole");
   dispatchEvent(new PopStateEvent("popstate"));
