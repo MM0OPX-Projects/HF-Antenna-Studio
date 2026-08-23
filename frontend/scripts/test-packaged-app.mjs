@@ -9,7 +9,23 @@ const changelogStorageKey = "antennasim:changelog-seen";
 const storageKey = "hfas-package-uninstall-preservation-sentinel";
 const storageValue = "preserve-project-profile-data";
 
-const browser = await chromium.connectOverCDP(cdpUrl, { timeout: 60_000 });
+async function connectToPackagedBrowser() {
+  let lastError;
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    try {
+      return await chromium.connectOverCDP(cdpUrl, { timeout: 60_000 });
+    } catch (error) {
+      lastError = error;
+      if (attempt < 2) {
+        console.warn("Packaged WebView2 CDP attach timed out; retrying once.");
+        await new Promise((resolve) => setTimeout(resolve, 1_000));
+      }
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error("Packaged WebView2 CDP attach failed.");
+}
+
+const browser = await connectToPackagedBrowser();
 const pageDeadline = Date.now() + 15_000;
 let page;
 do {
