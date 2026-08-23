@@ -1,5 +1,7 @@
 import { defineConfig } from "@playwright/test";
 
+const useProductionPreview = process.env.HFAS_E2E_SERVER === "preview";
+
 export default defineConfig({
   testDir: "./e2e",
   timeout: 120_000,
@@ -14,7 +16,9 @@ export default defineConfig({
     trace: "retain-on-failure",
   },
   webServer: {
-    command: "node node_modules/vite/bin/vite.js --host 127.0.0.1 --port 4173 --strictPort",
+    command: useProductionPreview
+      ? "node node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port 4173 --strictPort"
+      : "node node_modules/vite/bin/vite.js --host 127.0.0.1 --port 4173 --strictPort",
     url: "http://127.0.0.1:4173",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
