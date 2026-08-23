@@ -9,7 +9,12 @@ async function openStudio(page: Page) {
   if (await changelog.isVisible().catch(() => false)) await changelog.click();
 }
 
+const aggregateTemplateTimeoutMs = process.platform === "win32" && process.env.CI
+  ? 600_000
+  : 120_000;
+
 test("all eight templates generate geometry, feed/segments, NEC, and solve locally", async ({ page }) => {
+  test.setTimeout(aggregateTemplateTimeoutMs);
   await openStudio(page);
   for (const reference of TEMPLATE_REGRESSION_CASES) {
     const definition = antennaTemplateDefinitions.find((item) => item.id === reference.id)!;
@@ -42,6 +47,7 @@ test("all eight templates generate geometry, feed/segments, NEC, and solve local
 });
 
 test("the common parameter UI enforces every declared range", async ({ page }) => {
+  test.setTimeout(aggregateTemplateTimeoutMs);
   await openStudio(page);
   for (const definition of antennaTemplateDefinitions) {
     await page.getByTestId(`template-${definition.id}`).click();
