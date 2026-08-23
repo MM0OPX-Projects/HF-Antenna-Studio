@@ -49,38 +49,32 @@ async function expectApplicationReturn(page: Page): Promise<void> {
 }
 
 test.describe("application navigation regression", () => {
-  test("opens every feature and returns to the start in the desktop layout", async ({ page }) => {
-    await page.setViewportSize({ width: 1440, height: 900 });
-    const consoleErrors: string[] = [];
-    const pageErrors: string[] = [];
-    let activeRoute = "/";
-    page.on("console", (message) => {
-      if (message.type() === "error") consoleErrors.push(message.text());
+  for (const { to, label } of FEATURE_ROUTES) {
+    test(`${label} opens from and returns to the desktop start`, async ({ page }) => {
+      await page.setViewportSize({ width: 1440, height: 900 });
+      const consoleErrors: string[] = [];
+      const pageErrors: string[] = [];
+      page.on("console", (message) => {
+        if (message.type() === "error") consoleErrors.push(message.text());
+      });
+      page.on("pageerror", (error) => pageErrors.push(`${to}: ${error.stack ?? error.message}`));
+
+      await navigateFromStart(page, to, false);
+      await expectApplicationReturn(page);
+
+      expect(consoleErrors, `${label} browser console errors`).toEqual([]);
+      expect(pageErrors, `${label} uncaught page errors`).toEqual([]);
     });
-    page.on("pageerror", (error) => pageErrors.push(`${activeRoute}: ${error.stack ?? error.message}`));
+  }
 
-    for (const { to, label } of FEATURE_ROUTES) {
-      await test.step(`${label}: start → feature → start`, async () => {
-        activeRoute = to;
-        await navigateFromStart(page, to, false);
-        await expectApplicationReturn(page);
-      });
-    }
+  for (const path of ROUTE_SHELL_PAGES) {
+    test(`${path} remains escapable in the compact layout`, async ({ page }) => {
+      await page.setViewportSize({ width: 768, height: 900 });
 
-    expect(consoleErrors, "browser console errors").toEqual([]);
-    expect(pageErrors, "uncaught page errors").toEqual([]);
-  });
-
-  test("keeps every repaired route escapable in the compact layout", async ({ page }) => {
-    await page.setViewportSize({ width: 768, height: 900 });
-
-    for (const path of ROUTE_SHELL_PAGES) {
-      await test.step(`${path}: compact start → feature → start`, async () => {
-        await navigateFromStart(page, path, true);
-        await expectApplicationReturn(page);
-      });
-    }
-  });
+      await navigateFromStart(page, path, true);
+      await expectApplicationReturn(page);
+    });
+  }
 
   test("retains an explicit recovery path for an unknown route", async ({ page }) => {
     await page.goto("/not-a-real-feature");

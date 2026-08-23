@@ -12,7 +12,7 @@ Status: **release candidate — tag/merge prohibited until every required gate b
 | Dependencies/security | Clean npm install/audit, RustSec audit in CI, secret scan, reviewed CSP/capabilities and unsafe DOM/process boundaries | npm/scan/review pass; RustSec CI pending |
 | Licence/provenance | GPL text, DCO, notices, source/build scripts, JS SBOM, dependency and comparator/asset review, offline About notice | Local review pass; package CI pending |
 | Unit/type/lint/build | Fresh `npm ci`, type-check, ESLint, complete Vitest, production Wasm build | Pass: 645 tests; lint 0 errors/13 reviewed warnings |
-| Integration/UI | Complete Playwright suite, browser-console and every-route return audit, stale/cancel/error paths | Pass: 73/73 after final fixes |
+| Integration/UI | Complete Playwright suite, browser-console and every-route return audit, stale/cancel/error paths | Local pass: 93/93; clean-runner rerun pending |
 | Solver/validation | Wasm solver tests and fail-closed 16-deck external 4NEC2 campaign | Pass: 9 primary, 16 exact decks/5 families |
 | Data workflows | Save/load/migration/recovery, NEC import/export/round trip, measurement parsing/export regressions | Pass in unit/browser suites |
 | Windows package | Clean Windows runner build/install/launch/offline solve/log/uninstall/data-preservation acceptance | Pending workflow |
@@ -59,6 +59,7 @@ The release candidate was reviewed from the position that D-031 should be reject
 
 - Old planning checkpoints still described a native solver as an unmet v1 gate. D-004 through D-006 and affected architecture, roadmap, risk, family and validation records now distinguish superseded history from the selected Wasm runtime.
 - The first changelog rewrite allowed the inherited AntennaSim 1.4.2 entry to be absorbed into v1.0.0, producing duplicate React keys and repeated browser-console errors. Parseable inherited headings plus index-stable section keys fixed it; two complete 73-test browser runs then passed.
+- The first clean Linux candidate run exceeded the generic 120-second limit inside one monolithic 17-route navigation test after 34 earlier solver-heavy cases. No route assertion failed before Playwright closed the page. The audit was split into 17 independently isolated desktop cases plus five compact cases and unknown-route recovery, preserving every assertion and console/page-error check. The expanded complete suite passes 93/93 locally; the clean-runner rerun remains a gate.
 - The frontend engine factory defaulted to the historical network backend if its build variable was absent. It now fails safe to local Wasm; backend mode requires explicit `VITE_ENGINE=backend` and has a dedicated selection regression.
 - GitHub's automatic source archive contains only a submodule gitlink, not the bundled solver's source. The package workflow now builds and hashes a named corresponding-source ZIP with the pinned nec2c tree expanded. Missing solver source blocks the workflow.
 - Ground-contact vertical language could imply explicit radial systems that v1 does not implement. Known limitations and the user/release guides now distinguish perfect-ground contact, the single-vertical NEC radial-screen approximation, and elevated explicit current-carrying radials, including the phased-array boundary.
