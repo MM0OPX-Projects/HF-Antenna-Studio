@@ -4,7 +4,7 @@
 
 The Wire Editor is the arbitrary-geometry path alongside the easier parametric template studio. Templates still generate the shared wire model and can be loaded into this editor; the editor does not create a second template-specific calculation pipeline.
 
-This feature extends the inherited editor instead of replacing its already useful 3D interaction, junction, measurement, results, and project components. It does not add a new electromagnetic solver. Simulation continues through the same local NEC-2 Wasm worker used by the rest of the current experimental application.
+This feature extends the inherited editor instead of replacing its already useful 3D interaction, junction, measurement, results, and project components. It does not add a new electromagnetic solver. Simulation continues through the same local NEC-2 Wasm worker selected for the v1 application.
 
 ## Coordinate and edit contract
 
@@ -137,4 +137,4 @@ The preferred bounded structured-editor approach was reviewed from the opposing 
 | Multiple FR blocks could survive browser state but disappear through the alternate backend export route. | Resolved by passing frequency segments through both Wasm and FastAPI export contracts. |
 | Retaining raw text inside native projects can increase project size or retain comments the user did not expect. | Accepted and documented. Source retention is local and intentional; future native packaging still needs file-size limits and a source-removal control. |
 | O(n²) overlap checks can freeze arbitrary-geometry editing. | Mitigated by a 500-wire detailed-pair limit with an explicit warning. More scalable spatial indexing remains future work. |
-| Browser/Wasm is not the long-term Windows-native architecture chosen in the foundation decision. | Accepted. This branch strengthens the current experimental application and its contracts; it does not claim to complete the packaged Windows host, native solver adapter, or safe raw-deck runner. |
+| The original foundation expected a native process rather than browser/Wasm. | D-031 supersedes that sequence for v1 because the Wasm path has the complete application and package evidence. A future native adapter still requires full parity and safe raw-deck review. |

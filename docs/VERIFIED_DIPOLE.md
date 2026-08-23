@@ -98,7 +98,7 @@ The following 14.1 MHz cases use a 10.631 m half-wave dipole and 1 mm wire diame
 
 An informational run in the independent rftools.io NEC2 antenna simulator showed 2.1 dBi and a 21-segment half-wave free-space dipole. Its UI did not expose enough exact geometry or numeric impedance data to qualify as release evidence, so it is not an automated oracle.
 
-PyNEC/NEC2++ 1.8.2 and necpp 2.3.2 were assessed as possible second implementations. The current Windows host lacks the required Visual C++ toolchain and PyPI does not provide a compatible Windows wheel; the attempted build therefore failed before solver execution. No comparison result is claimed. A byte-identical 4NEC2 comparison remains the release-blocking established-package task from `VALIDATION_PLAN.md`.
+PyNEC/NEC2++ 1.8.2 and necpp 2.3.2 were assessed as possible second implementations. The Windows host lacked the required Visual C++ toolchain and PyPI did not provide a compatible wheel, so no comparison result is claimed. The later validation campaign closes the established-package requirement for the exact published/free-space and perfect-ground dipole decks using the separately installed, hash-pinned 4NEC2 NEC-2D build; it does not establish a distinct-method physical oracle.
 
 ## Automated coverage
 
@@ -134,14 +134,14 @@ After the first green implementation, the feature was reviewed from the position
 
 | Objection | Finding | Resolution |
 | --- | --- | --- |
-| “Verified” overstates a one-solver browser result. | Valid. | Claim boundary tightened; only the published free-space case has independent numeric evidence, and established-package ground comparison remains release-blocking. |
+| “Verified” overstates a one-solver browser result. | Valid. | Claim boundary is limited to recorded cases; the later campaign adds exact-deck 4NEC2 evidence for the 0.5λ perfect-ground case without claiming independent physical truth. |
 | The inherited `GE` convention may be backwards. | Confirmed defect in the first adapter draft. | Corrected to manual-defined `GE 0` for free space and `GE -1` for this elevated wire with ground; every numeric case was rerun without baseline movement. |
 | Results can become stale after a user edits parameters. | Confirmed UI integrity risk. | Completed runs are keyed to the canonical SI model; a parameter change immediately hides the prior result while regenerating the pending deck. Browser regression coverage was added. |
 | The shown deck could differ from the solved deck. | Valid in the inherited generic path. | The feature bypasses the generic builder after adaptation and passes the same string through `runDeck`; a worker-message test and browser assertion cover it. |
 | Automatic segmentation can create false confidence. | Valid residual risk. | Counts and ratios are exposed, manual-based limits are enforced, and convergence is explicitly still required rather than claimed automatic. |
 | A symmetric dipole cannot prove coordinate handedness. | Valid. | Keep the conventional theta contract here; require asymmetric Yagi/phased cases before general visualization validation. |
 | Filtering stderr could hide a meaningful diagnostic. | Valid. | Solver output and stderr warning/error lines are retained in the result; a broader diagnostic corpus and raw-output download remain open work. |
-| Wasm conflicts with the proposed native desktop architecture. | Valid if treated as product selection. | This remains an experimental adapter/proof of contracts. Native nec2c versus NEC2++ selection and Wasm parity gates are unchanged. |
+| Wasm conflicts with the proposed native desktop architecture. | Historically valid. | D-031 selects the complete tested Wasm path for v1.0.0; native alternatives remain future challengers requiring full parity evidence. |
 
 No objection was closed merely because tests passed. The unresolved items remain in `RISK_REGISTER.md` and `VALIDATION_PLAN.md`.
 

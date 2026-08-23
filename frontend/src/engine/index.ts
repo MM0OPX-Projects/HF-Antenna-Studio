@@ -1,8 +1,8 @@
 /**
  * Engine factory — returns the appropriate SimulationEngine based on VITE_ENGINE.
  *
- * - "backend" (default): BackendEngine using REST API + WebSocket
- * - "wasm": WasmEngine using nec2c compiled to WebAssembly (GitHub Pages)
+ * - "wasm" (default): local nec2c compiled to WebAssembly
+ * - "backend": legacy AntennaSim REST API + WebSocket, only when explicitly requested
  */
 
 import type { SimulationEngine } from "./types";
@@ -15,10 +15,10 @@ let _engine: SimulationEngine | null = null;
 export function getEngine(): SimulationEngine {
   if (!_engine) {
     const mode = import.meta.env.VITE_ENGINE as string | undefined;
-    if (mode === "wasm") {
-      _engine = new WasmEngine();
-    } else {
+    if (mode === "backend") {
       _engine = new BackendEngine();
+    } else {
+      _engine = new WasmEngine();
     }
   }
   return _engine;

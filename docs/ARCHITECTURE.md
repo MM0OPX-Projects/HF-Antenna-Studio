@@ -1,27 +1,27 @@
 # HF Antenna Studio — Architecture
 
-Status: proposed architecture, subject to the Phase 0 solver and packaging gates
-Last reviewed: 2026-08-02
+Status: v1.0.0 implemented architecture plus documented post-v1 options
+Last reviewed: 2026-08-23
 
 ## Recommendation in one sentence
 
-Build a new GPL-3.0-or-later desktop repository with a bundled React/TypeScript interface in a Tauri 2 host, invoke a checksummed native NEC command-line solver through a narrow local process adapter, and keep the solver replaceable until native `nec2c` and NEC2++ have completed the same Windows and numerical bake-off.
+Ship v1.0.0 as a GPL-3.0-or-later Tauri 2/WebView2 desktop application containing the React/TypeScript UI and pinned nec2c/WebAssembly NEC-2 solver in a dedicated cancellable worker; keep the canonical model/adapter boundary so a future native or alternative solver can be evaluated without changing antenna semantics.
 
-This is a proposal, not an implementation report. Neither candidate solver has yet passed HF Antenna Studio's validation suite.
+This release decision is D-031. The exact v1 Wasm path passes the bounded application/reference suite and Windows installed/offline package gate; those results do not validate every antenna or NEC assumption. The native-process design below is retained as a post-v1 alternative, not the current runtime.
 
-## Experimental vertical-slice status
+## Implementation lineage and evidence checkpoints
 
-The `feature/verified-dipole-model` branch implements a deliberately narrow vertical slice inside the inherited AntennaSim browser/Wasm baseline. Its typed SI model, dedicated NEC adapter, exact-deck worker request, result validator, and `/verified-dipole` page test the contract shape proposed here. It does not reverse the native-solver/Tauri proposal or select Wasm for the product.
+The `feature/verified-dipole-model` branch first implemented a deliberately narrow vertical slice inside the inherited AntennaSim browser/Wasm baseline. Its typed SI model, dedicated NEC adapter, exact-deck worker request, result validator, and `/verified-dipole` page established the contract shape later retained in v1. At that checkpoint it did not select a product runtime; D-031 made the later selection after the broader evidence campaign.
 
-The key architectural evidence is that the displayed deterministic deck can cross a narrow solver boundary without rebuilding it from a second application model. That pattern should be retained when the slice moves to the proposed `domain`, `nec-compiler`, `result-parser`, and native `solver-runner` packages. See [`VERIFIED_DIPOLE.md`](VERIFIED_DIPOLE.md) for implementation and validation boundaries.
+The key architectural evidence is that the displayed deterministic deck crosses a narrow solver boundary without being rebuilt from a second application model. That pattern is retained in the shared TypeScript domain, NEC-adapter, parser, and solver-service modules. See [`VERIFIED_DIPOLE.md`](VERIFIED_DIPOLE.md) for implementation and validation boundaries.
 
-The `feature/antenna-template-system` branch extends that experiment with a declarative template registry, an SI-only shared parametric-wire schema, and one common workbench/segmentation/NEC pipeline for eight antenna topologies. It demonstrates that adding a template need not add a calculation screen. This remains inherited browser/Wasm implementation evidence rather than a change to the proposed Tauri/native architecture. See [`ANTENNA_TEMPLATE_SYSTEM.md`](ANTENNA_TEMPLATE_SYSTEM.md) for the contract, RF review, regression evidence, and open validation work.
+The `feature/antenna-template-system` branch extended that experiment with a declarative template registry, an SI-only shared parametric-wire schema, and one common workbench/segmentation/NEC pipeline for eight antenna topologies. It demonstrates that adding a template need not add a calculation screen and is part of the Tauri/Wasm v1 codebase. See [`ANTENNA_TEMPLATE_SYSTEM.md`](ANTENNA_TEMPLATE_SYSTEM.md) for the contract, RF review, regression evidence, and open validation work.
 
 The `feature/vertical-antennas` branch adds a solver-independent vertical-model schema and a dedicated NEC adapter for three intentionally non-equivalent configurations: a ground-contact monopole over perfect ground, elevated explicit radial wires over perfect or Sommerfeld/Norton ground, and NEC's reflection-coefficient radial-screen approximation. Exact model identity continues across generated deck, result, and UI, and incompatible card combinations are rejected before execution. Independent same-deck comparison with a separately installed 4NEC2 NEC-2D engine now supports the three 40/20/10-m perfect-ground fixtures; it does not yet validate finite-ground or radial-screen accuracy. See [`VERTICAL_ANTENNAS.md`](VERTICAL_ANTENNAS.md).
 
-The `feature/yagi-beam-models` branch adds a typed directional-array model and dedicated adapter for 2-to-8-element Yagis. It fixes intended forward at `+Y`, derives axial front-to-back separately from worst-rear-hemisphere front-to-rear, and carries exact model identity through a debounced/cancellable worker and four saved comparisons. An independent NEC-2D run exposed and drove correction of an 80-column input portability issue; three exact perfect-ground decks now agree across the browser/Wasm and external NEC-2D builds. This remains evidence for the contracts and replaceable solver boundary, not a reversal of the proposed native/Tauri architecture. See [`YAGI_BEAMS.md`](YAGI_BEAMS.md).
+The `feature/yagi-beam-models` branch adds a typed directional-array model and dedicated adapter for 2-to-8-element Yagis. It fixes intended forward at `+Y`, derives axial front-to-back separately from worst-rear-hemisphere front-to-rear, and carries exact model identity through a debounced/cancellable worker and four saved comparisons. An external NEC-2D run exposed and drove correction of an 80-column input portability issue; three exact perfect-ground decks now agree across the Wasm and external NEC-2D builds. See [`YAGI_BEAMS.md`](YAGI_BEAMS.md).
 
-The `feature/loop-and-hexbeam-models` branch adds discriminated SI models and one dedicated adapter for closed polygon loops, multi-element closed-loop arrays, and a folded open-wire compact beam. It demonstrates topology-specific connectivity contracts, explicit one-segment source bridges, derived feed orientation without a polarisation claim, non-conducting visual supports, and the reuse of D-019's forward-axis metrics. Five perfect-ground decks agree with the separate NEC-2D comparator; physical/reference and finite-ground validation remain open. The experimental files live under `frontend/src/features/loop-beams/`, but their domain/generator/adapter/result separation maps directly onto the proposed `domain`, `nec-compiler`, `result-parser`, and view packages. See [`LOOP_AND_HEXBEAM_MODELS.md`](LOOP_AND_HEXBEAM_MODELS.md).
+The `feature/loop-and-hexbeam-models` branch adds discriminated SI models and one dedicated adapter for closed polygon loops, multi-element closed-loop arrays, and a folded open-wire compact beam. It demonstrates topology-specific connectivity contracts, explicit one-segment source bridges, derived feed orientation without a polarisation claim, non-conducting visual supports, and the reuse of D-019's forward-axis metrics. Five perfect-ground decks agree with the separate NEC-2D comparator; physical/reference and finite-ground validation remain open. Its domain/generator/adapter/result separation is retained under `frontend/src/features/loop-beams/`. See [`LOOP_AND_HEXBEAM_MODELS.md`](LOOP_AND_HEXBEAM_MODELS.md).
 
 The `feature/phased-arrays` branch adds a two-element phased-vertical domain and deliberately separate ideal-current and physical-network solver paths. Ideal mode derives a coupled two-port admittance matrix from two NEC calibration runs, solves the complex `EX` voltages required for requested feed currents, and verifies the final currents before accepting a pattern. Physical mode uses one source junction and explicit ideal `TL` cards, with solved element currents as outputs. Both paths share exact model identity, debounce/cancellation, bounded caches, compass-pattern metrics, and immutable overlays. Three classic perfect-ground decks pass a separate NEC-2D comparison; physical TL, finite-ground, radial, and convergence validation remain open. See [`PHASED_ARRAYS.md`](PHASED_ARRAYS.md).
 
@@ -37,17 +37,17 @@ The `feature/antenna-optimiser` branch adds a deterministic bounded coordinate-p
 
 The `feature/measurement-comparison` branch adds an untrusted-file boundary and comparison consumer over the frequency-analyser service. A bounded one-port Touchstone parser retains complete UTF-8 source/line provenance, derives S11/SWR/impedance without repairing input, and rejects ambiguous NanoVNA CSV. Exact matching or labelled simulation-only R/X interpolation creates comparison rows; measurement samples are never resampled or passed into NEC. Reference-impedance mismatches suppress SWR differences, and stale simulation identity remains visible. See [`MEASUREMENT_COMPARISON.md`](MEASUREMENT_COMPARISON.md).
 
-The `feature/validation-campaign` branch adds a versioned, SHA-256-pinned validation manifest and fail-closed Windows runner around the existing exact-deck family comparators. Nine primary cases cover all eight required antenna families and 16 application-authored decks are rerun by the separate 4NEC2 NEC-2D build. This strengthens the case for one immutable deck boundary and one result contract, but it does not select the product solver or supersede D-005/D-006: most comparisons share NEC-2 ancestry, native-runner parity and finite-ground/convergence evidence remain open, and the production architecture still requires the proposed solver bake-off. See [`VALIDATION_REPORT.md`](VALIDATION_REPORT.md) and D-029.
+The validation campaign adds a versioned, SHA-256-pinned manifest and fail-closed Windows runner around exact-deck family comparators. Nine primary cases cover all eight required families and 16 application-authored decks are rerun by a separate 4NEC2 NEC-2D build. This supports D-031's bounded v1 selection while retaining the important limitation that most comparisons share NEC-2 ancestry and finite-ground/convergence evidence remains open. See [`VALIDATION_REPORT.md`](VALIDATION_REPORT.md) and D-029/D-031.
 
-The `feature/windows-packaging` branch implements the first distributable Tauri 2 proof around the existing verified Wasm path. A per-user NSIS installer embeds the static UI and rebuilt pinned solver, uses Windows 11 Evergreen WebView2 with an embedded bootstrapper/check, exposes only three bounded diagnostic commands, applies a local-only CSP, preserves user data on uninstall, and is exercised after installation by a real offline dipole solve on a clean Windows runner. An explicit larger offline-WebView2 configuration exists for later air-gapped testing. This validates the shell/package boundary without resolving D-005's native solver choice or the future native filesystem/process adapter. See [`WINDOWS_PACKAGING.md`](WINDOWS_PACKAGING.md) and D-030.
+The Windows package is the implemented v1 runtime. A per-user NSIS installer embeds the static UI and rebuilt pinned solver, uses Windows 11 Evergreen WebView2 with an embedded bootstrapper/check, exposes only three bounded diagnostic commands, applies a local-only CSP, preserves user data on uninstall, and is exercised after installation by a real offline dipole solve on a clean Windows runner. An explicit larger offline-WebView2 configuration remains unclaimed pending air-gapped testing. See [`WINDOWS_PACKAGING.md`](WINDOWS_PACKAGING.md) and D-030/D-031.
 
 ## Why a desktop web architecture
 
-The product requires an HTML/JavaScript interface, offline operation, private local files, and dependable local native calculation on Windows 11. A desktop webview provides the desired UI technology without introducing a loopback web server, browser-origin file workarounds, Docker, Redis, or a permanently listening port.
+The product requires an HTML/JavaScript interface, offline operation after installation, private local files, and dependable local calculation on Windows 11. A desktop webview provides the desired UI technology without introducing a loopback web server, Docker, Redis, or a permanently listening port.
 
-[Tauri 2's Windows installer documentation](https://v2.tauri.app/distribute/windows-installer/) describes WebView2 bootstrapper, embedded offline installer, and fixed-runtime options. The project must select and test an offline option rather than assume the operating-system runtime is present. [Tauri capabilities](https://v2.tauri.app/security/capabilities/) provide a way to expose a deliberately small native command and file-access surface to the frontend.
+[Tauri 2's Windows installer documentation](https://v2.tauri.app/distribute/windows-installer/) describes WebView2 bootstrapper, embedded offline installer, and fixed-runtime options. V1 selects the small bootstrapper/check package for normal Windows 11 and tests normal operation offline after installation; it does not claim fully disconnected installation on a stripped image. [Tauri capabilities](https://v2.tauri.app/security/capabilities/) provide a way to expose a deliberately small native command surface to the frontend.
 
-Tauri is a packaging and isolation choice, not a source of numerical correctness. The NEC executable remains a separate, auditable artifact.
+Tauri is a packaging and isolation choice, not a source of numerical correctness. The nec2c Wasm module remains a separately identifiable, reproducibly built solver artifact with corresponding source.
 
 ## System context
 
@@ -55,14 +55,12 @@ Tauri is a packaging and isolation choice, not a source of numerical correctness
 flowchart LR
     U["User"] --> UI["Bundled HTML / TypeScript UI"]
     UI --> W["Geometry and visualization workers"]
-    UI --> IPC["Typed Tauri IPC"]
-    IPC --> H["Rust desktop host"]
-    H --> F["User-approved local project and NEC files"]
-    H --> J["Solver job manager"]
-    J --> S["Bundled native NEC solver process"]
+    UI --> S["Pinned nec2c WebAssembly solver worker"]
     S --> O["Raw NEC output and diagnostics"]
-    O --> J
-    J --> UI
+    O --> UI
+    UI --> L["Versioned WebView-local projects and explicit file imports/exports"]
+    UI --> IPC["Three bounded Tauri diagnostic commands"]
+    IPC --> H["Rust desktop host: runtime info and logs"]
 ```
 
 No network component appears in the required path. The initial application will have no HTTP listener and no remote calculation endpoint.
@@ -71,15 +69,19 @@ No network component appears in the required path. The initial application will 
 
 1. **One canonical model.** Project data, NEC generation, solver results, and UI plots use versioned contracts rather than parallel Python and TypeScript interpretations.
 2. **A replaceable solver boundary.** Solver selection is an adapter and release-manifest decision. UI components do not parse a solver's text directly.
-3. **Raw evidence is retained.** Generated input, raw output, stderr, exit status, timing, diagnostics, and solver identity accompany structured results.
+3. **Raw evidence is retained where the workflow exposes it.** Generated input, raw output/diagnostics, timing, and solver identity remain available to validation paths; native-only stderr/exit fields are requirements for a future native adapter, not invented v1 data.
 4. **No silent degradation.** Unsupported NEC cards or unsafe conversions are explicit diagnostics; they are never silently discarded or clamped.
 5. **Coordinates and units are explicit.** SI units and NEC angular conventions are canonical; UI units and compass views are reversible transforms.
-6. **Offline/private is enforced, not advertised only.** Assets are bundled, network access is absent by default, and an air-gapped acceptance test is required.
+6. **Offline/private is enforced, not advertised only.** Assets are bundled, normal calculation has no network dependency, and the installed application is tested with networking forced offline. Fully disconnected installation remains a separate unvalidated package claim.
 7. **Optimization is a client of a validated run API.** It cannot bypass constraints, provenance, cancellation, or validation.
 
 ## Runtime components
 
 ### Desktop host
+
+The v1 host reports runtime/package paths, appends bounded diagnostics, and opens the resolved log directory. It does not launch the solver, expose a general filesystem API, or listen on a port. Solver jobs execute synchronously inside replaceable Web Workers; cancelling or superseding a job terminates the worker and immutable request identity prevents stale publication.
+
+### Post-v1 native solver-host option
 
 Responsibilities:
 
@@ -185,7 +187,7 @@ Adapters initially considered:
 
 The UI submits immutable jobs. A bounded queue prevents an accidental fine sweep or optimizer from exhausting CPU, memory, or disk. Each job supports progress where the solver makes it observable, cancellation, timeout, and a maximum output budget.
 
-The first release should default to one native solver job at a time until reentrancy, process isolation, thermal behavior, and disk use are measured. UI geometry and chart workers may run concurrently. Later optimizers may use a measured concurrency limit, but every candidate is still an ordinary validated solver job.
+The first release runs one nec2c/Wasm solver worker job at a time per workbench until reentrancy, thermal behaviour, and memory use are measured. UI geometry and chart workers may run concurrently. Later optimisers may use a measured concurrency limit, but every candidate remains an ordinary solver job through the same validated pipeline. A future native runner would add process and disk measurements before selection.
 
 Cache identity is a hash of the exact deck, solver binary/build identity, parser version, and relevant run options. A cache keyed only by project name or frequency is invalid.
 
@@ -225,7 +227,7 @@ Raw solver warnings are retained even when an application diagnostic covers the 
 ## Offline and Windows 11 design
 
 - Bundle all JavaScript, styles, fonts, icons, schemas, help, and solver artifacts in the installer.
-- Use a WebView2 offline installer or fixed runtime selected during the packaging spike; do not rely on a download bootstrapper for the offline release.
+- Use the small WebView2 bootstrapper package for ordinary Windows 11 installation and prove normal operation offline after installation. Reserve the larger offline-installer/fixed-runtime option for a future air-gapped-install claim.
 - Build and test x64 first. ARM64 is a separate target only after its solver and runtime pass the same suite.
 - Sign the application and solver binaries when release infrastructure is available; publish SHA-256 checksums and an SBOM.
 - Use Windows-safe path and process APIs, including spaces, non-ASCII paths, long paths within documented limits, and cancellation of child process trees.
@@ -389,7 +391,7 @@ NEC2++ can be linked as a library, which may reduce text parsing and process sta
 
 This architecture deliberately leaves three items behind evidence gates:
 
-1. **Solver implementation:** native `nec2c` is the baseline and NEC2++ the challenger; neither is the product solver until Phase 0 passes.
+1. **Post-v1 solver study:** native `nec2c` and NEC2++ may be compared against the v1 pinned nec2c/Wasm oracle; neither replaces the v1 product solver until all parity, security, validation and package gates pass.
 2. **WebView2 packaging:** offline installer versus fixed runtime will be selected after clean-VM size, update, and reliability tests.
 3. **Supported NEC dialect:** the structured subset and raw-deck rules will be published only after corpus inventory and parser tests.
 

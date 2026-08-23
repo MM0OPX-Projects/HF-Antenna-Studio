@@ -35,7 +35,7 @@ The 2-degree grid limits peak-angle reporting to 2-degree samples and makes inte
 
 Geometry is regenerated immediately from the current immutable model. Solver work waits for 450 ms of stable input. A newer request aborts the active Wasm worker, increments request identity, and withholds all prior result-dependent plots and numbers. A late or aborted result cannot publish against a newer geometry. A 48-entry in-memory LRU cache is keyed by the complete serialized SI model, including ground and SWR reference. Saved comparisons are explicit immutable traces and therefore remain visible and labelled when the current model changes.
 
-This proves the current single-page browser worker behavior. A future native runner still requires equivalent process-tree cancellation, output limits, and identity tests.
+This proves the selected worker behaviour for the tested page. Any future native runner would still require equivalent process-tree cancellation, output limits, and identity tests before replacing it.
 
 ## Numerical evidence
 
@@ -70,7 +70,7 @@ The code review separated the Yagi domain schema, geometry generator, NEC adapte
 - A continuous driven wire with a delta-gap source is an NEC abstraction, not a model of the physical feed gap and hardware.
 - The same diameter applies to every element.
 - Sommerfeld/Norton ground completes successfully but has not received the independent same-deck ground comparison used for the three perfect-ground fixtures.
-- Segment-length, diameter, and 2-degree pattern-grid convergence studies remain release gates.
+- Segment-length, diameter, and 2-degree pattern-grid convergence studies remain future validation priorities and are outside the v1.0.0 claim.
 - The three comparator fixtures share the NEC-2 method. Published measurements add independent sanity evidence but are not a controlled equivalence study.
 - Forward/rear metrics can be poor or negative for arbitrary user dimensions; the application reports them rather than silently flipping the boom direction.
 - Absolute gain above ground includes ground reflection. It must not be read as free-space Yagi gain or guaranteed field performance.

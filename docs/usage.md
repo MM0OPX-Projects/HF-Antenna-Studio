@@ -2,6 +2,8 @@
 
 # Usage
 
+> **Historical AntennaSim baseline guide.** Template counts, names and feature descriptions below predate the HF Antenna Studio v1.0.0 release and are not validation or support claims. Use [USER_GUIDE.md](USER_GUIDE.md) for the released application and [KNOWN_LIMITATIONS.md](KNOWN_LIMITATIONS.md) for evidence boundaries.
+
 Everything you can do once AntennaSim is running: the antenna templates it ships with, the full feature set, and the keyboard shortcuts.
 
 ## Table of Contents

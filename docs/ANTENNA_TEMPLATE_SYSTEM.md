@@ -116,7 +116,7 @@ Before these templates are called validated or supported for release:
 4. Validate `GE 1`/`GN` behaviour for perfect and real ground against NEC documentation/reference cases.
 5. Check the five-degree pattern grid and take-off extraction at one degree on multi-lobed cases.
 6. Add loss-bearing template cases when loads become user-editable; the current eight definitions intentionally emit no loads.
-7. Test Windows 11 packaged/offline execution through the proposed native desktop runner. This branch exercises the inherited local browser/Wasm baseline only.
+7. Retain the passing Windows 11 installed/offline gate for the selected packaged Wasm runtime, and require equivalent evidence before any future native replacement.
 
 ## Adding a template
 

@@ -123,5 +123,5 @@ Before broad release support claims:
 3. Perform feed-junction segmentation sensitivity, especially above 16 radials.
 4. Run height/clearance sensitivity for Sommerfeld/Norton cases near 0.001λ.
 5. Compare radial length and soil sweeps against published numeric tables where redistribution/provenance permits.
-6. Repeat the corpus against the selected packaged native solver on Windows 11; current UI execution remains the inherited browser/Wasm experimental adapter.
+6. Retain the Windows installed/offline and exact-deck gates for the selected packaged Wasm solver, and require the same corpus before any future native solver replacement.
 7. Add measured-antenna comparisons only with documented feed-line isolation, soil measurement, construction tolerances, and calibration uncertainty.

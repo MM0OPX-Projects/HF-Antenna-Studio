@@ -6,7 +6,7 @@ Last reviewed: 2026-08-07
 
 ## Outcome
 
-HF Antenna Studio uses a minimal Tauri 2 host for its Windows 11 test package. The host embeds the production React/Vite assets and the exact nec2c WebAssembly files produced from the pinned solver submodule. A normal user installs one per-user NSIS setup executable and does not install Node.js, Python, Rust, Emscripten, Docker, Redis, or a separate NEC executable.
+HF Antenna Studio uses a minimal Tauri 2 host for its Windows 11 x64 release package. The host embeds the production React/Vite assets and the exact nec2c WebAssembly files produced from the pinned solver submodule. A normal user installs one per-user NSIS setup executable and does not install Node.js, Python, Rust, Emscripten, Docker, Redis, or a separate NEC executable.
 
 This is a packaging selection, not a new electromagnetic solver selection. The package exercises the currently validated browser/Wasm pipeline while D-005's native nec2c versus NEC2++ product bake-off remains open. No RF calculation code or expected result was changed for packaging.
 
@@ -17,7 +17,7 @@ This is a packaging selection, not a new electromagnetic solver selection. The p
 | Edge PWA | The existing frontend can cache assets and appear in the Start menu, but initial deployment, browser policy/profile state, storage clearing, diagnostics, and controlled solver/version delivery remain browser-owned. | Edge provides install/uninstall integration, but the project would not own a conventional distributable installer. | Smallest payload, weaker reproducibility and support boundary. | Keep as a possible demo/discovery route, not the primary Windows package. |
 | Browser plus packaged localhost service | Can invoke a native process but adds a listening port, service lifecycle, firewall/origin policy, and two installation/runtime surfaces. | Requires custom service installation and cleanup. | Larger operational and security surface than needed for the current Wasm engine. | Rejected for v1. |
 | Electron | Provides a consistent bundled Chromium/Node runtime and mature packaging. Electron explicitly embeds Chromium and Node. | Conventional Windows packaging is available through Electron tooling. | Reliable but duplicates the WebView already supplied by Windows 11 and materially increases update and distribution payload. | Retain only as fallback if WebView2/Tauri fails supported-machine testing. |
-| Tauri 2 plus system WebView2 | Embeds the existing frontend without a localhost server. Windows 11 distributes Evergreen WebView2 as an OS component; the NSIS package still includes Microsoft's small bootstrapper/check. | Per-user launcher, Start-menu entry, Apps uninstall registration, and clean program removal. | Small native host and no duplicate browser engine. | **Selected for the test package.** |
+| Tauri 2 plus system WebView2 | Embeds the existing frontend without a localhost server. Windows 11 distributes Evergreen WebView2 as an OS component; the NSIS package still includes Microsoft's small bootstrapper/check. | Per-user launcher, Start-menu entry, Apps uninstall registration, and clean program removal. | Small native host and no duplicate browser engine. | **Selected for v1.0.0.** |
 | Tauri 2 plus WebView2 offline installer/fixed runtime | Supports installation on a disconnected or unusually stripped Windows image. | Same application installer behaviour. | Tauri documents roughly 127 MB extra for the offline installer and roughly 180 MB for fixed runtime. The application then carries browser servicing consequences. | Provide an explicit larger build variant only after air-gapped testing. |
 
 Primary references: [Tauri Windows installers and WebView2 modes](https://v2.tauri.app/distribute/windows-installer/), [Microsoft WebView2 distribution](https://learn.microsoft.com/en-us/microsoft-edge/webview2/concepts/distribution), [Tauri security capabilities](https://v2.tauri.app/security/capabilities/), [Tauri CSP guidance](https://v2.tauri.app/security/csp/), [Electron packaging](https://www.electronjs.org/docs/latest/tutorial/application-distribution), and [Microsoft Edge PWA installation](https://learn.microsoft.com/en-us/microsoft-edge/progressive-web-apps/ux).
@@ -47,14 +47,15 @@ The distributable build runs KJ7LNW nec2c/WebAssembly v1.3.3 from source commit 
 2. installs pinned Emscripten 3.1.56;
 3. rebuilds `nec2c.js` and `nec2c.wasm` from source;
 4. builds the frontend with `VITE_ENGINE=wasm`;
-5. embeds those generated files in the Tauri package; and
-6. runs a real dipole solve inside the installed WebView2 application with browser networking forced offline.
+5. embeds those generated files in the Tauri package;
+6. runs a real dipole solve inside the installed WebView2 application with browser networking forced offline; and
+7. creates and hashes a corresponding-source ZIP with the exact solver submodule expanded.
 
 The campaign in [`VALIDATION_REPORT.md`](VALIDATION_REPORT.md) defines what has and has not been numerically validated. Packaging does not broaden those claims.
 
 ## Installation
 
-1. Download the `HF Antenna Studio_*_x64-setup.exe` test artifact from the Windows package workflow or a future signed release.
+1. Download the `HF Antenna Studio_*_x64-setup.exe` and `package-manifest.json` from the v1.0.0 release.
 2. Verify its published SHA-256 value in `package-manifest.json`.
 3. Run the setup executable. The current test build installs for the current user and should not request administrator rights.
 4. Launch **HF Antenna Studio** from the Start menu.
@@ -114,7 +115,7 @@ Set-Location ..
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\package-windows.ps1 -SkipDependencyInstall
 ```
 
-The preferred test installer appears under `src-tauri/target/release/bundle/nsis/` with a generated `package-manifest.json`. Build outputs and generated icons are ignored and must not be committed.
+The release-candidate installer appears under `src-tauri/target/release/bundle/nsis/` with a generated `package-manifest.json`. Build outputs and generated icons are ignored and must not be committed.
 
 ## Automated package acceptance
 
@@ -133,15 +134,15 @@ The clean `windows-latest` workflow performs:
 - silent uninstall and launcher removal; and
 - uninstall/reinstall confirmation that an actual WebView local-storage sentinel survives, plus an application-data-directory preservation check.
 
-The workflow artifact is a test build, retained for 14 days. It is unsigned. SmartScreen reputation, code signing, upgrade/repair, Windows ARM64, enterprise policy, non-ASCII Windows profiles, endpoint security, 100–200% DPI, High Contrast, Narrator, GPU/software rendering, and a genuinely air-gapped installer remain manual release gates.
+The workflow artifact is a release-candidate build, retained for 14 days. The exact accepted installer is promoted to the GitHub release with its manifest, corresponding-source ZIP and source checksum. It is unsigned. SmartScreen reputation, code signing, upgrade/repair, Windows ARM64, enterprise policy, non-ASCII Windows profiles, endpoint security, 100–200% DPI, High Contrast, Narrator, GPU/software rendering, and a genuinely air-gapped installer remain accepted unvalidated platform combinations rather than v1.0.0 claims.
 
 ## Known limitations
 
-- The current package uses the verified Wasm adapter, not the still-undecided native product solver.
+- The current package uses the D-031-selected, validation-bounded Wasm adapter. Native candidates remain post-v1 alternatives and are not an undecided v1 dependency.
 - The preferred small installer assumes the Windows 11 Evergreen runtime is serviceable; it is not an air-gapped-install claim.
-- Test installers are not code-signed and may trigger Windows reputation warnings.
+- The v1.0.0 installer is not code-signed and may trigger Windows reputation warnings; verify its published SHA-256.
 - Browser-local project storage is preserved but is not yet replaced by atomic native filesystem storage.
 - Logs are bounded operational diagnostics, not a complete raw solver-output archive.
 - Automatic updating is deliberately absent; normal operation makes no update/network request.
 - Installer repair, in-place downgrade, multi-user installation, and ARM64 packages are not yet supported claims.
-- `npm audit` currently reports the React Router RSC-mode CSRF advisory (GHSA-qwww-vcr4-c8h2). This package is a client-only `BrowserRouter` application with no RSC/action server, so the affected execution path is absent; update to a fixed compatible v7 release when the vendor publishes one instead of downgrading to versions with older client-routing advisories.
+- The final locked frontend graph must pass `npm audit`; Rust dependencies are checked by RustSec in CI. A release candidate with a known applicable high-severity advisory is blocked.

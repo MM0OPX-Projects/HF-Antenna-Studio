@@ -1,7 +1,7 @@
 # HF Antenna Studio — Architecture Decision Record
 
-Status: planning decisions
-Decision review date: 2026-08-02
+Status: current through the v1.0.0 release candidate; superseded planning decisions are retained explicitly
+Decision review date: 2026-08-23
 
 ## Decision summary
 
@@ -9,10 +9,10 @@ Decision review date: 2026-08-02
 |---|---|---|
 | D-001 | Start a new repository; selectively reuse audited AntennaSim components with GPL provenance | Accepted |
 | D-002 | License the combined application GPL-3.0-or-later before accepting code | Accepted, release checklist pending |
-| D-003 | Use a Tauri 2 Windows desktop shell with bundled React/TypeScript UI | Accepted, offline WebView2 mode conditional on Phase 0 |
-| D-004 | Use direct typed desktop IPC and an out-of-process native solver; no localhost service in v1 | Accepted |
-| D-005 | Bake off native `nec2c` against native NEC2++; do not name a product solver before validation | Accepted gate; solver undecided |
-| D-006 | Defer a Wasm solver to a post-native-validation adapter | Accepted |
+| D-003 | Use a Tauri 2 Windows desktop shell with bundled React/TypeScript UI | Accepted for v1; fully disconnected installation remains unclaimed |
+| D-004 | Use direct typed desktop IPC and an out-of-process native solver; no localhost service in v1 | Superseded for v1 by D-031; retained as a future native option |
+| D-005 | Bake off native `nec2c` against native NEC2++; do not name a product solver before validation | Superseded for v1 by D-031; retained as a future architecture study |
+| D-006 | Defer a Wasm solver to a post-native-validation adapter | Superseded for v1 by D-031 |
 | D-007 | Maintain one versioned project/deck/result contract and one model-to-NEC compiler | Accepted |
 | D-008 | Preserve raw NEC documents and prohibit silent import conversion | Accepted |
 | D-009 | Use NEC coordinates internally and tested explicit UI transforms | Accepted |
@@ -36,7 +36,8 @@ Decision review date: 2026-08-02
 | D-027 | Preserve analyser measurements as immutable evidence and interpolate simulation only | Accepted, experimental |
 | D-028 | Use an original four-region engineering workbench and preserve complete warnings/units/result currency | Accepted, experimental |
 | D-029 | Store validation as immutable exact-deck evidence with explicit discrepancy classifications | Accepted |
-| D-030 | Package the current verified Wasm application in a minimal Tauri/NSIS Windows shell | Accepted as a tested distribution checkpoint; product solver remains conditional |
+| D-030 | Package the current verified Wasm application in a minimal Tauri/NSIS Windows shell | Accepted and promoted by D-031 |
+| D-031 | Select pinned nec2c/WebAssembly in Tauri as the validation-bounded v1 runtime | Accepted for v1.0.0 |
 
 ## D-001 — New repository with selective AntennaSim reuse
 
@@ -80,14 +81,14 @@ A permissive UI repository plus separately downloaded solver could broaden reuse
 
 ### Decision
 
-Use React/TypeScript/Vite for the bundled HTML interface and a minimal Rust/Tauri 2 host for trusted Windows process/file functions.
+Use React/TypeScript/Vite for the bundled HTML interface and a minimal Rust/Tauri 2 host for the small set of trusted Windows integration functions.
 
 ### Consequences
 
-- Meets the HTML/JavaScript UI requirement while enabling native offline solver execution and local file dialogs.
+- Meets the HTML/JavaScript UI requirement while packaging local Wasm solver execution and bounded native diagnostics.
 - Avoids requiring Docker, Python, Redis, or a user-managed web service.
 - Introduces Rust, Tauri, WebView2, code-signing, and native installer expertise.
-- Offline WebView2 delivery and package size are Phase 0 measurements, not assumptions.
+- The v1 bootstrapper/check package is tested offline after installation. A fully disconnected-install WebView2 bundle remains a separate unclaimed variant.
 
 ### Rejected alternatives
 
@@ -96,6 +97,8 @@ Use React/TypeScript/Vite for the bundled HTML interface and a minimal Rust/Taur
 - Docker/FastAPI adds deployment/support machinery unnecessary for a local single-user desktop.
 
 ## D-004 — Direct IPC to an isolated solver process
+
+Historical planning decision. D-031 supersedes the solver-process portion for v1.0.0. The no-localhost-service boundary remains accepted, and this process design remains the preferred shape if a future native solver passes the release corpus.
 
 ### Decision
 
@@ -117,6 +120,8 @@ Imported raw NEC cards may be preserved without being executable. Before a raw d
 
 ## D-005 — Conditional native solver selection
 
+Historical planning decision. D-031 supersedes it as a v1 release condition; the bake-off remains a post-v1 challenger study.
+
 ### Decision
 
 Use native `nec2c` as the Phase 0 baseline because it matches the simple NEC deck/CLI boundary demonstrated by AntennaSim. Test native NEC2++ as an equal challenger because it has current Windows CI, CMake/library support, and a broader regression infrastructure.
@@ -130,6 +135,8 @@ The solver field remains **undecided** until both are evaluated as exact Windows
 - Shipping is delayed rather than allowing a familiar but unvalidated solver to become irreversible.
 
 ## D-006 — Defer WebAssembly
+
+Historical planning decision. D-031 reverses this sequencing for v1 based on the later application, corpus, cancellation, and installed-package evidence.
 
 ### Decision
 
@@ -230,7 +237,7 @@ Implementation note (2026-08-06): browser-local schema v4 now uses `.hfas`, deta
 
 Deliver deterministic parameters/sliders/sweeps only after normal calculations and cache/cancellation are proven. Deliver optimization only after objectives, constraints, warnings, and convergence can invalidate candidates correctly.
 
-An experimental optimiser may exercise and test those contracts before release only if it is visibly unsupported, cannot claim a global optimum, reuses the validated ordinary-run path, retains complete candidate evidence, and does not weaken Phase 7 release gates. D-026 governs that prototype.
+An experimental optimiser may ship only if it is visibly experimental, cannot claim a global optimum, reuses the validated ordinary-run path, retains complete candidate evidence, and does not broaden the validation claim. D-026 governs the v1 workflow.
 
 ### Consequences
 
@@ -247,7 +254,7 @@ Preserve the audited AntennaSim 1.4.2 source and pinned NEC2C submodule on `feat
 ### Consequences
 
 - Existing behavior can be observed and regression-tested before components are selectively ported.
-- D-001, D-005, and D-006 remain in force: the target repository structure is new, the native solver bake-off is undecided, and Wasm must later pass parity against the accepted oracle.
+- At that baseline checkpoint, D-001, D-005, and D-006 remained in force. D-031 later superseded their runtime selection for v1 after the Wasm worker passed the bounded corpus and installed/offline package gates.
 - Baseline ranges prevent accidental behavior changes but cannot be promoted to independent validation evidence.
 - GPL provenance remains explicit because the imported source and history are not represented as clean-room work.
 
@@ -261,9 +268,9 @@ Implement the first centre-fed dipole vertical slice on the inherited baseline b
 
 - The slice can test domain/compiler/parser/UI boundaries before repository migration.
 - The generic AntennaSim deck builder is not used for this model, preventing displayed/solved deck drift.
-- This decision supplies evidence for D-007 but does not reverse D-001, D-005, or D-006.
-- Wasm remains an experimental adapter until it has byte-deck parity with the selected native solver and the full independent corpus.
-- A 4NEC2 or equivalent established-package ground comparison remains release-blocking.
+- This decision supplied evidence for D-007; its provisional solver status is superseded for v1 by D-031.
+- The same Wasm adapter later gained exact-deck external comparison and installed/offline Windows evidence.
+- The validation campaign completed the required 4NEC2 ground comparison for the exact 0.5λ perfect-ground case.
 
 ## D-016 — Model-keyed interactive calculations
 
@@ -277,7 +284,7 @@ For the dipole height laboratory, geometry changes are synchronous UI state whil
 - An old 2D/3D current trace is removed as soon as controls change; explicitly saved comparisons remain visible as labelled historical traces.
 - Cancellation rejects every request sharing the single worker, which is acceptable for this single-model experimental page but not yet a general multi-job scheduler.
 - The cache is process-memory only, limited to 40 exact models, and does not weaken D-009's future solver/compiler provenance requirements.
-- The native product runner must implement equivalent process-tree cancellation and immutable run identity; this decision does not reverse D-004 or D-006.
+- Any future native product runner must implement equivalent process-tree cancellation and immutable run identity. D-031 later selected the tested worker path for v1.
 
 ## D-017 — Declarative antenna templates emit one shared SI model
 
@@ -292,7 +299,7 @@ Represent antenna templates as data-plus-pure-generators in one registry. Each d
 - Cross-parameter invalid geometry blocks execution rather than being silently clamped.
 - The common schema supports loads even though the initial eight definitions intentionally emit none.
 - A shared segment policy improves consistency but does not replace topology-specific convergence evidence.
-- The experimental Wasm implementation supplies contract evidence only; D-003 through D-006 still control the proposed Windows product runtime.
+- At this implementation checkpoint the Wasm path supplied contract evidence only. D-031 later selected that path for the bounded v1 Windows runtime.
 
 ## D-018 — Distinct vertical ground and radial representations
 
@@ -306,7 +313,7 @@ Represent three vertical configurations explicitly and never convert between the
 - Real-ground explicit wires must remain above ground in this workflow; touching, buried, or lossy radial-wire models require a separately validated formulation.
 - Screen mode cannot display radial-wire currents because no radial `GW` geometry exists.
 - Configuration changes regenerate and revalidate one immutable SI model before the solver runs.
-- The 40/20/10-m perfect-ground comparison is supporting evidence only. Finite-ground, screen, convergence, and packaged-native validation remain mandatory under D-005, D-006, and D-010.
+- The 40/20/10-m perfect-ground comparison is supporting evidence only. Finite-ground, screen, and convergence validation remain open under D-010; D-031 superseded the earlier packaged-native condition for v1.
 
 ## D-019 — Directional arrays have an explicit forward-axis contract
 
@@ -321,7 +328,7 @@ Represent three vertical configurations explicitly and never convert between the
 - Front-to-back and front-to-rear are separate named results, with exact definitions in documentation and tests.
 - Saved comparisons preserve the complete solved model and result definitions; a newer slider state cannot relabel or inherit an older pattern.
 - `GW` output must remain within the classic 80-column portability bound demonstrated by the independent NEC-2D comparator.
-- This decision does not validate arbitrary Yagi designs, select an optimizer, or reverse D-005, D-006, or D-010.
+- This decision does not validate arbitrary Yagi designs or select an optimiser, and it does not weaken D-010. D-031 later superseded D-005/D-006 for the v1 runtime only.
 
 ## D-020 — Feed locations use explicit source bridges
 
@@ -409,7 +416,7 @@ Represent three vertical configurations explicitly and never convert between the
 - Invalid, failed, and constraint-rejected candidates cannot become best solutions and remain documented in history.
 - Results use “Best solution found”; “perfect antenna” and unqualified optimum language are prohibited.
 - Determinism removes a random seed from the initial reproducibility contract but does not establish global convergence.
-- The prototype does not satisfy Phase 7 release preconditions; independent candidate sampling, convergence/discontinuity handling, tolerance robustness, native parity, and Windows performance remain blocking gates.
+- The workflow is included experimentally in v1.0.0; independent candidate sampling, convergence/discontinuity handling, tolerance robustness, alternative-solver parity, and broader Windows performance remain mandatory before claiming validated optimisation outcomes.
 
 ## D-027 — Measurement is immutable evidence, not solver input
 
@@ -421,7 +428,7 @@ Represent three vertical configurations explicitly and never convert between the
 - Measurement cannot mutate geometry or tune the NEC model automatically.
 - Comparison exports carry raw measurement source, simulation results, alignment method, and difference direction.
 - A visual match is not a validation certificate; calibration plane, feed line, common mode, environment, construction, ground and NEC limitations remain explicit.
-- The parser remains an untrusted-input boundary requiring fuzzing, broader encoding/Touchstone corpus work, and packaged Windows testing before release support.
+- The parser remains an untrusted-input boundary. Its narrow fail-closed subset is supported in v1.0.0; fuzzing, broader encoding/Touchstone corpora and physical measurement campaigns are required before widening that subset or claiming measured agreement.
 
 ## D-028 — The main Simulator uses a four-region engineering workbench
 
@@ -459,8 +466,22 @@ Represent three vertical configurations explicitly and never convert between the
 - Program files are removed by NSIS while local projects/logs are deliberately preserved; full data deletion remains an explicit user operation.
 - Electron remains a fallback if WebView2/Tauri fails representative Windows testing, not a parallel package to maintain now.
 - PWA and local-service packaging remain possible distribution modes but do not meet the same controlled installer/diagnostic boundary.
-- This checkpoint packages the best-validated current executable path. It does not select Wasm as the final product solver, approve every model, or replace the native solver bake-off in D-005/D-006.
-- Unsigned test installers are engineering artifacts only; signing, reputation, upgrades, repair, ARM64, enterprise policies, accessibility, endpoint-security, and air-gapped VM testing remain release gates.
+- This checkpoint packages the best-validated current executable path. D-031 selects that path for the bounded v1 release; it does not approve every model or prevent a later native bake-off.
+- The unsigned x64 installer can be a public artifact only with a published checksum and explicit unknown-publisher warning. Signing, reputation, ARM64, enterprise policies, and an air-gapped installer remain future platform claims rather than hidden v1 gates.
+
+## D-031 — Pinned nec2c/WebAssembly is the v1 product runtime
+
+**Decision:** For v1.0.0, select the existing pinned KJ7LNW/nec2c v1.3.3 WebAssembly build running in a dedicated Web Worker inside the Tauri/WebView2 package. Ship its exact source, build recipe and identity; bind all public accuracy claims to the immutable validation corpus. Treat the earlier native nec2c/NEC2++ bake-off as a post-v1 architecture investigation, not a condition that contradicts the tested v1 runtime.
+
+**Rationale:** The Wasm path is the only end-to-end implementation exercised by the complete application, cancellation/stale-result regressions, external exact-deck corpus, and installed offline Windows test. Introducing an unimplemented native runner at release would add process, parser, packaging and parity risk without numerical evidence. Solver lineage is NEC-2 and validation remains deliberately narrow.
+
+**Consequences:**
+
+- Tauri IPC is limited to runtime/log functions in v1; solver execution remains local in the worker.
+- Normal calculations require no listener, child executable, account or external connection.
+- Same-deck NEC-2 comparison cannot establish universal physical accuracy; finite ground, feed networks, convergence and measurements retain explicit limitations.
+- Future native or alternative solvers must pass the same canonical request/result contract, deck identity, validation corpus, cancellation, security and Windows package gates before replacement.
+- This decision supersedes D-005/D-006 only for the released v1 architecture; it does not declare WebAssembly or nec2c permanently optimal.
 
 ## Second, adversarial architecture review
 
@@ -468,24 +489,24 @@ The following review intentionally argues against the preferred architecture. �
 
 | Issue raised against the preferred design | Assessment | Resolution or documented disposition |
 |---|---|---|
-| **The preferred solver is fiction until a Windows binary runs.** KJ7LNW/nec2c has weak Windows evidence, so basing the system on it could strand the project. | Valid. The first draft language could have been read as a final selection. | Solver selection is now explicitly undecided. Native nec2c is only the baseline; NEC2++ is an equal challenger; Phase 0 can reject both. The UI depends only on the adapter contract. |
+| **The preferred solver is fiction until its exact Windows package runs.** Early KJ7LNW/nec2c evidence was too weak to select it. | Valid. The first draft language could have been read as a final selection. | D-031 now selects only the exact pinned Wasm build that passed the application corpus, cancellation/stale-result tests, and installed/offline Windows gate. Native nec2c and NEC2++ remain challengers; the UI still depends on the adapter contract. |
 | **Tauri does not guarantee offline use.** WebView2 may download at install/run time, defeating a core promise. | Valid. Windows 11 distributes Evergreen WebView2, but presence/update cannot be assumed on every modified image. | The test package uses an embedded bootstrapper/check and proves offline operation after install; a separate ~127 MB offline-installer configuration remains the disconnected-install candidate. Air-gapped VM evidence is still required. Electron remains a fallback if this gate fails. |
 | **A new repository throws away years of UI work and contributor history.** | Valid cost, but not decisive. | Keep the new repository because the calculation/storage/deployment contracts differ. Create an explicit reuse inventory and preserve file history/notices for selected ports. Reassess effort after the vertical slice. |
 | **GPL-3.0-or-later may deter contributors and integrations.** A permissive UI with a separate solver could have broader reach. | Valid tradeoff. | GPL is retained because planned AntennaSim reuse is GPLv3+ and solver provenance is conservative. A permissive clean-room alternative would require no GPL reuse, a resolved solver-distribution theory, contributor agreement, and a new decision. |
-| **A native executable is inelegant and hostile to browser portability.** | True for portability; less important than initial correctness/isolation. | Retain native process for Windows v1. Keep a byte-deck adapter so Wasm can be added after native parity. Browser portability is not a first-release goal. |
+| **A native executable is inelegant and hostile to browser portability.** | True for portability, but no native solver runner reached end-to-end parity. | D-031 selects the tested Wasm worker for Windows v1. Retain the byte-deck adapter so a future native challenger can be evaluated without changing models. |
 | **Text output parsing is brittle and can silently shift across solver versions.** | Valid and high consequence. | Pin exact binaries/locale, retain raw text, version parsers, fail on unknown/truncated sections, and run output fixtures from all shipped versions. Evaluate a structured NEC2++ wrapper only as an out-of-process adapter with equivalent raw evidence. |
-| **A child process is not a strong sandbox.** A malicious or pathological deck may exploit the solver. | Valid. Process isolation protects the host from ordinary crashes but not every local exploit. | Treat inputs as untrusted, enforce size/card/resource limits, prohibit external-resource/file-chaining cards in executable raw mode, use a unique directory and minimal environment, and monitor solver advisories. A restricted-token/job-object spike is added to Phase 0/security work. |
-| **No local HTTP service means no easy CLI, automation, or alternative UI.** | True but outside first-release needs. | Prefer smaller direct IPC now. Design the solver-run manifest and runner crate so a future local CLI can reuse them without opening a port. A service requires a new threat decision. |
-| **React + Rust creates cross-language schema drift, just like AntennaSim's Python + TypeScript split.** | Valid if both sides reproduce model semantics. | Electromagnetic schema/compiler/parser live once in shared TypeScript packages; generated/runtime schemas cross IPC. Rust validates generic bounds, hashes, files, and process requests, not a second antenna model. Contract tests prevent drift. |
-| **Trusting a JavaScript deck compiler permits UI bugs to reach a native solver.** | Valid, though the bundled UI is trusted product code. | The host verifies schema/request limits and deck hash; the compiler is deterministic and test-gated; users can inspect exact decks. Native safe-card/resource policy remains authoritative. Moving compiler semantics into Rust is rejected unless evidence shows a security benefit worth duplication. |
+| **A future child process would not be a strong sandbox.** A malicious or pathological deck could exploit a native solver. | Valid for the retained native alternative; it is not the v1 execution path. | Any native candidate must treat inputs as untrusted, enforce size/card/resource limits, prohibit external-resource/file-chaining cards, use a unique minimal environment, and pass restricted-token/job-object review before replacing D-031. |
+| **No local HTTP service means no easy CLI, automation, or alternative UI.** | True but outside first-release needs. | Keep the v1 worker plus bounded diagnostic IPC. A future CLI can reuse the exact-deck/run-manifest contracts without opening a port; a service requires a new threat decision. |
+| **React + Rust creates cross-language schema drift, just like AntennaSim's Python + TypeScript split.** | Valid only if both sides reproduce model semantics. | Electromagnetic schema/compiler/parser live once in TypeScript and remain inside the WebView/worker boundary. Rust exposes runtime/log operations only and does not reproduce the antenna model. |
+| **Trusting a TypeScript deck compiler permits UI bugs to reach the solver.** | Valid, though the bundled UI is trusted product code. | The compiler is deterministic and test-gated, unsupported imported cards fail closed, exact decks are inspectable, and the solver worker is limited to same-origin bundled artifacts. Moving model semantics into Rust would duplicate them without protecting against ordinary modelling mistakes. |
 | **4NEC2 is not an independent physical oracle if it uses a related NEC engine.** | Valid. A single established package can reproduce a shared flaw or different defaults. | Use 4NEC2 because the requirement asks for established-package comparison, but never alone. Combine original NEC examples/historical outputs, another implementation, analytic bounds, and convergence; record the 4NEC2 engine/settings. |
 | **Pattern validation can pass numeric samples while the 3D rendering is still misleading.** | Valid. | Test raw-to-Cartesian mapping, asymmetric direction, seams, cut planes, radial formula, plot/table points, labels, and screenshots/geometry independently. Default radial mapping is documented rather than linear dB decoration. |
-| **The project promises real ground without knowing which formulation/data files are shipped.** | Valid. | Narrow the first ground subset after solver selection. Require explicit GN/GE card form and ground-reference cases. Do not label ground “supported” until contact/elevated cases pass. |
+| **The project promises real ground beyond the available validation.** | Valid. | The exact GN/GE form and representation are visible, but finite-ground, radial-screen and explicit-radial accuracy remain outside the independent v1 campaign and are stated as limitations. |
 | **Offline/no-update defaults can leave solver/runtime vulnerabilities unpatched.** | Valid residual risk. | Publish signed releases/checksums/advisories and provide a user-initiated manual update path. Any future updater is separately designed and cannot be required for modelling. |
 | **Human-readable JSON will be enormous for currents and 3D sweeps.** | Valid for result caches, not canonical models. | Keep `.hfas` model/run references readable; results are optional and content-addressed. Select a versioned binary/container format only after measurements. |
-| **Process startup will make sliders and optimizers unusable.** | Unmeasured. | Benchmark startup in Phase 0/6. Use debounce, cancellation, content cache, and bounded batches first. Consider a persistent isolated worker only after state-reset and parity validation. Do not weaken v1 isolation for an unimplemented feature. |
-| **The architecture is too elaborate for an open-source first release.** | Valid delivery risk. | Phase 1 is intentionally one wire, one source, free space, one frequency, raw evidence, and minimal views. Advanced schema nodes, cache containers, plugins, Wasm, and optimization remain deferred. Trust boundaries are kept because retrofitting them later is riskier. |
-| **Native/project privacy claims can be broken by logs, temp files, or remote UI assets.** | Valid. | Bundle assets, no telemetry/network, document locations, minimize/redact logs, isolate/clean jobs, and use instrumented network/temp-file acceptance tests. Privacy is a tested release attribute. |
+| **Solver latency will make sliders and optimisers unusable.** | Valid. | The v1 worker is persistent per service, pointer changes are debounced, stale jobs terminate, caches are bounded, sweeps are capped, and complete browser regressions cover cancellation/responsiveness. Performance across low-end hardware remains a post-v1 measurement. |
+| **The architecture is too elaborate for an open-source first release.** | Valid delivery risk. | Keep one TypeScript model/deck/result pipeline, a local worker, and three bounded native commands. Advanced features remain clients of that same boundary and retain explicit evidence limits. |
+| **Project privacy claims can be broken by logs, browser storage, or remote UI assets.** | Valid. | Bundle assets, provide no telemetry/normal-use network path, bound diagnostic content, document storage/log locations, and test the installed solver with networking forced offline. Users must still review exported measurement/location data before sharing. |
 | **The project name itself may be unavailable.** | Valid and untested. | Add a Phase 0 trademark/package/domain search. Rename before public branding if the result is adverse. |
 
 ### Changes made because of the adversarial review
@@ -497,7 +518,7 @@ The preferred architecture was retained, but the review tightened it in six mate
 3. Raw NEC preservation is separated from permission to execute unsafe/unsupported cards.
 4. The host/TypeScript responsibility boundary avoids a second electromagnetic model while retaining native security limits.
 5. Reference validation uses several evidence classes; 4NEC2 is not treated as the sole oracle.
-6. The initial vertical slice is deliberately narrower, and performance-driven persistent/Wasm/container work is deferred.
+6. The initial vertical slice was deliberately narrow; later work retained a persistent cancellable Wasm worker while keeping alternate runners behind the same contract.
 
 ## Cross-document consistency review
 
@@ -508,13 +529,13 @@ The planning set uses the following single positions:
 | Repository | New repository, selective attributed AntennaSim reuse |
 | Application license | GPL-3.0-or-later applied; exact dependency/release review still required |
 | Initial platform | Windows 11 x64 desktop with bundled HTML/TypeScript UI |
-| Runtime boundary | Current package: WebView worker/Wasm plus three diagnostic IPC commands. Proposed final native option: Tauri IPC to an isolated child process. No localhost server. |
-| Solver | Current test package: pinned nec2c/Wasm. Proposed final native path: nec2c baseline and NEC2++ challenger; final product choice pending Phase 0. |
-| Wasm | Experimental dipole slice works; product selection/parity validation remains deferred |
+| Runtime boundary | v1 product: WebView worker/Wasm plus three diagnostic IPC commands. A post-v1 native option would use isolated Tauri IPC. No localhost server. |
+| Solver | v1 product: pinned KJ7LNW nec2c v1.3.3/WebAssembly under D-031 and bounded validation claims. Native nec2c/NEC2++ remain future challengers. |
+| Wasm | Selected for v1.0.0 because it is the complete externally compared and installed/offline-tested path; replacement requires full parity evidence |
 | Offline/privacy | No ordinary-use network feature; disconnected installer/run test required |
 | Import | Loss-aware raw document plus explicit structured subset; no silent mutation |
 | Coordinates | NEC theta/phi internal; labelled/tested UI transformations |
-| Feature status | Experimental verified-dipole, height-lab, shared-template, vertical, Yagi, loop/quad/hex, phased-array, frequency-analyser, measurement-comparison, wire-editor, shared current-visualisation, model-comparison, parameter-sweep, and bounded optimiser slices are implemented on inherited branches; a systematic exact-deck validation campaign passes its bounded corpus; a Tauri/NSIS test package exercises that Wasm application offline; the final native solver/filesystem architecture remains proposed |
-| Optimization | Experimental bounded prototype only; supported optimisation remains deferred until Phase 7 gates pass |
+| Feature status | The listed workflows ship in v1.0.0 with regression evidence; only the exact models/metrics in the validation report are independently compared. The installed Tauri/NSIS package exercises that same Wasm application offline. |
+| Optimization | Experimental bounded workflow included with explicit non-global claims; independent optimisation outcome validation remains future work |
 
 Any future change to these positions requires an ADR update plus review of architecture, solver evaluation, roadmap, validation, risks, licensing, and product claims.

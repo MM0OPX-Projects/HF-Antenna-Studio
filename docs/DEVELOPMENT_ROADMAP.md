@@ -1,5 +1,7 @@
 # HF Antenna Studio — Development Roadmap
 
+Historical planning status: this roadmap records the sequence and gates proposed before implementation. For v1.0.0 release state, D-031 in `DECISIONS.md`, `VALIDATION_REPORT.md`, `KNOWN_LIMITATIONS.md`, and `RELEASE_AUDIT.md` take precedence. Unfinished items below are future work unless the release audit explicitly classifies them as blockers.
+
 Status: phased proposal; dates intentionally unset
 Planning baseline: 2026-08-02
 
@@ -39,7 +41,7 @@ Goal: remove the assumptions that could invalidate the rest of the architecture.
 
 If neither solver passes, stop product implementation and investigate another open-source NEC implementation through the same adapter criteria.
 
-Implementation checkpoint (2026-08-07): `feature/windows-packaging` produces a per-user Tauri 2/NSIS test installer containing the production frontend and rebuilt pinned nec2c/Wasm solver. A clean Windows runner installs it, launches the installed WebView2 application, performs a real dipole solve with networking forced offline, checks logs and absence of external requests, uninstalls, and verifies user-data preservation. This is meaningful packaging evidence, but Phase 0 remains open for the native solver bake-off, solver/provenance release approval, signed artifacts, air-gapped offline-WebView installation, upgrade/repair, endpoint-security, non-ASCII paths, ARM64, and representative clean Windows 11 VM/manual testing.
+Implementation checkpoint (2026-08-07): `feature/windows-packaging` produces a per-user Tauri 2/NSIS test installer containing the production frontend and rebuilt pinned nec2c/Wasm solver. A clean Windows runner installs it, launches the installed WebView2 application, performs a real dipole solve with networking forced offline, checks logs and absence of external requests, uninstalls, and verifies user-data preservation. D-031 later accepted this runtime for the bounded v1 release. A native bake-off, signed/air-gapped variants, upgrade/repair, endpoint-security, non-ASCII paths, ARM64, and representative manual Windows 11 combinations remain post-v1 hardening or alternatives rather than hidden v1 gates; the exact v1 installation limits are in `KNOWN_LIMITATIONS.md`.
 
 ## Phase 1 — Trustworthy vertical slice
 
@@ -113,7 +115,7 @@ Goal: support the central HF workflows without concealing ground/model limitatio
 - Cancelled sweeps do not produce a successful complete result or stale-cache entry.
 - Performance limits and defaults are based on recorded Windows measurements.
 
-Implementation checkpoint (2026-08-02): `feature/vertical-antennas` implements three explicitly separated vertical configurations on the inherited browser/Wasm experimental slice. The three 40/20/10-m ideal perfect-ground decks pass an exact-deck comparison with a separately installed 4NEC2 NEC-2D engine, and the UI/solver corpus covers selected explicit-radial counts and heights. Phase 3 is not complete: finite-ground and screen comparisons, radial and feed-junction convergence, frequency-sweep infrastructure, native-runner parity, and packaged Windows performance evidence remain open.
+Implementation checkpoint (2026-08-02): `feature/vertical-antennas` implements three explicitly separated vertical configurations on the browser/Wasm path later selected by D-031. The three 40/20/10-m ideal perfect-ground decks pass an exact-deck comparison with a separately installed 4NEC2 NEC-2D engine, and the UI/solver corpus covers selected explicit-radial counts and heights. Finite-ground and screen comparisons, radial and feed-junction convergence, and broader packaged Windows performance evidence remain open; the frequency-analyser and installed/offline package gates were completed later.
 
 Implementation checkpoint (2026-08-02): `feature/yagi-beam-models` implements a bounded 2-to-8-element directional-array slice with explicit forward/rear metric definitions. Three perfect-ground exact decks pass direct comparison with a separately installed 4NEC2 NEC-2D engine and one NBS/NIST-scaled geometry passes a deliberately broad pattern sanity envelope. Broader Phase 5 is not complete: finite-ground, convergence, tube/material/feed/boom effects, other bands, native parity, and comparison against a package-authored external deck with fully recorded settings remain open.
 
@@ -173,7 +175,7 @@ Goal: reach a defensible initial public release for HF wire-antenna work.
 
 ## Phase 6 — Parameters, sliders, and parameter sweeps
 
-Implementation checkpoint (2026-08-02): `feature/dipole-height-lab` proves one bounded height parameter on the experimental browser/Wasm slice. Debounce, worker termination, stale-result suppression, cache identity, comparisons, and a five-point automatic animation are implemented and tested. This is evidence for the interaction contract, not completion of Phase 6: generic parameters, native-runner parity, persisted caches, arbitrary sweeps, discontinuity reporting, and workload budgets remain open.
+Implementation checkpoint (2026-08-02): `feature/dipole-height-lab` proves one bounded height parameter on the browser/Wasm path later selected by D-031. Debounce, worker termination, stale-result suppression, cache identity, comparisons, and a five-point automatic animation are implemented and tested. Generic parameter sweeps and workload caps were added later; persisted cross-session caches, discontinuity analysis, and broader performance evidence remain open.
 
 The subsequent `feature/antenna-template-system` checkpoint adds a declarative parameter/units/range/geometry/feed/load/ground/segmentation/validation/preset contract and one shared workbench for eight starting topologies. Frequency-linked starting dimensions and explicit manual override are implemented. It deliberately does not add an expression language, arbitrary dependency graph, persisted parameter sweeps, or optimization; the dimensions are not advertised as resonant. Independent external validation and native-runner parity remain open.
 

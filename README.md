@@ -1,152 +1,93 @@
-> **HF Antenna Studio Windows test package:** the application now has a reproducible per-user NSIS test installer containing the local interface and pinned nec2c/WebAssembly solver. Normal users do not install Node.js, Python, compilers, Docker, or an NEC executable. See [`docs/WINDOWS_PACKAGING.md`](docs/WINDOWS_PACKAGING.md) for installation, offline boundaries, logs, uninstall/data preservation, build evidence, and limitations. The upstream README remains below for provenance; its Docker/live-demo instructions are not the supported Windows path.
+# HF Antenna Studio
 
-> The original Windows-first application workspace, interaction/accessibility contract, review evidence, and remaining manual gates are documented in [`docs/UI_OVERHAUL.md`](docs/UI_OVERHAUL.md).
+HF Antenna Studio is a local, open-source antenna-modelling application for Windows 11. It combines an original HTML/TypeScript interface with a pinned nec2c/WebAssembly NEC-2 engine. Normal calculations, projects, and imported measurement data remain on the user's computer and require no cloud account.
 
-<h1 align="center">AntennaSim</h1>
+Version 1.0.0 is the first validation-bounded public release. It is engineering software, not a substitute for construction measurements or professional safety analysis.
 
-<p align="center">
-  <strong>Free, open-source antenna simulator for the browser -- powered by NEC2</strong>
-</p>
+## What v1.0.0 provides
 
-<p align="center">
-  <a href="https://github.com/EA1FUO/AntennaSim/stargazers"><img src="https://img.shields.io/github/stars/EA1FUO/AntennaSim?style=flat-square" alt="GitHub stars"></a>
-  <a href="https://hub.docker.com/r/ea1fuo/antennasim"><img src="https://img.shields.io/docker/pulls/ea1fuo/antennasim?style=flat-square&logo=docker&logoColor=white" alt="Docker pulls"></a>
-  <a href="https://EA1FUO.github.io/AntennaSim/"><img src="https://img.shields.io/github/actions/workflow/status/EA1FUO/AntennaSim/deploy-pages.yml?style=flat-square&label=pages" alt="Pages deploy"></a>
-  <img src="https://img.shields.io/badge/version-1.4.2-blue?style=flat-square" alt="Version">
-  <img src="https://img.shields.io/badge/license-GPL--3.0-green?style=flat-square" alt="License">
-  <img src="https://img.shields.io/badge/NEC2-engine-orange?style=flat-square" alt="NEC2">
-  <img src="https://img.shields.io/badge/WebAssembly-supported-654FF0?style=flat-square&logo=webassembly&logoColor=white" alt="WebAssembly">
-</p>
+- Parametric dipole, vertical, loop/quad/hexbeam, Yagi, and two-element phased-array laboratories.
+- An arbitrary-wire editor with reviewed NEC import/export boundaries.
+- Interactive antenna geometry, 2D azimuth/elevation plots, 3D radiation patterns, and NEC-derived segment-current views.
+- Feed resistance/reactance, complex impedance, SWR, gain, beam and take-off metrics where the selected model makes those quantities meaningful.
+- Frequency analysis, model comparison, bounded parameter sweeps, and a deliberately non-global experimental optimiser.
+- Touchstone `.s1p` measurement overlays that preserve the imported samples and distinguish measurement from simulation.
+- Versioned local `.hfas` projects, autosave, recovery, import/export, and schema migration review.
+- A per-user Windows installer containing the UI and solver. End users do not install Node.js, Python, Docker, a compiler, or a separate NEC executable.
 
-<p align="center">
-  <a href="https://EA1FUO.github.io/AntennaSim/"><img src="https://img.shields.io/badge/%E2%96%B6%20Launch%20the%20live%20demo-2ea44f?style=for-the-badge&logo=github&logoColor=white" alt="Launch the live demo"></a>
-</p>
+The application exposes many engineering workflows, but feature presence is not the same as numerical validation. See the scope below and the full [validation report](docs/VALIDATION_REPORT.md).
 
-<p align="center">
-  <sub>...or self-host in one line: <code>docker run -p 80:80 ea1fuo/antennasim</code></sub>
-</p>
+## Validated scope
 
-<br>
+The v1.0.0 campaign covers these exact reference models:
 
-<p align="center">
-  <img src="screenshots/simulator.png" alt="AntennaSim -- Simulator with 3D radiation pattern" width="100%">
-</p>
+| Family | Compared quantities | Evidence |
+|---|---|---|
+| Free-space dipole | R, X, gain and broadside/null shape | Published NEC-2 result plus exact-deck comparison |
+| Dipole over perfect ground | R, X, SWR, gain and take-off angle | Same deck in separately installed 4NEC2 NEC-2D |
+| Perfect-ground quarter-wave vertical | R, X, SWR, gain, take-off and azimuth symmetry | 4NEC2 plus image-theory gain sanity bound |
+| Square and delta loops over perfect ground | R, X, SWR, gain and take-off angle | Same deck in 4NEC2 NEC-2D |
+| Two- and three-element Yagis over perfect ground | R, X, SWR, forward/rear gain, F/B and take-off angle | Same deck in 4NEC2 NEC-2D; separate published sanity case |
+| Ideal-current two-vertical phased array over perfect ground | gain, symmetry/reversal, heading, F/B and take-off | Same deck in 4NEC2 NEC-2D plus analytical array symmetry |
 
-<p align="center">
-  <img src="screenshots/editor.png" alt="AntennaSim -- Wire editor with 3D viewport" width="100%">
-</p>
+All nine primary reference states pass their declared tolerances. Seven supplemental exact-deck models also pass, for 16 external comparator executions. Most comparisons use two implementations of NEC-2, so they are strong regression evidence for generated decks, parsing, coordinates and displayed metrics—not independent proof that NEC-2 represents every physical installation.
 
-<br>
+Not validated for v1.0.0 include finite Sommerfeld/Norton ground as an independent numeric campaign, lossy conductors, complex physical feed networks, optimiser optimality, universal geometry/segmentation convergence, or agreement with a constructed antenna. These and other boundaries are recorded in [Known limitations](docs/KNOWN_LIMITATIONS.md).
 
-<p align="center">
-  <strong>17 antenna templates</strong> &nbsp;&middot;&nbsp;
-  <strong>3D radiation patterns</strong> &nbsp;&middot;&nbsp;
-  <strong>SWR &amp; Smith charts</strong> &nbsp;&middot;&nbsp;
-  <strong>Wire editor + optimizer</strong> &nbsp;&middot;&nbsp;
-  <strong>NanoVNA overlay</strong> &nbsp;&middot;&nbsp;
-  <strong>Dark / light theme</strong>
-</p>
+## Install on Windows 11
 
-<br>
+1. Download the x64 setup executable and `package-manifest.json` from the v1.0.0 release. The named corresponding-source ZIP is provided separately for source/licence compliance.
+2. Verify the installer's SHA-256 against the manifest.
+3. Run the per-user installer and launch **HF Antenna Studio** from the Start menu.
+4. Open **About** and confirm version `1.0.0`.
+5. Open the verified dipole example and run one calculation before relying on a saved design.
 
-> **Antenna modeling without the install.** No license fee, no Windows-only desktop app, no account -- open a browser (or your phone) and start designing. Powered by the same NEC2 engine the classic tools (EZNEC, 4nec2, MMANA-GAL) are built on.
+The current installer is unsigned, so Microsoft Defender SmartScreen may display an unknown-publisher warning. Do not install a file whose checksum does not match the release manifest. Windows 11 normally includes Evergreen WebView2; a stripped machine may need a connection while the small installer obtains that prerequisite. Once installed, normal calculations work offline.
 
-Design antennas from built-in templates or build your own from scratch in the wire editor. Run NEC2 simulations and instantly visualize SWR, impedance, Smith chart, 3D radiation patterns, current distribution, and near-field heatmaps -- all in your browser.
+See [Installation and troubleshooting](docs/INSTALLATION.md) for checksums, storage, logs, uninstall behaviour, and source-build instructions.
 
-**Two deployment modes:** self-hosted with Docker (backend + Redis) or fully static via WebAssembly on GitHub Pages -- zero server required.
+## Privacy and project safety
 
----
-
-## Quick Start
-
-### Prerequisites
-
-- [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/) (v2+)
-- That's it. No Python, Node.js, or nec2c installation needed.
-
-### One-liner (Docker Hub)
-
-```bash
-docker run -p 80:80 ea1fuo/antennasim
-```
-
-Open **http://localhost** in your browser. Done. This pulls the all-in-one image from Docker Hub with everything bundled (frontend, backend, Redis, nginx).
-
-### From source
-
-```bash
-git clone https://github.com/EA1FUO/AntennaSim.git
-cd AntennaSim
-cp .env.example .env
-docker compose up --build
-```
-
-The first build takes a few minutes (downloading base images, compiling nec2c, installing dependencies). Subsequent starts are fast.
-
-> Prefer to run it without a server? AntennaSim also runs fully in the browser via WebAssembly -- see the [Deployment guide](docs/deployment.md).
-
----
+No account, telemetry service, or calculation server is required. The packaged application uses a restrictive local-only content policy and runs nec2c inside a Web Worker. Projects are stored in the application's local WebView profile until explicitly exported. Export important designs as `.hfas` files: local browser-style storage is convenient recovery state, not a backup.
 
 ## Documentation
 
-Full guides live in the [`docs/`](docs/) folder:
+- [User guide](docs/USER_GUIDE.md)
+- [Installation and troubleshooting](docs/INSTALLATION.md)
+- [Engineering validation report](docs/VALIDATION_REPORT.md)
+- [Known limitations](docs/KNOWN_LIMITATIONS.md)
+- [Windows packaging evidence](docs/WINDOWS_PACKAGING.md)
+- [Project file format](docs/PROJECT_FILE_FORMAT.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Release notes](docs/RELEASE_NOTES_v1.0.0.md)
+- [Third-party notices](THIRD_PARTY_NOTICES.md)
 
-| Guide | What's inside |
-|---|---|
-| [Usage](docs/usage.md) | Antenna templates, full feature list, keyboard shortcuts |
-| [Development](docs/development.md) | Dev setup, local WASM build, architecture, project structure, tech stack |
-| [Deployment](docs/deployment.md) | GitHub Pages (WebAssembly) and production Docker deployment |
-| [API Reference](docs/api.md) | REST + WebSocket endpoints and configuration (`.env`) |
-| [Project File Format](docs/PROJECT_FILE_FORMAT.md) | `.hfas` schema, local library, autosave/recovery, migration, and limitations |
-| [Vertical Antennas](docs/VERTICAL_ANTENNAS.md) | Vertical configurations, ground formulations, exact-deck comparison evidence, and limitations |
-| [Yagi Beam Models](docs/YAGI_BEAMS.md) | Directional model/metric contracts, exact-deck comparison evidence, and limitations |
-| [Loop & Hexbeam Models](docs/LOOP_AND_HEXBEAM_MODELS.md) | Loop/quad/hex topology, feed/polarisation boundaries, independent comparison evidence, and limitations |
-| [Engineering Validation Report](docs/VALIDATION_REPORT.md) | Nine primary reference cases, 16 external exact-deck runs, discrepancies, and remaining validation gates |
-| [Windows 11 Packaging](docs/WINDOWS_PACKAGING.md) | Installer architecture, offline operation, solver/runtime identity, logs, uninstall policy, tests, and troubleshooting |
-| [Professional UI Workbench](docs/UI_OVERHAUL.md) | Desktop panel system, keyboard/accessibility contract, usability review, and limitations |
+## Build and test from source
 
----
+Maintainers use Node.js 24.14.0, npm 11, Emscripten 3.1.56, Rust 1.90.0/MSVC, and the recursively checked-out solver submodule. From a PowerShell prompt in the repository:
 
-## Highlights
+```powershell
+git submodule update --init --recursive
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\build-wasm.ps1 -EmsdkPath C:\path\to\emsdk
+Set-Location .\frontend
+npm ci
+npm run type-check
+npm run lint
+npm test
+npm run build:wasm
+npm run test:smoke
+```
 
-- **17 antenna templates** -- dipoles, verticals, loops, Yagi/Moxon/Hex beams, LPDA, magnetic loop, and more ([full list](docs/usage.md#antenna-templates))
-- **Full NEC2 pipeline** -- card deck generation, `nec2c` execution, and parsed results, all automated
-- **Interactive 3D viewport** -- radiation patterns, current distribution with animated flow, near-field heatmaps
-- **Charts & analysis** -- SWR, impedance, Smith chart, polar pattern, balun/unun matching, NanoVNA `.s1p` overlay
-- **Wire editor** -- build arbitrary geometries, import/export `.nec` and `.maa` files
-- **Optimizer** -- Nelder-Mead with 5 objective functions and real-time progress
-- **Runs anywhere** -- desktop, tablet, or phone; touch-friendly controls and a responsive layout, no install or account
+The Windows package command and its clean-install acceptance test are documented in [docs/INSTALLATION.md](docs/INSTALLATION.md). The lockfiles, source commit, and toolchain pins are part of the release evidence.
 
-See the [Usage guide](docs/usage.md#features) for the complete feature list.
+## Contributing and provenance
 
----
+Contributions are welcome through the [HF Antenna Studio repository](https://github.com/MM0OPX-Projects/HF-Antenna-Studio). Contributors must use the DCO sign-off and document the origin and licence of code, antenna reference data, model decks, and assets. Do not submit copied proprietary application code, artwork, screenshots, manuals, or reverse-engineered assets. Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
 
-## Contributing
+HF Antenna Studio began from the GPL-licensed [EA1FUO/AntennaSim](https://github.com/EA1FUO/AntennaSim) codebase at audited commit `96e153ceefffd25819e42142d591ca811b4790d3`. Its interface, packaging, modelling adapters, validation infrastructure, and product documentation have subsequently been extensively changed. This project is not affiliated with or endorsed by AN-SOF, EZNEC, 4NEC2, or their authors. 4NEC2 is used only as a separately installed validation comparator and is not distributed here.
 
-Contributions are welcome -- this is a free and open-source project for the amateur radio community. See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, branch/commit conventions, and how to add an antenna template.
+## Licence
 
-Found a bug or have an idea? Open an [issue](https://github.com/EA1FUO/AntennaSim/issues) or a [discussion](https://github.com/EA1FUO/AntennaSim/discussions).
+HF Antenna Studio is distributed under `GPL-3.0-or-later`; see [LICENSE](LICENSE). The bundled solver is built from pinned KJ7LNW/nec2c source commit `55be1e0e3fe5ee9dad4ce6050711450d19c562fd` (tag `v1.3.3`) and is handled conservatively under GPLv3 because its historical provenance statements are not perfectly uniform. Source, build scripts, notices, and dependency records accompany the release. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and [docs/LICENSING.md](docs/LICENSING.md).
 
----
-
-## License
-
-AntennaSim is free software released under the [GNU General Public License v3.0](LICENSE).
-
-You are free to use, modify, and distribute this software. If you distribute modified versions, they must also be released under the GPL-3.0. See [LICENSE](LICENSE) for the full text.
-
----
-
-## Acknowledgments
-
-- **[NEC2](https://en.wikipedia.org/wiki/Numerical_Electromagnetics_Code)** -- the Numerical Electromagnetics Code developed at Lawrence Livermore National Laboratory. The foundation of antenna simulation for decades.
-- **[nec2c](https://www.pa3fwm.nl/software/nec2c/)** -- the C translation of NEC2 by Neoklis Kyriazis (5B4AZ), making NEC2 accessible on modern systems.
-- **The amateur radio community** -- for decades of antenna design knowledge, experimentation, and sharing.
-
----
-
-<p align="center">
-  <sub>Built for amateur radio operators, by amateur radio operators.</sub>
-  <br>
-  <sub>73 de AntennaSim</sub>
-</p>
+There is no warranty. NEC-2 has important thin-wire, junction, ground, and segmentation limits; inspect all warnings and validate consequential designs independently.

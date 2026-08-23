@@ -233,8 +233,8 @@ export function ChangelogPopup() {
                       id={panelId}
                       className="space-y-4 border-t border-border px-3 py-3 sm:px-4 sm:py-4"
                     >
-                      {entry.sections.map((section) => (
-                        <section key={section.title}>
+                      {entry.sections.map((section, sectionIndex) => (
+                        <section key={`${section.title}-${sectionIndex}`}>
                           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-primary">
                             {section.title}
                           </h3>

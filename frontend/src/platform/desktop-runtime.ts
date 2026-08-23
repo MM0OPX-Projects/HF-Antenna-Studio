@@ -67,7 +67,7 @@ function writeFrontendDiagnostic(level: "info" | "warn" | "error", message: stri
 export function initialiseDesktopDiagnostics(): () => void {
   if (!isDesktopRuntime()) return () => undefined;
 
-  writeFrontendDiagnostic("info", `Frontend ${__APP_VERSION__} initialized; solver mode ${import.meta.env.VITE_ENGINE || "backend"}`);
+  writeFrontendDiagnostic("info", `Frontend ${__APP_VERSION__} initialized; solver mode ${import.meta.env.VITE_ENGINE || "wasm"}`);
   const handleError = (event: ErrorEvent) => {
     writeFrontendDiagnostic("error", `Unhandled window error: ${errorMessage(event.error ?? event.message)}`);
   };

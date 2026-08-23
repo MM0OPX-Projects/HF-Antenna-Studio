@@ -4,7 +4,7 @@ import { appendDiagnosticLog, getRuntimeInfo, isDesktopRuntime, openLogDirectory
 const originalWindow = globalThis.window;
 
 beforeEach(() => {
-  vi.stubGlobal("__APP_VERSION__", "1.4.2");
+  vi.stubGlobal("__APP_VERSION__", "1.0.0");
 });
 
 afterEach(() => {
@@ -17,7 +17,7 @@ describe("desktop runtime boundary", () => {
   it("keeps normal browser operation independent of Tauri", async () => {
     Object.defineProperty(globalThis, "window", { configurable: true, value: undefined });
     expect(isDesktopRuntime()).toBe(false);
-    await expect(getRuntimeInfo()).resolves.toMatchObject({ packaged: false, version: "1.4.2" });
+    await expect(getRuntimeInfo()).resolves.toMatchObject({ packaged: false, version: "1.0.0" });
     await expect(appendDiagnosticLog("info", "browser message")).resolves.toBeUndefined();
     await expect(openLogDirectory()).rejects.toThrow("installed Windows application");
   });
@@ -25,7 +25,7 @@ describe("desktop runtime boundary", () => {
   it("uses only the three declared native commands in the package", async () => {
     const invoke = vi.fn(async (command: string) => {
       if (command === "get_runtime_info") {
-        return { packaged: true, version: "1.4.2", logDirectory: "C:\\logs", projectStorage: "preserved" };
+        return { packaged: true, version: "1.0.0", logDirectory: "C:\\logs", projectStorage: "preserved" };
       }
       return undefined;
     });

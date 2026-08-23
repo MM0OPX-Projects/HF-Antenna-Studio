@@ -2,6 +2,8 @@
 
 # API Reference
 
+> **Historical AntennaSim backend reference.** HF Antenna Studio v1.0.0 does not run, expose or require this FastAPI/WebSocket service. The released solver runs locally in a Web Worker and the Windows host exposes only the three bounded diagnostic commands documented in [ARCHITECTURE.md](ARCHITECTURE.md).
+
 REST and WebSocket endpoints exposed by the backend, plus the environment variables that configure it.
 
 ## Table of Contents

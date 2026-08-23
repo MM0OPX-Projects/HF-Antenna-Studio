@@ -1,5 +1,7 @@
 # HF Antenna Studio — Solver and Foundation Evaluation
 
+Historical status: this document records the initial foundation/bake-off recommendation. D-031 in [`DECISIONS.md`](DECISIONS.md) supersedes the deferred-product-solver position for v1.0.0 by selecting the externally compared, packaged nec2c/WebAssembly path. Native alternatives remain future studies.
+
 Status: repository audit and architecture recommendation
 Audit date: 2026-08-02
 
@@ -221,7 +223,7 @@ Every derived quantity needs a formula, input-field definition, coordinate conve
 
 ## Solver option evaluation
 
-Ratings below are planning assessments, not benchmark results.
+Ratings below preserve the initial planning assessment. They are not current benchmark results. D-031 later selected option 3—the pinned KJ7LNW/nec2c WebAssembly worker—for the validation-bounded v1.0.0 runtime after exact-deck, cancellation, and installed/offline Windows gates passed. Native nec2c and NEC2++ remain post-v1 challengers, not unmet v1 gates.
 
 | Option | Strengths | Gaps/risks | Planning disposition |
 |---|---|---|---|
@@ -239,7 +241,9 @@ Its current WebAssembly workflow only proves compilation. The `nec_wasm.cpp` ent
 
 NEC2++'s native maturity makes it a serious candidate, but upstream regression success is not a substitute for testing HF Antenna Studio's exact build, input compiler, process wrapper, parser, and plots.
 
-## Recommended Phase 0 bake-off
+## Post-v1 native bake-off retained from Phase 0
+
+The following experiment remains useful as an architecture comparison, but D-031 makes it post-v1 work rather than a release condition.
 
 Build reproducible x64 Windows candidates for:
 
@@ -276,7 +280,7 @@ If both pass, choose using, in order: warning/error quality, supported-card cove
 
 Reasons:
 
-- HF Antenna Studio has a different deployment boundary: Windows desktop IPC and native solver process instead of a Python/Redis/Docker plus browser-Wasm dual architecture.
+- HF Antenna Studio has a different deployment boundary: a Tauri/WebView2 Windows package with one local Wasm worker pipeline instead of AntennaSim's Python/Redis/Docker plus browser-Wasm dual architecture. A narrow native IPC/process alternative remains a post-v1 option.
 - A new canonical schema/compiler/parser is central to accuracy and maintainability.
 - Loss-aware NEC import and solver provenance are foundational requirements, not incremental UI fixes.
 - The application needs validation evidence before inheriting broad feature claims.
@@ -295,6 +299,8 @@ This is not a clean-room mandate. Reusing GPL-compatible AntennaSim code can sav
 A Git fork is therefore not the recommended starting shape, but upstream credit and license compliance remain mandatory for any actual reuse.
 
 ## Experimental assumptions still open
+
+Native-candidate rows below affect a possible post-v1 replacement, not the selected v1 runtime.
 
 | Assumption | Required experiment | Decision affected |
 |---|---|---|

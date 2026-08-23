@@ -5,12 +5,16 @@ on:
   push:
     branches:
       - feature/windows-packaging
+      - "release/**"
+    tags:
+      - "v*"
     paths:
       - ".github/workflows/windows-package.yml"
       - "frontend/**"
       - "scripts/build-desktop-frontend.ps1"
       - "scripts/build-wasm.ps1"
       - "scripts/check-package-version.ps1"
+      - "scripts/package-source.ps1"
       - "scripts/package-windows.ps1"
       - "scripts/test-windows-package.ps1"
       - "src-tauri/**"
@@ -19,6 +23,8 @@ on:
 
 permissions:
   contents: read
+  checks: write
+  issues: write
 
 jobs:
   package:
@@ -52,6 +58,16 @@ jobs:
         working-directory: frontend
         run: npm ci
 
+      - name: Audit frontend dependencies
+        working-directory: frontend
+        run: npm audit --audit-level=high
+
+      - name: Audit locked Rust dependencies
+        uses: rustsec/audit-check@69366f33c96575abad1ee0dba8212993eecbe998 # v2.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          working-directory: src-tauri
+
       - name: Install pinned Rust toolchain
         uses: dtolnay/rust-toolchain@1.90.0
 
@@ -71,6 +87,10 @@ jobs:
           $installer = (Get-ChildItem .\src-tauri\target\release\bundle\nsis\*-setup.exe | Select-Object -First 1).FullName
           & .\scripts\test-windows-package.ps1 -InstallerPath $installer
 
+      - name: Build corresponding-source archive
+        shell: powershell
+        run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\package-source.ps1
+
       - name: Upload distributable test build
         if: always()
         uses: actions/upload-artifact@v4
@@ -79,5 +99,7 @@ jobs:
           path: |
             src-tauri/target/release/bundle/nsis/*-setup.exe
             src-tauri/target/release/bundle/nsis/package-manifest.json
+            release-artifacts/hf-antenna-studio-*-corresponding-source.zip
+            release-artifacts/hf-antenna-studio-*-corresponding-source.zip.sha256
           if-no-files-found: error
           retention-days: 14

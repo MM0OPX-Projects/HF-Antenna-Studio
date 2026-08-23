@@ -2,7 +2,7 @@
  * BackendEngine — SimulationEngine implementation that calls the FastAPI backend.
  *
  * This wraps the existing REST API and WebSocket calls.
- * Used when VITE_ENGINE=backend (the default, for Docker deployment).
+ * Used only when the historical Docker path explicitly sets VITE_ENGINE=backend.
  */
 
 import { api } from "../../api/client";

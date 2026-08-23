@@ -1,263 +1,88 @@
-# HF Antenna Studio — Licensing and Attribution Plan
+# HF Antenna Studio licensing and attribution
 
-Status: project recommendation and release checklist, not legal advice
-Last reviewed: 2026-08-02
+Status: v1.0.0 engineering compliance record; not legal advice
+Last reviewed: 2026-08-23
 
-## Recommended project license
+## Distribution position
 
-Use **GNU GPL-3.0-or-later** for HF Antenna Studio's combined application distribution.
+HF Antenna Studio is distributed as a combined work under `GPL-3.0-or-later`. The root `LICENSE` contains the complete GNU GPLv3 text and the package metadata uses the same SPDX expression. Release source includes the exact dependency lockfiles, solver submodule reference/source, build/test scripts, notices, and machine-readable frontend SBOM.
 
-Reasons:
+This conservative GPL position is required because:
 
-- The audited EA1FUO/AntennaSim repository grants GPL version 3 or later. Selectively copying or adapting its code must preserve compatible GPL terms and notices.
-- The KJ7LNW/nec2c source used by AntennaSim has ambiguous public-domain/GPL signals. Treating the exact distributed solver and combined installer conservatively under GPL terms avoids a falsely permissive release while provenance is resolved.
-- NEC2++ is GPL-2.0-or-later; a distributor can select GPLv3 for a combined GPLv3 work, subject to verifying the exact files and dependencies.
-- A single strong-copyleft policy is easier for contributors and recipients to understand than implying that process separation erases all obligations.
+- HF Antenna Studio is derived from GPL-3.0-or-later EA1FUO/AntennaSim source;
+- the pinned KJ7LNW/nec2c solver tree contains a GPLv3 `COPYING` file alongside less uniform historical provenance wording; and
+- a process, worker, or Wasm boundary is an engineering mechanism, not an assumed licence exemption.
 
-Use SPDX identifier:
+The project does not claim that a new name or repository removes inherited obligations. It does not advertise nec2c as unambiguously public domain.
 
-```text
-GPL-3.0-or-later
-```
-
-The AntennaSim baseline import includes the complete GPL-3.0-or-later text and upstream copyright notice at repository root, and the frontend/backend package metadata now uses the same SPDX expression. Public binary distribution is still gated on the remaining checklist, especially solver provenance, third-party notices, corresponding source, and branding/assets review.
-
-## Verified-dipole branch checkpoint
-
-The `feature/verified-dipole-model` work adds no runtime or development dependency and remains part of the GPL-3.0-or-later AntennaSim-derived source tree. The feature's new TypeScript, tests, and original UI are distributed under the repository license; existing shared AntennaSim components retain their upstream history and notices.
-
-External validation handling is consistent with the comparator policy:
-
-- the Ellingson Virginia Tech/UNM memo is linked and only selected factual scalar results plus an independently authored summary are recorded; the PDF and its figures are not copied into the repository;
-- no rftools.io code, output file, screenshot, interface artwork, or model asset is committed;
-- PyNEC/necpp was evaluated but is not installed, linked, bundled, or added as a dependency;
-- no 4NEC2, EZNEC, or AN-SOF artifact is included;
-- the `HF Antenna Studio` name is applied as original product text, while AntennaSim provenance remains explicit in the baseline documentation.
-
-This checkpoint does not resolve the pinned nec2c provenance or approve a public binary distribution. The existing solver and release checklist remains open and unchanged.
-
-If the project later decides to avoid all GPL-covered reuse and chooses a differently licensed solver arrangement, relicensing new original code would require contributor agreement and a new documented decision. The current architecture does not assume that future path.
-
-## Audited upstream classifications
+## Provenance
 
 ### EA1FUO/AntennaSim
 
-- Audited commit: [`96e153ceefffd25819e42142d591ca811b4790d3`](https://github.com/EA1FUO/AntennaSim/tree/96e153ceefffd25819e42142d591ca811b4790d3).
-- Root license: GNU GPL version 3 with “or later” permission and an AntennaSim contributor notice.
-- GitHub's automated `NOASSERTION` classification is not a grant; read the actual license file.
-- Reused files require retained notices, source attribution, compatible distribution terms, and corresponding source.
-- Concepts and facts are not licensed like copied expression, but a “conceptual rewrite” must not be used to erase actual copied code/text/art provenance.
+- Audited/import source: commit `96e153ceefffd25819e42142d591ca811b4790d3`.
+- Licence: GNU GPL version 3 or later in the upstream root licence.
+- Treatment: Git history and attribution retained; public README, product identity, documentation and UI claims replaced with HF Antenna Studio originals. Adapted source is included in corresponding source.
 
 ### KJ7LNW/nec2c
 
-- AntennaSim pins commit [`55be1e0e3fe5ee9dad4ce6050711450d19c562fd`](https://github.com/KJ7LNW/nec2c/tree/55be1e0e3fe5ee9dad4ce6050711450d19c562fd).
-- The README describes nec2c as public domain, while `COPYING` contains GPLv3; [Fedora's package metadata](https://packages.fedoraproject.org/pkgs/nec2c/nec2c/index.html) classifies its package as GPL-3.0-only.
-- Source headers contain government-origin/warranty history that must be traced to the original conversion and later contributions.
-- Until counsel or a documented provenance review resolves the inconsistency, preserve all notices, comply with GPLv3 source obligations for the shipped source/binary, and do not advertise the component as public domain.
-- Record every local patch and the complete reproducible Windows build recipe.
+- Source/tag: commit `55be1e0e3fe5ee9dad4ce6050711450d19c562fd`, tag `v1.3.3`.
+- Distributed form: project-built `nec2c.js` and `nec2c.wasm` plus exact pinned source and build scripts.
+- Notices: upstream README, source headers and `wasm/nec2c/COPYING` are retained.
+- Patches: the submodule is clean; project-specific build integration is outside it under `wasm/` and `scripts/`.
+- Position: distribute conservatively under GPLv3 while explicitly recording the unresolved historical wording. This is an engineering release decision, not a legal adjudication of every NEC-era contribution.
 
-### NEC2++
+### Application dependencies
 
-- Audited commit: [`865851d15c5de8e64054adf5621a12e5b9984233`](https://github.com/tmolteno/necpp/tree/865851d15c5de8e64054adf5621a12e5b9984233).
-- Project/source notices indicate GPL-2.0-or-later; verify each bundled subtree and generated/binary component.
-- Its bundled Eigen and other dependencies require their own notice/license review.
-- If selected, record whether the CLI, library, wrapper, test data, and Wasm artifacts have different applicable notices.
+Direct browser runtime dependencies (React, React DOM, React Router, Three.js, React Three Fiber/Drei/Postprocessing, postprocessing, Recharts, three-stdlib and Zustand) declare MIT licences. Direct Rust dependencies Tauri/tauri-build and Serde declare Apache-2.0 OR MIT. The exact transitive inventories are pinned by `frontend/package-lock.json` and `src-tauri/Cargo.lock`; `THIRD_PARTY_NOTICES.md` explains their use and the frontend CycloneDX SBOM lists resolved packages.
 
-No solver is approved for redistribution merely by appearing in this list. Approval applies to an exact pinned source, patch set, build, and bundle after checklist review.
+The build uses Node/npm, Vite, TypeScript, Tailwind, ESLint, Vitest, Playwright, Emscripten, Rust and NSIS/Tauri tooling. These are build/test inputs rather than separately installed end-user prerequisites. Windows WebView2 remains subject to Microsoft's applicable terms; the preferred package embeds its small bootstrapper/check and does not claim the untested larger air-gapped redistribution variant.
 
-## Combined distribution policy
+## Assets, validation, and external software
 
-The Windows installer is considered one product distribution for compliance planning even when the solver runs as a child process. It will include or provide, as required:
+- The HF Antenna Studio icon, waveform mark, layout, wording and current documentation are project-authored and GPL-3.0-or-later.
+- No CDN font/image/icon package is required at runtime.
+- Project-authored NEC fixtures and comparator scripts are GPL-3.0-or-later.
+- External publications are linked and paraphrased; their PDFs, images, substantial prose and tables are not bundled.
+- 4NEC2 is installed separately by the validation operator. No 4NEC2 executable, model library, screenshot, artwork or raw packaged output is distributed.
+- AN-SOF and EZNEC are factual reference names only. No code, algorithm implementation, artwork, trade dress, help text or bundled asset is copied.
+- NanoVNA software/fixtures are not bundled. User measurement files remain user data.
 
-- HF Antenna Studio corresponding source;
-- the exact solver corresponding source;
-- build and installation scripts needed to reproduce modified binaries;
-- local patches in source form;
-- GPL license text and warranty disclaimer;
-- copyright notices and attribution;
-- third-party notices/licenses;
-- source commit and binary hash information;
-- a clear route from the About/Licenses screen to the bundled offline notices.
+## Contributor policy
 
-Do not rely on a subprocess boundary as a legal conclusion that would permit incompatible licensing. Seek qualified advice if the distribution model or intended license changes.
+`CONTRIBUTING.md` requires Developer Certificate of Origin sign-off and provenance for code, data, models, expected values, assets and excerpts. Contributors must have the right to submit their work under GPL-3.0-or-later. Proprietary/decompiled source, copied commercial assets/layouts, and unattributed reference material are rejected.
 
-## Original product identity
+## v1.0.0 release checklist
 
-HF Antenna Studio will create its own:
+### Satisfied engineering controls
 
-- name treatment, icon, logo, color system, layout, illustrations, screenshots, and marketing assets;
-- application wording, tutorials, help, validity explanations, examples, and templates;
-- code and design system except for explicitly attributed open-source reuse.
+- [x] Complete GPLv3 licence at repository root and package metadata aligned to `GPL-3.0-or-later`.
+- [x] DCO and provenance requirements documented.
+- [x] AntennaSim origin and exact audited commit recorded; Git authorship retained.
+- [x] nec2c repository, exact tag/commit, source, upstream notices, clean submodule and reproducible Emscripten build recorded.
+- [x] Lockfiles match the release build and the frontend resolved dependency graph has a CycloneDX SBOM.
+- [x] Direct runtime licence expressions manually reviewed; exact transitive graphs retained in lockfiles/SBOM.
+- [x] No remote runtime asset, cloud service, proprietary comparator binary, proprietary model collection or commercial interface asset is bundled.
+- [x] Public claims distinguish same-method numerical comparison from independent physical truth.
+- [x] Offline About page presents project, solver, dependency, source and warranty notices; the NSIS installer presents the complete GPL text.
+- [x] `THIRD_PARTY_NOTICES.md` accompanies source and packaged UI notice; the release workflow creates a corresponding-source ZIP that expands the exact solver submodule instead of relying on GitHub's gitlink-only automatic archive.
+- [x] Installer manifest identifies version, solver source and SHA-256 of the exact setup executable.
+- [x] No project EULA or installer restriction contradicts GPL rights.
 
-AN-SOF, 4NEC2, EZNEC, AntennaSim, NEC2++, and nec2c names are used factually and remain associated with their respective owners/projects. Do not imply sponsorship or compatibility beyond evidence. Complete a trademark/name search for “HF Antenna Studio” before public launch.
+### Explicitly not claimed
 
-## Proprietary comparator policy
+- Code signing/signature and SmartScreen publisher reputation are not present in v1.0.0; the SHA-256 manifest is the published integrity control.
+- A full cross-ecosystem legal-opinion SBOM/attestation covering WebView2, Windows, NSIS and every build tool is not claimed. Those platforms/tools are named and exact application graphs are locked.
+- The optional fully offline WebView2 installer variant is not distributed as the v1.0.0 supported package.
+- Trademark clearance and a formal legal opinion on NEC/nec2c historical provenance have not been obtained.
+- No export-control or jurisdiction-specific legal advice is represented by this engineering checklist; the distributor remains responsible for applicable law.
 
-4NEC2, EZNEC, and AN-SOF can inform workflow research and black-box numeric comparison. The project must not copy their:
+These limitations are disclosed in `docs/KNOWN_LIMITATIONS.md`. They do not alter recipients' GPL rights or the no-warranty statement.
 
-- executable/source code or proprietary algorithms;
-- icons, artwork, screenshots, chart styles, or other visual assets;
-- documentation/help text or sample collections without compatible permission;
-- branding, distinctive trade dress, or marketing copy;
-- bundled solver/data files outside their distribution terms.
+## Release consistency rules
 
-Validation records should prefer independently authored NEC decks and numeric tables of selected results. Store screenshots, full output files, or redistributed example decks only after checking their terms. Record application version and settings without implying endorsement.
-
-## AntennaSim reuse procedure
-
-Before copying/adapting a file:
-
-1. Record upstream repository, exact commit, source path, original copyright header, and license.
-2. Decide whether the file is copied, modified, translated, or only consulted.
-3. Preserve existing notices; add an HF Antenna Studio modification notice without deleting authorship.
-4. Add the source to a machine-readable provenance inventory and human-readable third-party notice where appropriate.
-5. Review transitive imports/assets; do not copy an entire directory to obtain one component.
-6. Replace AntennaSim branding, remote URLs, screenshots, sample data, and version text unless separately appropriate and attributed.
-7. Add HF Antenna Studio contract/validation tests before treating the component as supported.
-8. Include the adapted source in corresponding-source releases.
-
-Git history can preserve useful authorship, but a commit hash and notice inventory are still required because selective file imports can obscure history.
-
-## Source and asset provenance records
-
-Maintain records with at least:
-
-```text
-component/package/file
-version or commit
-source URL
-copyright holders/notices
-SPDX license expression
-use: build/dev/runtime/test/data/asset
-modified? patch location
-distributed? target artifact
-source-offer/corresponding-source location
-reviewer/date/notes
-```
-
-Separate categories include:
-
-- npm and Cargo packages;
-- Tauri CLI/runtime/plugins;
-- WebView2 runtime/installer redistribution terms;
-- Rust/Node/compiler/build-tool redistribution;
-- native solver source and runtime libraries;
-- Emscripten/Wasm tooling if later used;
-- fonts, icons, color palettes, images, sample antenna models, and documentation excerpts;
-- validation decks, raw reference outputs, and comparator records;
-- installer/bootstrapper/signing components.
-
-Generated code is not automatically unencumbered; record the generator and template/runtime terms.
-
-## Contributor licensing
-
-Recommended initial policy:
-
-- accept contributions under the repository's GPL-3.0-or-later terms through a Developer Certificate of Origin sign-off;
-- state in `CONTRIBUTING.md` that contributors must have the right to submit code, data, docs, and assets;
-- do not require a broad copyright assignment without a separately reviewed reason;
-- reject code pasted from proprietary applications, decompiled material, disallowed AI training/output sources, or unattributed forums/books;
-- require provenance for validation models and expected values;
-- allow project maintainers to request replacement of questionable assets/data.
-
-If future dual licensing is contemplated, contributor terms must be redesigned before accepting contributions under that model; it cannot be assumed retroactively.
-
-## Release licensing checklist
-
-### Repository baseline
-
-- [ ] Complete GPL-3.0 license text at root.
-- [ ] Package metadata uses `GPL-3.0-or-later` consistently.
-- [ ] Copyright/authorship policy documented.
-- [ ] `CONTRIBUTING.md` includes DCO/provenance requirements.
-- [ ] `LICENSES/` or `licenses/` contains required third-party license texts.
-- [ ] `THIRD_PARTY_NOTICES` identifies distributed components and assets.
-- [ ] Source files carry appropriate SPDX identifiers/notices according to project policy.
-
-### Solver
-
-- [ ] Exact source repository, commit/tag, and archive hash recorded.
-- [ ] License/provenance ambiguity resolved or approved under conservative terms.
-- [ ] Every patch is documented and included.
-- [ ] Windows compiler/toolchain, flags, and dependencies recorded.
-- [ ] Binary SHA-256 and reproducible-build status published.
-- [ ] Corresponding source and build/install scripts ship or are durably offered as required.
-- [ ] Upstream notices/warranty disclaimers retained.
-- [ ] Test/reference files reviewed separately from program-source licensing.
-
-### Application dependencies and assets
-
-- [ ] Lock files match release build.
-- [ ] SBOM covers desktop, JavaScript, Rust, native solver, runtime libraries, installer, and assets.
-- [ ] Automated license scan reviewed manually for unknown/custom/dual licenses.
-- [ ] Copyleft compatibility reviewed for linked and bundled components.
-- [ ] Fonts/icons/images/themes have compatible redistribution/modification terms and attribution.
-- [ ] WebView2 offline/fixed-runtime redistribution complies with Microsoft's applicable terms.
-- [ ] No CDN-only or remotely licensed runtime asset is required offline.
-- [ ] No proprietary comparison-package artifact is bundled without permission.
-
-### AntennaSim-derived material
-
-- [ ] File-level source commit/path provenance recorded.
-- [ ] Original notices retained.
-- [ ] Adaptation/modification notice added where appropriate.
-- [ ] Source included in the GPL corresponding-source bundle.
-- [ ] Branding/assets/text reviewed and replaced unless intentionally licensed/attributed.
-
-### Documentation and validation
-
-- [ ] Every external deck/table/image has source and license/permission metadata.
-- [ ] Quotations are minimal, attributed, and legally reviewed where needed.
-- [ ] 4NEC2/EZNEC/AN-SOF references are factual and do not imply endorsement.
-- [ ] NEC manual links/citations are recorded; redistribution of copies follows site/document terms.
-- [ ] Validation output redistribution is permitted, or only original reviewed summaries are shipped.
-
-### Installer and release
-
-- [ ] About/Licenses view works offline.
-- [ ] Installer includes applicable license and notice access.
-- [ ] Binary and source release versions correspond.
-- [ ] Source download remains available for the required period/distribution method.
-- [ ] Checksums, signatures, SBOM, and provenance attestations identify the exact artifacts.
-- [ ] No license text is contradicted by an EULA, store term, or installer restriction.
-- [ ] Export/control or jurisdiction-specific obligations have been considered by the distributor.
-
-## Internal consistency rules
-
-The `feature/antenna-template-system` implementation adds original project TypeScript, tests, and documentation under the existing GPL-3.0-or-later project terms. It adds no runtime dependency, copied proprietary asset, bundled comparator output, or externally sourced numeric validation table. The template regression values are generated locally and are explicitly not represented as independent reference data. Future externally sourced decks/results still require the documentation-and-validation checklist above.
-
-The `feature/vertical-antennas` implementation likewise adds original project code, tests, documentation, and three application-generated ideal-monopole NEC fixtures under the existing project terms. The separate NEC-2 User's Guide Example 10 fixture is a short functional input deck transcribed from the cited official guide/sample source and must retain its source/provenance note; its redistribution status still requires release review. The local 4NEC2 installation and `nec2dxs11k.exe` are external comparison tools only: neither executable nor proprietary application asset is copied or bundled. The committed comparator script records locally generated numeric summaries and the executable hash, not a 4NEC2 binary or raw packaged output.
-
-The `feature/yagi-beam-models` implementation adds original project TypeScript, tests, documentation, and three application-generated exact NEC fixtures under GPL-3.0-or-later. It does not copy local 4NEC2 model files, executable code, output files, interface assets, or NBS/NIST tables. The comparator invokes the separately installed 4NEC2 NEC-2D executable and commits only an original script plus reviewed numeric summaries and the executable hash. NBS Technical Note 688 is cited as an external government publication; the repository does not bundle its PDF, figures, prose, or tables. Any later decision to redistribute an external Yagi deck or raw package output requires the documentation-and-validation license review above.
-
-The `feature/loop-and-hexbeam-models` implementation adds original project TypeScript, tests, documentation, and five application-generated exact NEC fixtures under GPL-3.0-or-later. It does not copy a 4NEC2 binary, raw output, packaged example, interface asset, or third-party NEC deck. Its comparator commits an original invocation/parser script and a short factual numeric summary only. The hex starting values manually transcribe selected dimensional facts from the linked G3TXQ/K4KIO construction sources; no source diagram, prose, photograph, branding, code, or model file is reproduced. Those names are used factually for provenance and do not imply sponsorship or fidelity. Any external model/deck, screenshot, or raw package output added later still requires separate permission/provenance review.
-
-The `feature/phased-arrays` implementation adds original project TypeScript, tests, documentation, three application-generated exact NEC decks, and an original comparator script under GPL-3.0-or-later. The repository does not contain the 4NEC2 executable, its packaged examples, proprietary interface assets, or copied raw output. Documentation links to the public NEC-2 EX/TL/GN card reference for factual solver semantics. The recorded executable description, hashes, and short numeric results are factual validation metadata and do not imply 4NEC2 endorsement. A future package-authored model or published result must receive a separate provenance/copyright review before inclusion.
-
-The `feature/parameter-sweeps` implementation adds original project TypeScript, tests, and documentation under GPL-3.0-or-later. It introduces no dependency, external artwork, dataset, reference deck, comparator output, executable, or network service. Exported result JSON contains only user/application-generated model and NEC evidence. Existing family references and solver provenance retain their current review status; orchestration tests are not represented as new independent electromagnetic validation.
-
-The `feature/antenna-optimiser` implementation adds an original deterministic bounded search, UI, tests, and documentation under GPL-3.0-or-later. It adds no third-party optimiser library, dependency, asset, dataset, reference model, comparator output, executable, or network service. Exported histories contain user/application-generated models and NEC decks. Existing solver, family-reference, and distribution provenance remains unchanged; best-found candidates are not externally sourced validation data.
-
-The `feature/measurement-comparison` implementation adds original project TypeScript, tests and documentation under GPL-3.0-or-later. It adds no parser dependency, NanoVNA code/software/sample measurement, Touchstone specification copy, third-party asset, analyser executable, dataset or network service. Documentation links to the public IBIS Touchstone specification and NanoVNA software repositories/pages for factual format provenance. User-imported measurement data remains user data and is embedded only in explicit local exports; users are responsible for rights and privacy in files they share.
-
-The `feature/ui-overhaul` implementation adds original project TypeScript, CSS, tests, documentation, and a project-authored inline waveform mark under GPL-3.0-or-later. It adds no dependency, remote font, image, artwork, icon pack, commercial screenshot, interface asset, comparator output, or network service. Windows system-font names are fallback requests rather than bundled font files. References to commercial modelling packages remain factual product context only; no exact layout, trade dress, branding, or artwork is reproduced.
-
-The `feature/validation-campaign` implementation adds original project-authored NEC fixtures, PowerShell runners, TypeScript regression tests, a machine-readable factual result manifest, and an original validation report under GPL-3.0-or-later. It does not bundle the 4NEC2 application or executable, raw comparator output, screenshots, interface assets, or package-authored model files. The separately installed comparator is pinned by executable hash and invoked locally. Short numerical results, program/version identities, hashes, dimensions, and discrepancy summaries are recorded as factual engineering evidence. External publications are linked and paraphrased without reproducing their tables, figures, or substantial prose. Any future decision to store raw third-party outputs or redistribute package-authored decks requires the documentation-and-validation review above.
-
-The `feature/windows-packaging` implementation adds original Rust/TypeScript/PowerShell code, configuration, tests, and documentation under GPL-3.0-or-later, plus Tauri and its transitive open-source dependencies. The application icon is mechanically generated from the existing project-authored SVG. The installer embeds project-built nec2c JavaScript/WebAssembly from the pinned source submodule; the unresolved nec2c provenance review remains a release blocker rather than being cured by Wasm or Tauri packaging. The preferred test installer may download/install Microsoft's WebView2 runtime only when the Windows 11 runtime is missing; the optional offline variant redistributes Microsoft's offline installer and therefore requires a separate runtime-redistribution/license review. Tauri, Rust crates, npm dependencies, NSIS components, WebView2 materials, exact corresponding source, notices, SBOM, signing, and installer terms must pass the release checklist before public binary distribution. Test workflow artifacts are not represented as release-approved binaries.
-
-- Documentation must say GPL-3.0-or-later for HF Antenna Studio unless a later ADR changes it.
-- Do not call KJ7LNW/nec2c unambiguously public domain while its provenance is unresolved.
-- Do not describe a solver as “open-source and approved” until its exact source and bundle pass review.
-- Do not call 4NEC2, EZNEC, or AN-SOF project dependencies; they are external comparison tools.
-- A new repository does not remove obligations for copied AntennaSim material.
-- A native process boundary is an engineering isolation mechanism, not a license exemption.
-
-## Questions requiring qualified review
-
-- The precise status of original NEC-2 government-origin code, the C conversion, and later KJ7LNW contributions.
-- Whether any desired reference output/deck can be redistributed or should remain a locally generated/manual comparison record.
-- WebView2 runtime redistribution terms for the chosen offline packaging mode.
-- The project-name/trademark search.
-- Any future plugin/solver interface intended for proprietary third-party modules.
-- Any proposal to relicense, dual-license, distribute through an app store, or include a non-GPL-compatible dependency.
+- Describe HF Antenna Studio as GPL-3.0-or-later.
+- Describe the v1 solver exactly as pinned nec2c/WebAssembly NEC-2, not as a novel or universally validated solver.
+- Do not call 4NEC2, EZNEC, AN-SOF or NanoVNA project dependencies or imply their endorsement.
+- Keep all derived source and solver corresponding source available with each distributed binary version.
+- Review every new dependency, external deck/result, asset and installer component before a later release.
+- A future solver/licence/distribution change requires an ADR plus an updated notice, SBOM, compatibility review and validation campaign.

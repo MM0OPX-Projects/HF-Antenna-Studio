@@ -30,7 +30,7 @@ A minimal current simulator file is structurally equivalent to:
 ```json
 {
   "version": 4,
-  "app_version": "1.4.2",
+  "app_version": "1.0.0",
   "created_at": "2026-08-06T12:00:00.000Z",
   "mode": "simulator",
   "simulator": {

@@ -2,7 +2,7 @@
 
 # Deployment
 
-> HF Antenna Studio's supported Windows test-distribution path is the local Tauri/NSIS package described in [Windows 11 Packaging](WINDOWS_PACKAGING.md). The inherited Docker and GitHub Pages material below is retained for AntennaSim provenance and compatibility testing; it is not the preferred single-user Windows installation.
+> **Historical AntennaSim deployment reference.** HF Antenna Studio v1.0.0 supports only the local Windows Tauri/NSIS package described in [Installation](INSTALLATION.md) and [Windows packaging](WINDOWS_PACKAGING.md). The Docker, backend and upstream Pages material below is retained for provenance/testing and is not a supported HF Antenna Studio deployment or live demo.
 
 AntennaSim runs two ways: self-hosted with Docker (backend + Redis) or fully static via WebAssembly on GitHub Pages.
 
@@ -24,7 +24,7 @@ The package embeds the same production Wasm frontend in a small Tauri host, crea
 
 AntennaSim can run entirely in the browser -- no backend server needed. The NEC2 engine (`nec2c`) is compiled to WebAssembly and executes locally in a Web Worker.
 
-**Live demo:** https://EA1FUO.github.io/AntennaSim/
+**Historical upstream demo (not HF Antenna Studio):** https://EA1FUO.github.io/AntennaSim/
 
 This mode is enabled by setting `VITE_ENGINE=wasm` at build time. The GitHub Pages deployment is fully automated via the `deploy-pages.yml` workflow, which:
 

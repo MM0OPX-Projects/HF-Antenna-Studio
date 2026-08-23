@@ -175,6 +175,15 @@ export function AboutPage() {
                 </li>
               ))}
             </ul>
+            <p className="mt-4">
+              <a
+                href="/licenses.html"
+                className="text-sm font-medium text-accent hover:underline"
+              >
+                Licences and notices
+              </a>
+              <span className="ml-2 text-xs text-text-secondary">Available offline in the installed application.</span>
+            </p>
           </div>
 
           {/* Tech Stack */}

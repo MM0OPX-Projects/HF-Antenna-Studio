@@ -7,6 +7,7 @@ on:
     branches:
       - main
       - "feature/**"
+      - "release/**"
 
 jobs:
   frontend:
@@ -46,6 +47,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Audit frontend dependencies
+        run: npm audit --audit-level=high
+
       - name: Type check
         run: npm run type-check
 
@@ -65,6 +69,24 @@ jobs:
 
       - name: Browser smoke tests
         run: npm run test:smoke
+
+  rust-security:
+    name: Rust dependency audit
+    runs-on: ubuntu-latest
+    permissions:
+      checks: write
+      contents: read
+      issues: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Audit locked Rust dependencies
+        uses: rustsec/audit-check@69366f33c96575abad1ee0dba8212993eecbe998 # v2.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          working-directory: src-tauri
 
   windows-baseline:
     name: Windows 11 baseline
@@ -98,6 +120,10 @@ jobs:
       - name: Install frontend dependencies
         working-directory: frontend
         run: npm ci
+
+      - name: Audit frontend dependencies
+        working-directory: frontend
+        run: npm audit --audit-level=high
 
       - name: Type check
         working-directory: frontend

@@ -1,9 +1,8 @@
 # HF Antenna Studio Engineering Validation Report
 
-Campaign: `hfas-validation-campaign-2026-08-06`
+Campaign: `hfas-validation-campaign-2026-08-06`, rerun for release candidate `v1.0.0` on 2026-08-23
 
-Branch: `feature/validation-campaign`
-Status: **PASS within the exact models and tolerances recorded here**
+Status: **PASS within the exact models and tolerances recorded here; not a universal accuracy claim**
 
 ## Executive result
 
@@ -215,6 +214,12 @@ The full completion run must also include type checking, linting, and the produc
 6. Perform controlled calibrated measurements with complete construction and environment records. Measurement agreement is not replaced by same-method solver agreement.
 7. Repeat on the packaged Windows 11 desktop runtime, offline, with the exact shipped solver binary; this campaign exercises the browser/Wasm development baseline.
 8. Preserve raw comparator outputs or a signed machine-readable result bundle in a future release process after licensing, size, and provenance policy is agreed.
+
+## v1.0.0 release interpretation
+
+For v1.0.0, the primary table is the validated numerical claim. Workflows outside those exact free-space/perfect-ground families and metrics may be functional and regression-tested without being independently validated. In particular, finite real ground, physical phased-array feed networks, arbitrary imported structures, absolute current values, frequency-sweep points outside the fixtures, optimiser candidates, and constructed-antenna measurement agreement are not promoted by this report.
+
+The release audit reruns the machine-readable deck/hash assertions, complete application solver suite and the fail-closed 4NEC2 comparator command. A package is not accepted merely because this earlier campaign text says PASS; the exact release commit must also pass the Windows installed/offline solver workflow.
 
 ## Conclusion
 

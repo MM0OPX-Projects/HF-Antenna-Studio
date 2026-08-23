@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "HF Antenna Studio",
-  "version": "1.4.2",
+  "version": "1.0.0",
   "identifier": "uk.co.mm0opx.hfantennastudio",
   "build": {
     "beforeBuildCommand": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/build-desktop-frontend.ps1",
@@ -35,7 +35,7 @@
     "copyright": "Copyright HF Antenna Studio contributors",
     "category": "Utility",
     "shortDescription": "Local NEC-based HF antenna modelling",
-    "longDescription": "HF Antenna Studio is an offline-capable antenna modelling application for Windows 11 using a bundled, validated nec2c WebAssembly solver.",
+    "longDescription": "HF Antenna Studio is an offline-capable antenna modelling application for Windows 11 using a bundled nec2c WebAssembly NEC-2 solver with published validation scope and limitations.",
     "license": "GPL-3.0-or-later",
     "licenseFile": "../LICENSE",
     "icon": [

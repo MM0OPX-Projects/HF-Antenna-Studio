@@ -10,7 +10,8 @@ test("browser fallback exposes the release identity without requiring native com
   await dismissChangelog(page);
 
   await expect(page.getByRole("heading", { name: "About HF Antenna Studio" })).toBeVisible();
-  await expect(page.getByTestId("about-version")).toHaveText("1.4.2");
+  await expect(page.getByTestId("about-version")).toHaveText("1.0.0");
+  await expect(page.getByRole("link", { name: "Licences and notices" })).toHaveAttribute("href", "/licenses.html");
   await expect(page.getByTestId("about-runtime-mode")).toHaveText("Browser development application");
   await expect(page.getByTestId("about-log-directory")).toHaveText("Browser developer console");
   await expect(page.getByRole("button", { name: "Open log folder" })).toHaveCount(0);

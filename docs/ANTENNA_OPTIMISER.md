@@ -1,6 +1,6 @@
 # Antenna optimiser
 
-Status: implemented experimental browser/Wasm prototype on `feature/antenna-optimiser`; not a supported release optimiser
+Status: included experimental v1.0.0 workflow; search mechanics supported, numerical optimality not independently validated
 
 ## Scope and claim boundary
 
@@ -8,7 +8,7 @@ The `/antenna-optimiser` route varies one or two declared dimensions, evaluates 
 
 Results are called **“Best solution found.”** The application records `globalOptimumEstablished: false`. The deterministic local search does not justify “perfect antenna,” “global optimum,” construction-performance, or measurement-equivalence claims.
 
-This is an experimental Phase 7 workflow prototype built before all Phase 0–6 release gates have passed. It tests bounded orchestration and evidence retention. It does not promote the inherited browser/Wasm engine or any family metric to release-validated status.
+This is an experimental workflow included in v1.0.0 to test bounded orchestration and evidence retention. Its search mechanics are regression-tested, but it does not promote any candidate, family metric, or global-optimum claim to independently validated status.
 
 ## Initial model and variable subset
 
@@ -122,7 +122,7 @@ The locally downloaded `hf-antenna-studio-antenna-optimisation.json` contains th
 | Challenge | Resolution or retained limitation |
 |---|---|
 | A local heuristic may be mistaken for a global optimiser. | Every UI/export claim says “Best solution found”; the result schema fixes `globalOptimumEstablished` to false and documents termination. |
-| Optimisation can exploit solver/model defects. | Candidate generation reuses existing validation and retains every exact deck, but independent point sampling and convergence remain release gates. |
+| Optimisation can exploit solver/model defects. | Candidate generation reuses existing validation and retains every exact deck, but independent point sampling and convergence remain future validation requirements. |
 | Weighted scores can conceal incompatible units and subjective trade-offs. | The raw-unit formula is shown beside controls and all targets/weights are exported; weights are not called percentages. |
 | Constraints can make the feasible region empty. | Rejections remain in history. A run with no feasible candidate fails instead of relabelling a rejected model as best. |
 | Invalid geometry might be clamped into a plausible candidate. | Parameter bounds and existing typed-model checks reject candidates; the optimiser does not repair geometry silently. |

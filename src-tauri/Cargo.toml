@@ -1,6 +1,6 @@
 [package]
 name = "hf-antenna-studio"
-version = "1.4.2"
+version = "1.0.0"
 description = "Local NEC-based HF antenna modelling for Windows"
 authors = ["HF Antenna Studio contributors"]
 license = "GPL-3.0-or-later"

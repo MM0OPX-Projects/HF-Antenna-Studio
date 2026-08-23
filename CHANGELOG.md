@@ -7,7 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-### Fixed
+No changes yet.
+
+## [1.0.0] - 2026-08-23
+
+### Release audit
+
+- Prepared the first HF Antenna Studio public release with synchronized version metadata, a clean dependency/security audit, licence and provenance notices, machine-readable frontend SBOM, offline About notice, Windows installation/user/limitation guides, bounded validation claims, and reproducible release notes
+- Reclassified the inherited AntennaSim entries below as preserved upstream history; those version numbers are not HF Antenna Studio releases
+
+### Navigation fixes
 
 - Restored the shared application header on Frequency Analyser, Model Comparison, Parameter Sweeps, Antenna Optimiser, and Measurement Comparison so every tool has a visible, tested return path in the chromeless Windows application
 
@@ -21,7 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - Added a systematic validation campaign covering a free-space dipole, dipole over ground, quarter-wave vertical, full-wave square loop, delta loop, two- and three-element Yagis, and broadside/end-fire two-element phased vertical arrays
 - Added a SHA-256-pinned machine-readable reference manifest, exact dipole fixtures, application-deck identity tests, a fail-closed unified Windows comparator runner, and 16 exact-deck executions through a separately installed 4NEC2 NEC-2D build
-- Added `docs/VALIDATION_REPORT.md` with complete model/settings/result records, signed differences, honest discrepancy classifications, investigation notes, unresolved release gates, and reproducible commands; no RF calculation behaviour was changed because no new calculation bug was confirmed
+- Added `docs/VALIDATION_REPORT.md` with complete model/settings/result records, signed differences, honest discrepancy classifications, documented scope limitations, and reproducible commands; no RF calculation behaviour was changed because no new calculation bug was confirmed
 
 - Added an original Windows-first Simulator workbench with independently resizable/collapsible model-input, geometry, calculated-summary, and analysis regions; compact tablet/mobile layouts mount only one WebGL viewer
 - Added explicit result-currency and input-condition summaries, modelling/solver diagnostics, contextual help, keyboard panel shortcuts, accessible resizers/tabs/dialogs, locally rendered light/dark design tokens, browser usability coverage, and `docs/UI_OVERHAUL.md`
@@ -125,9 +134,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Security
 
-- Reduced the clean-install audit from 12 vulnerabilities to two entries for one React Router RSC-mode advisory; the client-only SPA does not use the affected RSC/server-action path, and the offered forced downgrade was not applied
+- Resolved the remaining locked frontend advisory by pinning transitive `nanoid` to fixed version 3.3.18; a clean npm 11 install reports zero vulnerabilities
 
-## [1.4.2] - 2026-07-31
+## AntennaSim-derived history (preserved for provenance)
+
+The entries below describe the imported EA1FUO/AntennaSim history and the subsequent feature-development chain. They are retained for authorship and technical provenance; their version numbers are not HF Antenna Studio release tags.
+
+## [AntennaSim 1.4.2] - 2026-07-31
 
 ### Added
 
@@ -279,7 +292,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - Renamed "Band Presets" label to "Band Sweep Presets" for clarity
 
-## [1.0.0] - 2026-03-05
+## [AntennaSim 1.0.0] - 2026-03-05
 
 ### Added
 
@@ -538,7 +551,7 @@ This was the initial public release -- a complete rewrite of the original protot
 [1.2.2]: https://github.com/EA1FUO/AntennaSim/compare/v1.2.1...v1.2.2
 [1.2.1]: https://github.com/EA1FUO/AntennaSim/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/EA1FUO/AntennaSim/compare/v1.1.1...v1.2.0
-[1.0.0]: https://github.com/EA1FUO/AntennaSim/compare/v0.8.0...v1.0.0
+[1.0.0]: https://github.com/MM0OPX-Projects/HF-Antenna-Studio/releases/tag/v1.0.0
 [0.8.0]: https://github.com/EA1FUO/AntennaSim/compare/v0.7.7...v0.8.0
 [0.7.7]: https://github.com/EA1FUO/AntennaSim/compare/v0.7.6...v0.7.7
 [0.7.6]: https://github.com/EA1FUO/AntennaSim/compare/v0.7.5...v0.7.6

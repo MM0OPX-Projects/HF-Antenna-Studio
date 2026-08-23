@@ -2,6 +2,8 @@
 
 # Development
 
+> **Historical AntennaSim development reference.** The Docker/FastAPI/Redis path below is retained for provenance and compatibility research but is not the v1.0.0 Windows runtime or supported maintainer build. Use [INSTALLATION.md](INSTALLATION.md), [ARCHITECTURE.md](ARCHITECTURE.md), and the root [CONTRIBUTING.md](../CONTRIBUTING.md).
+
 How to run AntennaSim with hot-reload, how the pieces fit together, and where everything lives.
 
 ## Table of Contents

@@ -8,7 +8,7 @@ The application source is imported from EA1FUO/AntennaSim commit `96e153ceefffd2
 
 The supported baseline execution mode is the browser-local WebAssembly engine. The Python/native-service path remains in the source tree for reference but is not the recommended Windows baseline.
 
-This branch is a preserved, runnable reference snapshot. It does not reverse D-001 (new product repository with selective reuse), D-005 (native solver bake-off), or D-006 (Wasm must later prove parity with the accepted native oracle). Making the inherited application reproducible is evidence-gathering before redevelopment, not a decision to ship its architecture unchanged.
+This branch is a preserved, runnable reference snapshot. At the time it did not reverse D-001 (new product repository with selective reuse), D-005 (native solver bake-off), or D-006 (defer Wasm). D-031 later superseded D-005/D-006 for v1 after materially broader evidence. Making the inherited application reproducible was evidence-gathering, not by itself the decision to ship the later architecture.
 
 The descendant `feature/verified-dipole-model` branch adds a dedicated exact-deck route and does not alter the recorded generic baseline model/deck semantics in the table below. Its separate implementation and evidence are documented in [`VERIFIED_DIPOLE.md`](VERIFIED_DIPOLE.md).
 
@@ -161,14 +161,14 @@ Current baseline results:
 - Production Wasm build: pass.
 - Playwright baseline: three real-solver examples pass.
 - ESLint: pass with 13 warnings and no errors; see known UI limitations.
-- npm audit: two high-severity entries representing one React Router RSC-mode CSRF advisory. This application is a client-rendered SPA and does not use React Server Components or server actions. npm offers only a forced downgrade, so the dependency is documented rather than changed unsafely. Reassess when a non-breaking patched release is available.
+- Historical baseline result: npm audit reported two entries for one React Router RSC-mode advisory. The v1.0.0 release lockfile supersedes this result and reports zero vulnerabilities after the remaining transitive `nanoid` advisory was fixed; use `RELEASE_AUDIT.md` for current status.
 - All dependencies within the existing compatible version ranges were refreshed. ESLint 10, Vite 8, TypeScript 7, React plugin 6, Node 26 types, and newer Three.js are intentional major/minor migration work rather than baseline dependency fixes and remain deferred.
 
 CI builds the pinned Wasm solver, runs static checks and unit tests, creates a Wasm production build, installs Chromium, and runs the browser smoke suite. A dedicated `windows-latest` job repeats the build, unit, production, and browser baseline on feature-branch pushes and pull requests to `main`.
 
 ## Licensing status
 
-The imported application remains under AntennaSim's GPL-3.0-or-later grant and its root copyright notice. Frontend and backend package metadata now state `GPL-3.0-or-later`; the complete license text is at repository root. The NEC2C submodule retains its own `COPYING` file and exact Git history. Its conflicting public-domain/GPL provenance signals remain an open release issue under `LICENSING.md`; no more-permissive claim is made here. Generated Wasm binaries must be distributed with corresponding-source and notice obligations satisfied.
+The imported application remains under AntennaSim's GPL-3.0-or-later grant and its root copyright notice. Frontend and backend package metadata state `GPL-3.0-or-later`; the complete license text is at repository root. The NEC2C submodule retains its own `COPYING` file and exact Git history. The v1.0.0 release handles its conflicting historical provenance signals conservatively under GPLv3, preserves notices/source/build scripts, and makes no more-permissive claim; see `LICENSING.md`.
 
 ## Current broken or incomplete features
 

@@ -98,7 +98,7 @@ Deck hashes:
 
 The two end-fire cases have equal gain, equal axial suppression, and headings separated by exactly 180 degrees at the grid resolution. The broadside case is symmetric with equal opposite peaks. These are the requested broadside, end-fire, reversal, and symmetry sanity checks. The exact final currents are also checked in the browser as `1∠0 degrees` and `1∠target phase` ampere after normalization.
 
-This is independent package/executable, same-deck NEC-2 evidence. It catches compiler, solver-build, parser, coordinate, and metric defects. It is not independent physical truth: both engines implement NEC-2, the decks originated in this project, and perfect ground plus ideal enforced currents are abstractions. Physical-mode TL cases, real ground, explicit radials, spacing/segment/grid convergence, another solver family, a package-authored phased-array model, and controlled measurement remain open release gates.
+This is independent package/executable, same-deck NEC-2 evidence. It catches compiler, solver-build, parser, coordinate, and metric defects. It is not independent physical truth: both engines implement NEC-2, the decks originated in this project, and perfect ground plus ideal enforced currents are abstractions. Physical-mode TL cases, real ground, explicit radials, spacing/segment/grid convergence, another solver family, a package-authored phased-array model, and controlled measurement remain outside the v1.0.0 validated scope.
 
 ## Adversarial RF and architecture review
 

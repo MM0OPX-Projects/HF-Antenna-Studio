@@ -1,17 +1,19 @@
-# AntennaSim Documentation
+# HF Antenna Studio documentation
 
-Detailed guides for AntennaSim. New here? Start with the [project README](../README.md) for the overview and quick start.
+Start with the [project README](../README.md), then use the v1.0.0 guides below.
 
-| Guide | What's inside |
+| Guide | Purpose |
 |---|---|
-| [Usage](usage.md) | Antenna templates, full feature list, keyboard shortcuts |
-| [Development](development.md) | Dev setup, local WASM build, architecture, project structure, tech stack |
-| [Deployment](deployment.md) | GitHub Pages (WebAssembly) and production Docker deployment |
-| [API Reference](api.md) | REST + WebSocket endpoints and configuration (`.env`) |
-| [Verified Dipole](VERIFIED_DIPOLE.md) | Exact-deck vertical slice, numeric evidence, and claim limits |
-| [Dipole Height Lab](DIPOLE_HEIGHT_LAB.md) | Interactive height controls, cancellation/cache contract, validation, and limitations |
-| [Engineering Validation Report](VALIDATION_REPORT.md) | Systematic reference models, external NEC comparisons, discrepancies, and bounded conclusions |
-| [Windows 11 Packaging](WINDOWS_PACKAGING.md) | Installer selection, offline/runtime boundary, local logs/data, reproducible build, acceptance tests, and troubleshooting |
-| [Professional UI Workbench](UI_OVERHAUL.md) | Desktop layout, interaction/accessibility contract, usability reviews, tests, and manual gates |
+| [User guide](USER_GUIDE.md) | Safe workflow, projects, antenna families, results, sweeps, measurement and imports |
+| [Installation](INSTALLATION.md) | Windows installer, checksum, offline boundary, data, logs and troubleshooting |
+| [Validation report](VALIDATION_REPORT.md) | Exact reference models, tolerances, discrepancies and bounded conclusions |
+| [Known limitations](KNOWN_LIMITATIONS.md) | Numerical, workflow, packaging and provenance boundaries |
+| [Release notes](RELEASE_NOTES_v1.0.0.md) | v1.0.0 highlights and upgrade/install warnings |
+| [Architecture](ARCHITECTURE.md) | Implemented v1 runtime and post-v1 options |
+| [Project file format](PROJECT_FILE_FORMAT.md) | `.hfas` schema, migrations, recovery and compatibility |
+| [Licensing](LICENSING.md) | GPL position, provenance and release checklist |
+| [Windows packaging](WINDOWS_PACKAGING.md) | Reproducible package design and clean-runner acceptance |
 
-See also: [Contributing](../CONTRIBUTING.md) · [Changelog](../CHANGELOG.md) · [License](../LICENSE)
+Family/workflow engineering records remain in this directory and state their own evidence limits. `usage.md`, `development.md`, `deployment.md`, and `api.md` are preserved AntennaSim baseline references; they are not the v1.0.0 product contract unless a current guide explicitly links to a relevant section.
+
+See also [Contributing](../CONTRIBUTING.md), [Changelog](../CHANGELOG.md), [Third-party notices](../THIRD_PARTY_NOTICES.md), and [Licence](../LICENSE).
