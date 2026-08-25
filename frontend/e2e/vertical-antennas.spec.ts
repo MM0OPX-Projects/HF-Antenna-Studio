@@ -20,6 +20,10 @@ async function impedance(locator: Locator): Promise<{ resistance: number; reacta
   return { resistance: Number(match[1]), reactance: Number(match[3]) * (match[2] === "-" ? -1 : 1) };
 }
 
+function numericResult(text: string): number {
+  return Number(text.match(/[+−-]?\d+(?:\.\d+)?/)![0].replace("−", "-"));
+}
+
 test("40/20/10m ideal monopoles match the recorded local NEC regression and analytic sanity bounds", async ({ page }) => {
   await openVerticals(page);
   await page.getByTestId("vertical-mode-ground-mounted-ideal").click();
@@ -79,6 +83,26 @@ test("Sommerfeld/Norton explicit wires and simplified RCA screen remain distinct
   expect(screenDeck).toContain("RP 4 19 72");
   await runAndWait(page);
   await expect(page.getByTestId("radial-current-path")).toHaveCount(0);
+});
+
+test("ground-mounted real-soil radials solve the externally compared exact deck", async ({ page }) => {
+  await openVerticals(page);
+  await page.getByTestId("vertical-mode-ground-mounted-explicit-radials").click();
+  await expect(page.getByTestId("vertical-wire-count")).toHaveText("17");
+  await expect(page.getByTestId("vertical-ground-kind")).toHaveValue("sommerfeld-norton");
+  await expect(page.getByTestId("vertical-surface-clearance")).toHaveValue("10");
+  await expect(page.getByTestId("vertical-warnings")).toContainText("cannot solve buried or exactly-on-soil wires");
+  const deck = await page.getByTestId("vertical-generated-nec").textContent() ?? "";
+  expect(deck).toContain("CM HF Antenna Studio vertical system: ground-mounted-explicit-radials");
+  expect(deck).toContain("GE -1\nGN 2 0 0 0 13 0.005");
+  await runAndWait(page);
+  const z = await impedance(page.getByTestId("vertical-result-impedance"));
+  expect(z.resistance).toBeCloseTo(32.3154, 1);
+  expect(z.reactance).toBeCloseTo(-15.3840, 1);
+  expect(numericResult(await page.getByTestId("vertical-result-gain").innerText())).toBeCloseTo(-0.16, 1);
+  expect(numericResult(await page.getByTestId("vertical-result-takeoff").innerText())).toBe(25);
+  await expect(page.getByTestId("vertical-current-distribution")).toBeVisible();
+  await expect(page.getByTestId("radial-current-path")).toBeVisible();
 });
 
 test("the NEC-2 User's Guide Example 10 dimensions solve as an explicit-wire analogue", async ({ page }) => {

@@ -1,4 +1,5 @@
 import { SPEED_OF_LIGHT_M_PER_S } from "../verified-dipole/model";
+import { validateNearSurfaceRadialPlane } from "../ground-radials/model";
 import { HF_AMATEUR_BANDS } from "./bands";
 import type {
   AntennaTemplateDefinition,
@@ -22,8 +23,8 @@ const frequencyParameter: TemplateParameterDefinition = {
   slider: true, dimensional: false,
 };
 
-function lengthParameter(key: string, label: string, description: string, minimum = 0.05, maximum = 250, defaultSI = 10): TemplateParameterDefinition {
-  return { key, label, description, quantity: "length", internalUnit: "m", metricUnit: "m", imperialUnit: "ft", minSI: minimum, maxSI: maximum, stepSI: 0.05, defaultSI, decimals: 2, slider: true, dimensional: true };
+function lengthParameter(key: string, label: string, description: string, minimum = 0.05, maximum = 250, defaultSI = 10, stepSI = 0.05): TemplateParameterDefinition {
+  return { key, label, description, quantity: "length", internalUnit: "m", metricUnit: "m", imperialUnit: "ft", minSI: minimum, maxSI: maximum, stepSI, defaultSI, decimals: stepSI < 0.01 ? 3 : 2, slider: true, dimensional: true };
 }
 
 const diameterParameter: TemplateParameterDefinition = {
@@ -63,8 +64,23 @@ function commonRules(model: Parameters<AntennaTemplateDefinition["validationRule
   return issues;
 }
 
-function templateBase(definition: Omit<AntennaTemplateDefinition, "version" | "presets" | "segmentation" | "loads">): AntennaTemplateDefinition {
-  return { ...definition, version: 1, presets: HF_AMATEUR_BANDS, segmentation: SEGMENTATION, loads: () => [] };
+function surfaceRadialRules(model: Parameters<AntennaTemplateDefinition["validationRules"][number]>[0]): TemplateValidationIssue[] {
+  if (model.ground.kind !== "real") {
+    return [{ severity: "error", code: "surface-radial-real-ground", message: "The ground-mounted explicit-radial template requires real Sommerfeld/Norton ground. Use the Vertical Antennas lab for an ideal perfect-ground monopole." }];
+  }
+  return validateNearSurfaceRadialPlane({
+    wireAxisHeightM: model.parametersSI.surfaceClearanceM!,
+    wireDiameterM: model.parametersSI.wireDiameterM!,
+    wavelengthM: SPEED_OF_LIGHT_M_PER_S / model.frequencyHz,
+  });
+}
+
+type TemplateBaseInput = Omit<AntennaTemplateDefinition, "version" | "presets" | "segmentation" | "loads"> & {
+  segmentation?: AntennaTemplateDefinition["segmentation"];
+};
+
+function templateBase(definition: TemplateBaseInput): AntennaTemplateDefinition {
+  return { ...definition, version: 1, presets: HF_AMATEUR_BANDS, segmentation: definition.segmentation ?? SEGMENTATION, loads: () => [] };
 }
 
 export const antennaTemplateDefinitions: AntennaTemplateDefinition[] = [
@@ -93,14 +109,14 @@ export const antennaTemplateDefinitions: AntennaTemplateDefinition[] = [
     feedPoint: (_p, wires) => ({ wireId: wires[0]!.id, position: 0.5, voltage: { realV: 1, imaginaryV: 0 } }), validationRules: [commonRules],
   }),
   templateBase({
-    id: "quarter-wave-vertical", name: "Quarter-wave vertical", shortDescription: "Single near-quarter-wave radiator using the selected ground model.", defaultBandId: "20m", groundRequirement: "required",
-    groundConnection: "touching",
-    defaultGround: { kind: "perfect" },
-    rfNotes: ["Perfect ground is the explicit ideal starting preset; real soil without a radial model can differ radically.", "0.2375λ is a starting dimension and must be tuned for the installation."],
-    parameters: [frequencyParameter, lengthParameter("radiatorLengthM", "Radiator length", "Vertical conductor length."), diameterParameter],
-    startingParameters: (frequencyHz) => { const l = SPEED_OF_LIGHT_M_PER_S / frequencyHz; return { frequencyHz, radiatorLengthM: l * 0.2375, wireDiameterM: 0.004 }; },
-    geometryGenerator: (p) => [wire("radiator", { x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: p.radiatorLengthM! }, p.wireDiameterM!)],
-    feedPoint: (_p, wires) => ({ wireId: wires[0]!.id, position: 0, voltage: { realV: 1, imaginaryV: 0 } }), validationRules: [commonRules],
+    id: "quarter-wave-vertical", name: "Quarter-wave vertical", shortDescription: "Ground-mounted vertical with explicit near-surface radial wires over real soil.", defaultBandId: "20m", groundRequirement: "required",
+    defaultGround: { kind: "real", conductivitySPerM: 0.005, relativePermittivity: 13 },
+    segmentation: { ...SEGMENTATION, maximumSegmentLengthWavelengths: 0.02, rationale: "Target at most 0.02 wavelength per wire segment to match the validated specialist vertical-radial adapter." },
+    rfNotes: ["Radials are current-carrying NEC wires raised slightly above real ground; they are not buried-wire geometry.", "0.2375λ radiator and 0.25λ radials are starting dimensions and must be tuned for the installation."],
+    parameters: [frequencyParameter, lengthParameter("radiatorLengthM", "Radiator length", "Vertical conductor length."), lengthParameter("radialLengthM", "Radial length", "Length of every horizontal ground radial."), lengthParameter("surfaceClearanceM", "NEC radial clearance", "Wire-axis height above soil; not burial depth.", 0.001, 0.1, 0.01, 0.001), integerParameter("radialCount", "Radial count", "Number of explicit current-carrying radial wires.", 4, 64, 16), diameterParameter],
+    startingParameters: (frequencyHz) => { const l = SPEED_OF_LIGHT_M_PER_S / frequencyHz; return { frequencyHz, radiatorLengthM: l * 0.2375, radialLengthM: l * 0.25, surfaceClearanceM: 0.01, radialCount: 16, wireDiameterM: 0.002 }; },
+    geometryGenerator: (p) => { const base = { x: 0, y: 0, z: p.surfaceClearanceM! }; const wires = [wire("radiator", base, { ...base, z: base.z + p.radiatorLengthM! }, p.wireDiameterM!)]; const count = Math.round(p.radialCount!); for (let index = 0; index < count; index += 1) { const angle = index * 2 * Math.PI / count; wires.push(wire(`radial-${index + 1}`, { ...base }, { x: p.radialLengthM! * Math.cos(angle), y: p.radialLengthM! * Math.sin(angle), z: base.z }, p.wireDiameterM!)); } return wires; },
+    feedPoint: (_p, wires) => ({ wireId: wires[0]!.id, position: 0, voltage: { realV: 1, imaginaryV: 0 } }), validationRules: [commonRules, surfaceRadialRules],
   }),
   templateBase({
     id: "ground-plane-vertical", name: "Ground-plane vertical", shortDescription: "Elevated vertical with configurable drooping radials.", defaultBandId: "20m", groundRequirement: "recommended",

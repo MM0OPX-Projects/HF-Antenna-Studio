@@ -1,7 +1,7 @@
 # HF Antenna Studio — Architecture
 
-Status: v1.0.0 implemented architecture plus documented post-v1 options
-Last reviewed: 2026-08-23
+Status: v1.0.0 implemented architecture plus unreleased post-v1 ground-radial extension
+Last reviewed: 2026-08-25
 
 ## Recommendation in one sentence
 
@@ -17,7 +17,7 @@ The key architectural evidence is that the displayed deterministic deck crosses 
 
 The `feature/antenna-template-system` branch extended that experiment with a declarative template registry, an SI-only shared parametric-wire schema, and one common workbench/segmentation/NEC pipeline for eight antenna topologies. It demonstrates that adding a template need not add a calculation screen and is part of the Tauri/Wasm v1 codebase. See [`ANTENNA_TEMPLATE_SYSTEM.md`](ANTENNA_TEMPLATE_SYSTEM.md) for the contract, RF review, regression evidence, and open validation work.
 
-The `feature/vertical-antennas` branch adds a solver-independent vertical-model schema and a dedicated NEC adapter for three intentionally non-equivalent configurations: a ground-contact monopole over perfect ground, elevated explicit radial wires over perfect or Sommerfeld/Norton ground, and NEC's reflection-coefficient radial-screen approximation. Exact model identity continues across generated deck, result, and UI, and incompatible card combinations are rejected before execution. Independent same-deck comparison with a separately installed 4NEC2 NEC-2D engine now supports the three 40/20/10-m perfect-ground fixtures; it does not yet validate finite-ground or radial-screen accuracy. See [`VERTICAL_ANTENNAS.md`](VERTICAL_ANTENNAS.md).
+The `feature/vertical-antennas` branch added a solver-independent vertical-model schema and a dedicated NEC adapter for three intentionally non-equivalent configurations. The post-v1 `feature/ground-radial-systems` branch adds a fourth: horizontal explicit radial wires held at visible positive clearance over Sommerfeld/Norton ground. It also adds independent or explicitly bonded shared near-surface radial topologies to phased vertical arrays. Exact model identity continues across generated deck, result, and UI; incompatible ground, contact, droop and crossing combinations are rejected before execution. Separate 4NEC2 NEC-2D same-deck checks cover the original 40/20/10-m perfect-ground fixtures and three new 20-m real-ground radial fixtures. This establishes cross-build agreement for those exact discretisations, not buried-wire, soil-interface or broad finite-ground accuracy. See [`VERTICAL_ANTENNAS.md`](VERTICAL_ANTENNAS.md) and [`GROUND_RADIAL_SYSTEMS.md`](GROUND_RADIAL_SYSTEMS.md).
 
 The `feature/yagi-beam-models` branch adds a typed directional-array model and dedicated adapter for 2-to-8-element Yagis. It fixes intended forward at `+Y`, derives axial front-to-back separately from worst-rear-hemisphere front-to-rear, and carries exact model identity through a debounced/cancellable worker and four saved comparisons. An external NEC-2D run exposed and drove correction of an 80-column input portability issue; three exact perfect-ground decks now agree across the Wasm and external NEC-2D builds. See [`YAGI_BEAMS.md`](YAGI_BEAMS.md).
 

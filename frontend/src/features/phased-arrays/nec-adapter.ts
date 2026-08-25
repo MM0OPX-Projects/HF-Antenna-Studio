@@ -83,12 +83,15 @@ function geometryCards(generated: GeneratedPhasedArray, segmentation: PhasedSegm
     "CM HF Antenna Studio two-element phased vertical array",
     "CM SI units; bearing is converted to NEC X/Y geometry",
     "CM Explicit EX sources are voltages; ideal-current mode uses calibrated voltages",
-    "CE",
   ];
+  if (generated.model.radials.representation !== "perfect-ground-image") {
+    lines.push(`CM Radials: ${generated.model.radials.representation}; topology: ${generated.model.radials.topology}`);
+  }
+  lines.push("CE");
   for (const wire of segmentation.wires) {
     lines.push(`GW ${wire.tag} ${wire.segments} ${fmt(wire.startM.x)} ${fmt(wire.startM.y)} ${fmt(wire.startM.z)} ${fmt(wire.endM.x)} ${fmt(wire.endM.y)} ${fmt(wire.endM.z)} ${fmt(wire.diameterM / 2)}`);
   }
-  lines.push("GE 1", groundCard(generated), "PT 0 0 0 0");
+  lines.push(generated.model.radials.representation === "perfect-ground-image" ? "GE 1" : "GE -1", groundCard(generated), "PT 0 0 0 0");
   return lines;
 }
 

@@ -17,6 +17,10 @@ Version 1.0.0 is the first validation-bounded public release. It is engineering 
 
 The application exposes many engineering workflows, but feature presence is not the same as numerical validation. See the scope below and the full [validation report](docs/VALIDATION_REPORT.md).
 
+## Unreleased development work
+
+The local `feature/ground-radial-systems` branch adds explicit near-surface radial-wire models for single and phased ground-mounted verticals. NEC-2 requires these wires to remain slightly above Sommerfeld/Norton ground; the application does not claim buried-wire or exact soil-contact modelling. See [Ground-radial systems](docs/GROUND_RADIAL_SYSTEMS.md) and the Unreleased changelog. This work is not part of the frozen v1.0.0 release claim until its later release workflow passes.
+
 ## Validated scope
 
 The v1.0.0 campaign covers these exact reference models:
@@ -56,6 +60,7 @@ No account, telemetry service, or calculation server is required. The packaged a
 - [Installation and troubleshooting](docs/INSTALLATION.md)
 - [Engineering validation report](docs/VALIDATION_REPORT.md)
 - [Known limitations](docs/KNOWN_LIMITATIONS.md)
+- [Ground-radial systems](docs/GROUND_RADIAL_SYSTEMS.md)
 - [Windows packaging evidence](docs/WINDOWS_PACKAGING.md)
 - [Project file format](docs/PROJECT_FILE_FORMAT.md)
 - [Architecture](docs/ARCHITECTURE.md)

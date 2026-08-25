@@ -2,6 +2,7 @@ import type { PatternData } from "../../api/nec";
 
 export type VerticalConfiguration =
   | "ground-mounted-ideal"
+  | "ground-mounted-explicit-radials"
   | "elevated-explicit-radials"
   | "nec-radial-screen-approximation";
 

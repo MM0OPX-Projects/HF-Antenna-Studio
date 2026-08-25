@@ -1,4 +1,5 @@
 import { complexMagnitude, complexPhaseDeg, phaseComplex } from "./model";
+import { formatPhaseDegrees } from "./presentation";
 import type { ComplexValue, ElementFeedCurrent, IdealExcitation } from "./schema";
 
 interface PhaseVector { label: string; colour: string; value: ComplexValue }
@@ -28,6 +29,6 @@ export function PhasedArrayPhaseDiagram({ ideal, solved, mode }: { ideal: IdealE
       {vectors.map((vector) => { const end = endpoint(vector.value, scale); return <g key={vector.label}><defs><marker id={`arrow-${vector.label.replace(/\W/g, "")}`} viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill={vector.colour} /></marker></defs><line x1="130" y1="120" x2={end.x} y2={end.y} stroke={vector.colour} strokeWidth="4" markerEnd={`url(#arrow-${vector.label.replace(/\W/g, "")})`} /><text x={end.x} y={end.y - 8} textAnchor="middle" fill={vector.colour} fontSize="10" fontWeight="700">{vector.label}</text></g>; })}
       {vectors.length === 0 && <text x="130" y="120" textAnchor="middle" className="fill-text-secondary text-[10px]">Waiting for NEC result</text>}
     </svg>
-    <div className="grid grid-cols-2 gap-2 text-[10px]">{vectors.map((vector) => <div key={vector.label} className="rounded border border-border px-2 py-1"><span style={{ color: vector.colour }}>{vector.label}</span><br /><span className="font-mono">{complexMagnitude(vector.value).toFixed(4)} ∠ {complexPhaseDeg(vector.value).toFixed(1)}°</span></div>)}</div>
+    <div className="grid grid-cols-2 gap-2 text-[10px]">{vectors.map((vector) => <div key={vector.label} className="rounded border border-border px-2 py-1"><span style={{ color: vector.colour }}>{vector.label}</span><br /><span className="font-mono">{complexMagnitude(vector.value).toFixed(4)} ∠ {formatPhaseDegrees(complexPhaseDeg(vector.value))}°</span></div>)}</div>
   </figure>;
 }

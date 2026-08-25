@@ -1,7 +1,7 @@
 # Phased Vertical-Array Laboratory
 
-Status: implemented experimental workflow on `feature/phased-arrays`
-Last reviewed: 2026-08-02
+Status: extended on `feature/ground-radial-systems`
+Last reviewed: 2026-08-25
 
 ## Scope and claim boundary
 
@@ -52,9 +52,10 @@ The workbench keeps these representations distinct:
 
 - a ground-contact pair with no radial `GW` wires and infinite perfect `GN 1` image ground;
 - elevated explicit radial wires above perfect ground;
-- elevated explicit radial wires above `GN 2` Sommerfeld/Norton real ground.
+- elevated explicit radial wires above `GN 2` Sommerfeld/Norton real ground;
+- near-surface horizontal radial wires at positive clearance above `GN 2` ground, either as non-overlapping independent fields or one explicitly bonded centre-fed shared field.
 
-The [NEC-2 GN definition](https://www.nec2.org/part_3/cards/gn.html) identifies `GN 1` as perfect ground and `GN 2` as the Sommerfeld/Norton method. Explicit radial wires are ordinary current-carrying geometry; they are not NEC's reflection-coefficient ground-screen approximation. Every explicit radial must remain strictly above `z = 0` in this workflow. Overlapping radial fields produce an inspection warning because the generator does not automatically split wire crossings into junctions.
+The [NEC-2 GN definition](https://www.nec2.org/part_3/cards/gn.html) identifies `GN 1` as perfect ground and `GN 2` as the Sommerfeld/Norton method. Explicit radial wires are ordinary current-carrying geometry; they are not NEC's reflection-coefficient ground-screen approximation. Every explicit radial must remain strictly above `z = 0` in this workflow. Independent near-surface fields that overlap are blocked; the supported shared topology instead inserts two bond wires from the element bases to a common radial hub so every electrical junction is explicit.
 
 Elements use at least 11 odd segments and explicit radials at least 5 odd segments, targeting at most `0.02 wavelength` per segment with a 199-segment per-wire cap and 3,000-segment workbench cap. Segment length/diameter diagnostics, electrically thick wires, extremely close element spacing, ground penetration, non-finite geometry, invalid line values, and invalid ground/radial combinations are checked before execution. These checks are conservative application diagnostics, not a complete NEC validity proof.
 

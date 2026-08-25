@@ -4,8 +4,9 @@ export type PhasedArrayMode = "ideal-current-phase" | "physical-feed-network";
 export type PhasedArrayGround =
   | { kind: "perfect" }
   | { kind: "sommerfeld-norton"; conductivitySPerM: number; relativePermittivity: number };
-export type RadialRepresentation = "perfect-ground-image" | "explicit-wires";
-export interface PhasedRadials { representation: RadialRepresentation; count: number; lengthM: number; droopAngleRad: number; diameterM: number }
+export type RadialRepresentation = "perfect-ground-image" | "elevated-explicit-wires" | "near-surface-explicit-wires";
+export type PhasedRadialTopology = "independent-per-element" | "shared-bonded-network";
+export interface PhasedRadials { representation: RadialRepresentation; topology: PhasedRadialTopology; count: number; lengthM: number; droopAngleRad: number; diameterM: number }
 export interface IdealExcitation { amplitude1: number; amplitude2: number; phase1Deg: number; phase2Deg: number }
 export type FeedTopology = "parallel-junction" | "series-cascade";
 export type LineLengthInput = "physical" | "electrical" | "delay";
@@ -37,7 +38,7 @@ export interface PhasedArrayModel {
   provenance: { dimensionsAreStartingPoints: true; manualDimensions: boolean };
 }
 export interface PhasedPoint3M { x: number; y: number; z: number }
-export type PhasedWireFamily = "element-1" | "element-2" | "radial-1" | "radial-2" | "source-junction";
+export type PhasedWireFamily = "element-1" | "element-2" | "radial-1" | "radial-2" | "radial-shared" | "ground-bond" | "source-junction";
 export interface PhasedWire { id: string; family: PhasedWireFamily; startM: PhasedPoint3M; endM: PhasedPoint3M; diameterM: number }
 export interface PhasedNetworkPath { id: string; kind: "transmission-line"; fromM: PhasedPoint3M; toM: PhasedPoint3M; line: 1 | 2 }
 export interface PhasedIssue { severity: "error" | "warning"; code: string; message: string }

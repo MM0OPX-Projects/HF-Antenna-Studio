@@ -7,7 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-No changes yet.
+### Added
+
+- Added a ground-mounted explicit-radial mode for the specialist vertical laboratory and reusable quarter-wave vertical template using visible positive wire clearance over Sommerfeld/Norton soil
+- Added ground-mounted phased vertical radial systems with non-overlapping per-element fields or an explicit shared centre-bonded radial network
+- Added shared NEC-2 surface-wire validity checks, current-carrying radial visualisation, exact-deck fixtures, real-Wasm UI regression coverage, and an independently pinned 4NEC2 comparator for three ground-radial decks
+
+### Changed
+
+- Split phased elevated, near-surface, and perfect-image radial representations at the typed-model level and blocked ambiguous independent-field crossings
+- Replaced the reusable quarter-wave template's perfect-ground-only start with a real-soil, sixteen-radial starting model; the ideal perfect-ground monopole remains in the Vertical Antennas laboratory
 
 ## [1.0.0] - 2026-08-23
 

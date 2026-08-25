@@ -1,9 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { adaptIdealCalibrationToNec, adaptIdealFinalToNec, adaptPhysicalNetworkToNec, segmentPhasedWires } from "../nec-adapter";
-import { buildPhasedWires, elementBases, generatePhasedArray, lineMetrics, phasedWavelengthM, startingPhasedArrayModel, validatePhasedArrayModel } from "../model";
+import { buildPhasedWires, complexPhaseDeg, elementBases, generatePhasedArray, lineMetrics, phasedWavelengthM, startingPhasedArrayModel, switchPhasedRadialRepresentation, validatePhasedArrayModel } from "../model";
+import { formatPhaseDegrees } from "../presentation";
 
 describe("typed phased-array model and NEC adapter", () => {
+  it("normalises numerical signed zero in phase results", () => {
+    expect(complexPhaseDeg({ real: 1, imag: -Number.EPSILON })).toBe(0);
+    expect(Object.is(complexPhaseDeg({ real: 1, imag: -Number.EPSILON }), -0)).toBe(false);
+    expect(formatPhaseDegrees(-0.049)).toBe("0.0");
+    expect(formatPhaseDegrees(-0.051)).toBe("-0.1");
+  });
+
   it("uses SI geometry and compass bearing from element 1 toward element 2", () => {
     const model = startingPhasedArrayModel(14_100_000);
     model.spacingM = 10;
@@ -23,7 +31,7 @@ describe("typed phased-array model and NEC adapter", () => {
     const model = startingPhasedArrayModel();
     expect(buildPhasedWires(model)).toMatchObject({ wires: expect.arrayContaining([expect.objectContaining({ family: "element-1" }), expect.objectContaining({ family: "element-2" })]), networkPaths: [] });
     model.mode = "physical-feed-network";
-    model.radials = { ...model.radials, representation: "explicit-wires", count: 4 };
+    model.radials = { ...model.radials, representation: "elevated-explicit-wires", topology: "independent-per-element", count: 4 };
     model.elementBaseHeightM = phasedWavelengthM(model.frequencyHz) * .1;
     const built = buildPhasedWires(model);
     expect(built.wires.filter((wire) => wire.family === "radial-1")).toHaveLength(4);
@@ -96,9 +104,42 @@ describe("typed phased-array model and NEC adapter", () => {
     model.ground = { kind: "sommerfeld-norton", conductivitySPerM: .005, relativePermittivity: 13 };
     const built = buildPhasedWires(model);
     expect(validatePhasedArrayModel(model, built.wires).some((issue) => issue.code === "image-ground" && issue.severity === "error")).toBe(true);
-    model.radials = { ...model.radials, representation: "explicit-wires", count: 4 };
+    model.radials = { ...model.radials, representation: "elevated-explicit-wires", topology: "independent-per-element", count: 4 };
     model.elementBaseHeightM = 0;
     expect(validatePhasedArrayModel(model, buildPhasedWires(model).wires).some((issue) => issue.code === "radial-clearance")).toBe(true);
     expect(() => adaptIdealCalibrationToNec(generatePhasedArray(model), 1)).toThrow();
+  });
+
+  it("builds a connected shared near-surface radial network for both element bases", () => {
+    const model = switchPhasedRadialRepresentation(startingPhasedArrayModel(), "near-surface-explicit-wires");
+    const generated = generatePhasedArray(model);
+    expect(generated.issues.filter((issue) => issue.severity === "error")).toEqual([]);
+    expect(generated.wires.filter((wire) => wire.family === "radial-shared")).toHaveLength(16);
+    expect(generated.wires.filter((wire) => wire.family === "ground-bond")).toHaveLength(2);
+    const centre = { x: 0, y: 0, z: model.elementBaseHeightM };
+    expect(generated.wires.filter((wire) => wire.family === "radial-shared").every((wire) => wire.startM.x === centre.x && wire.startM.y === centre.y && wire.startM.z === centre.z)).toBe(true);
+    const bases = elementBases(model);
+    const bonds = generated.wires.filter((wire) => wire.family === "ground-bond");
+    expect(bonds[0]).toMatchObject({ startM: bases[0], endM: centre });
+    expect(bonds[1]).toMatchObject({ startM: centre, endM: bases[1] });
+    expect(generated.issues).toContainEqual(expect.objectContaining({ code: "surface-radial-nec2-approximation", severity: "warning" }));
+  });
+
+  it("emits the shared radial network above Sommerfeld/Norton ground", () => {
+    const model = switchPhasedRadialRepresentation(startingPhasedArrayModel(), "near-surface-explicit-wires");
+    const adapted = adaptIdealCalibrationToNec(generatePhasedArray(model), 1);
+    expect(adapted.deck.match(/^GW /gm)).toHaveLength(20);
+    expect(adapted.deck).toContain("CM Radials: near-surface-explicit-wires; topology: shared-bonded-network");
+    expect(adapted.deck).toContain("GE -1\nGN 2 0 0 0 13 0.005");
+    const finalDeck = adaptIdealFinalToNec(generatePhasedArray(model), [{ real: 1, imag: 0 }, { real: 1, imag: 0 }]).deck.replace(/\r\n/g, "\n");
+    const fixture = readFileSync(new URL("../../../../../validation/phased-arrays/shared-16radial-20m-real.nec", import.meta.url), "utf8").replace(/\r\n/g, "\n");
+    expect(finalDeck).toBe(fixture);
+  });
+
+  it("rejects overlapping independent near-surface fields instead of leaving unresolved crossings", () => {
+    const model = switchPhasedRadialRepresentation(startingPhasedArrayModel(), "near-surface-explicit-wires");
+    model.radials.topology = "independent-per-element";
+    const issues = validatePhasedArrayModel(model, buildPhasedWires(model).wires);
+    expect(issues).toContainEqual(expect.objectContaining({ severity: "error", code: "independent-radial-overlap" }));
   });
 });

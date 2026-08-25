@@ -65,7 +65,7 @@ export function adaptVerticalToNec(generated: GeneratedVerticalModel): AdaptedVe
   for (const wire of segmentation.wires) {
     lines.push(`GW ${wire.tag} ${wire.segments} ${fmt(wire.startM.x)} ${fmt(wire.startM.y)} ${fmt(wire.startM.z)} ${fmt(wire.endM.x)} ${fmt(wire.endM.y)} ${fmt(wire.endM.z)} ${fmt(wire.diameterM / 2)}`);
   }
-  lines.push(model.configuration === "elevated-explicit-radials" ? "GE -1" : "GE 1");
+  lines.push(model.radials.representation === "explicit-wires" ? "GE -1" : "GE 1");
   if (model.ground.kind === "perfect") {
     lines.push("GN 1 0 0 0 0 0");
   } else if (model.radials.representation === "nec-ground-screen") {

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import { SPEED_OF_LIGHT_M_PER_S } from "../../verified-dipole/model";
 import { antennaTemplateDefinitions, getTemplateDefinition } from "../definitions";
 import { adaptTemplateToNec } from "../nec-adapter";
@@ -23,7 +24,7 @@ describe("parametric antenna template registry", () => {
   for (const definition of antennaTemplateDefinitions) {
     describe(definition.name, () => {
       const parameters = initialTemplateParameters(definition);
-      const generated = generateTemplateModel(definition, parameters, perfectGround, false);
+      const generated = generateTemplateModel(definition, parameters, definition.defaultGround ?? perfectGround, false);
 
       it("declares complete UI parameter metadata and valid starting values", () => {
         expect(definition.parameters[0]?.key).toBe("frequencyHz");
@@ -72,11 +73,15 @@ describe("parametric antenna template registry", () => {
         expect(adapted.deck.match(/^GW /gm)).toHaveLength(generated.model.wires.length);
         expect(adapted.deck.match(/^EX /gm)).toHaveLength(1);
         expect(adapted.deck).toContain("CM Generated dimensions are starting points, not resonance guarantees");
-        expect(adapted.deck).toContain("GN 1");
+        expect(adapted.deck).toContain(definition.defaultGround?.kind === "real" ? "GN 2" : "GN 1");
         expect(adapted.deck).toContain(`FR 0 1 0 0 ${generated.model.frequencyHz / 1_000_000}`);
         expect(adapted.deck.endsWith("EN\n")).toBe(true);
         expect(adapted.runRequest.deck).toBe(adapted.deck);
         expect(adapted.runRequest.parse.totalSegments).toBe(adapted.segmentation.totalSegments);
+        if (definition.id === "quarter-wave-vertical") {
+          const fixture = readFileSync(new URL("../../../../../validation/vertical/template-surface-16radial-20m-real.nec", import.meta.url), "utf8").replace(/\r\n/g, "\n");
+          expect(adapted.deck.replace(/\r\n/g, "\n")).toBe(fixture);
+        }
       });
     });
   }
@@ -100,11 +105,11 @@ describe("template RF geometry sanity", () => {
 
   it("creates the expected topology and closes every loop", () => {
     const expectedWires = new Map([
-      ["horizontal-dipole", 1], ["inverted-v", 2], ["sloper", 1], ["quarter-wave-vertical", 1],
+      ["horizontal-dipole", 1], ["inverted-v", 2], ["sloper", 1], ["quarter-wave-vertical", 17],
       ["ground-plane-vertical", 5], ["full-wave-loop", 16], ["delta-loop", 3], ["square-loop", 4],
     ]);
     for (const definition of antennaTemplateDefinitions) {
-      const model = generateTemplateModel(definition, initialTemplateParameters(definition), perfectGround, false).model;
+      const model = generateTemplateModel(definition, initialTemplateParameters(definition), definition.defaultGround ?? perfectGround, false).model;
       expect(model.wires).toHaveLength(expectedWires.get(definition.id)!);
       if (definition.id.endsWith("loop")) {
         for (let index = 0; index < model.wires.length; index += 1) {
@@ -151,11 +156,22 @@ describe("template RF geometry sanity", () => {
     expect(generated.issues).toContainEqual(expect.objectContaining({ severity: "error", code: "parameter-totalLengthM-range" }));
   });
 
-  it("uses NEC's explicit touching-ground geometry mode only for the quarter-wave vertical", () => {
+  it("keeps the near-surface vertical above the NEC interface over real ground", () => {
     for (const definition of antennaTemplateDefinitions) {
-      const model = generateTemplateModel(definition, initialTemplateParameters(definition), perfectGround, false).model;
+      const model = generateTemplateModel(definition, initialTemplateParameters(definition), definition.defaultGround ?? perfectGround, false).model;
       const deck = adaptTemplateToNec(model, definition).deck;
-      expect(deck).toContain(definition.id === "quarter-wave-vertical" ? "GE 1" : "GE -1");
+      expect(deck).toContain("GE -1");
+      if (definition.id === "quarter-wave-vertical") expect(deck).toContain("GN 2 0 0 0 13 0.005");
     }
+  });
+
+  it("generates explicit connected ground radials and rejects a perfect-ground substitution", () => {
+    const definition = getTemplateDefinition("quarter-wave-vertical");
+    const parameters = initialTemplateParameters(definition);
+    const generated = generateTemplateModel(definition, parameters, definition.defaultGround!, false);
+    expect(generated.model.wires.filter((wire) => wire.id.startsWith("radial-"))).toHaveLength(16);
+    expect(generated.model.wires.every((wire) => wire.startM.z === parameters.surfaceClearanceM)).toBe(true);
+    expect(generated.issues).toContainEqual(expect.objectContaining({ code: "surface-radial-nec2-approximation", severity: "warning" }));
+    expect(generateTemplateModel(definition, parameters, perfectGround, false).issues).toContainEqual(expect.objectContaining({ code: "surface-radial-real-ground", severity: "error" }));
   });
 });

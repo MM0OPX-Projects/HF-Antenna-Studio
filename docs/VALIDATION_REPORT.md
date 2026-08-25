@@ -204,9 +204,29 @@ npm run test:smoke
 
 The full completion run must also include type checking, linting, and the production Wasm build described in [`BASELINE.md`](BASELINE.md).
 
+## Post-v1 ground-radial feature evidence
+
+The local `feature/ground-radial-systems` branch adds a separate, fail-closed comparator command:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\compare-ground-radials-4nec2.ps1
+```
+
+It runs three immutable real-ground decks through the same SHA-256-pinned 4NEC2 NEC-2D comparator used above:
+
+| Case | Exact deck SHA-256 | 4NEC2 result | Classification |
+|---|---|---|---|
+| Specialist 20 m vertical, 16 explicit near-surface radials | `473847CBE76DE50FEEA7A4A5BFF1FACA968D358C53E50D9B5B87DF938230D941` | 32.3154 − j15.3840 Ω; −0.16 dBi; 25° take-off; 0.00 dB azimuth spread | Numerical tolerance — bundled Wasm browser result agrees at displayed precision |
+| Reusable-template 20 m vertical, 16 explicit near-surface radials | `D13C1A9FBC7C2452BA196D1D2F28FBF8BCAFF0D4AC25DA8D49F74FE376C3A882` | 32.3095 − j15.5247 Ω; −0.16 dBi; 25° take-off; 0.00 dB azimuth spread | Numerical tolerance — distinct quantised template dimensions are preserved, not tuned |
+| Two-element shared bonded field, 16 spokes, equal one-volt sources | `9FC10FF9337D3A003A1C7F730B86DFFE3BC6C0D76AAD1B16564926105EC1467E` | 121.795 + j566.626 Ω and 121.807 + j566.639 Ω; −2.80 dBi on both broadside axes | Numerical tolerance / symmetry sanity |
+
+These cases use `GE -1`, `GN 2`, 10 mm wire-axis clearance, relative permittivity 13, conductivity 0.005 S/m, and explicit current-carrying radial geometry. They validate solver/deck interoperability for the raised-wire representation; they do not turn NEC-2 into a buried-wire or exact soil-contact solver. The phased comparator case fixes equal source voltages, while the interactive ideal-current workflow separately calibrates source voltages using the bundled solver. Browser regression verifies that calibrated equal currents are achieved and the expected bidirectional symmetry is retained, but no external two-port recalibration claim is made.
+
+Full model boundaries, topology details, and remaining convergence work are in [`GROUND_RADIAL_SYSTEMS.md`](GROUND_RADIAL_SYSTEMS.md).
+
 ## Limitations and next validation priorities
 
-1. Add independent finite Sommerfeld/Norton ground comparisons. Perfect ground and free space dominate this campaign; a different ground kernel was not treated as interchangeable.
+1. Extend the new same-deck Sommerfeld/Norton comparisons with independently authored finite-ground references, clearance/segmentation convergence, and controlled measurements. Cross-build agreement alone is not a physical oracle.
 2. Run systematic 0.01λ/0.02λ/0.04λ segmentation and 1°/2°/5° pattern-grid convergence, especially at feed bridges, array nulls, and ground contact.
 3. Add a second solver family rather than relying mainly on two NEC-2 implementations.
 4. Add package-authored reference decks where redistribution/provenance permits; project-authored decks can expose cross-build drift but not every shared modelling error.

@@ -1,7 +1,7 @@
 # HF Antenna Studio — Architecture Decision Record
 
-Status: current through the v1.0.0 release candidate; superseded planning decisions are retained explicitly
-Decision review date: 2026-08-23
+Status: current through the unreleased post-v1 ground-radial extension; superseded planning decisions are retained explicitly
+Decision review date: 2026-08-25
 
 ## Decision summary
 
@@ -38,6 +38,7 @@ Decision review date: 2026-08-23
 | D-029 | Store validation as immutable exact-deck evidence with explicit discrepancy classifications | Accepted |
 | D-030 | Package the current verified Wasm application in a minimal Tauri/NSIS Windows shell | Accepted and promoted by D-031 |
 | D-031 | Select pinned nec2c/WebAssembly in Tauri as the validation-bounded v1 runtime | Accepted for v1.0.0 |
+| D-032 | Represent near-surface radial wires as positive-clearance `GE -1` geometry and make phased radial topology explicit | Accepted, experimental post-v1 |
 
 ## D-001 — New repository with selective AntennaSim reuse
 
@@ -482,6 +483,17 @@ Represent three vertical configurations explicitly and never convert between the
 - Same-deck NEC-2 comparison cannot establish universal physical accuracy; finite ground, feed networks, convergence and measurements retain explicit limitations.
 - Future native or alternative solvers must pass the same canonical request/result contract, deck identity, validation corpus, cancellation, security and Windows package gates before replacement.
 - This decision supersedes D-005/D-006 only for the released v1 architecture; it does not declare WebAssembly or nec2c permanently optimal.
+
+## D-032 — Near-surface radial geometry and phased topology remain explicit
+
+**Decision:** Model a ground-laid radial system in NEC-2 only as ordinary current-carrying `GW` wires whose complete surfaces remain at a visible positive clearance above Sommerfeld/Norton `GN 2` ground, with `GE -1`. Never label that approximation as buried wire or exact soil contact. In two-element phased arrays, store whether near-surface fields are non-overlapping and independent or form the supported explicitly bonded shared network; never infer a connection from visual overlap.
+
+**Consequences:**
+
+- The solver blocks a wire surface touching/crossing `z = 0`, drooped near-surface radials, perfect-ground combinations, ambiguous independent-field overlap, and unsupported shared elevated networks.
+- The specialist vertical, reusable quarter-wave template, and phased-array lab use the same clearance validator and warning language while retaining their dedicated antenna schemas/adapters.
+- Perfect-ground image models, elevated explicit radials, the `GN`/`RP` radial-screen approximation, independent near-surface fields, and the supported shared bonded network remain distinct representations.
+- Same-deck 4NEC2 agreement establishes application/adapter/parser parity only for the committed clearance, segmentation and geometry. Clearance/segment/radial-count convergence, a separately authored finite-ground reference, soil-interface modelling and measurements remain release gates for broader claims.
 
 ## Second, adversarial architecture review
 

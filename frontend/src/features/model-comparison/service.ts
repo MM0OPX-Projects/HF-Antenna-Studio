@@ -133,7 +133,7 @@ export async function runComparisonSlot(
     if (conditions.ground.kind === "sommerfeld-norton") {
       const lambda = phasedWavelengthM(frequencyHz);
       model.elementBaseHeightM = lambda * 0.12;
-      model.radials = { ...model.radials, representation: "explicit-wires", count: 4, lengthM: lambda * 0.25, droopAngleRad: 20 * Math.PI / 180 };
+      model.radials = { ...model.radials, representation: "elevated-explicit-wires", topology: "independent-per-element", count: 4, lengthM: lambda * 0.25, droopAngleRad: 20 * Math.PI / 180 };
     }
     const result = await runPhasedArrayModel(generatePhasedArray(model), { signal: options.signal });
     const direction = baseMetrics(result.azimuthPattern);

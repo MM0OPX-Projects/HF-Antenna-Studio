@@ -82,12 +82,40 @@ test("overlays, automatic phase sweep, ground distinctions, and invalid geometry
   await expect.poll(async () => Number(await page.getByTestId("phased-phase-2").inputValue()), { timeout: 60_000 }).toBeGreaterThan(0);
   await page.getByTestId("phased-phase-sweep").click();
   await page.getByTestId("phased-ground").selectOption("sommerfeld-norton");
-  await expect(page.getByTestId("phased-radial-mode")).toHaveValue("explicit-wires");
+  await expect(page.getByTestId("phased-radial-mode")).toHaveValue("elevated-explicit-wires");
   await expect(page.getByTestId("phased-conductivity")).toBeVisible();
   await waitForNewResult(page);
   await expect(page.getByTestId("phased-generated-nec")).toContainText("GN 2");
   await page.getByTestId("phased-element-height").fill("0");
   await expect(page.getByTestId("phased-errors")).toContainText("strictly above z = 0");
+  await expect(page.getByTestId("phased-results")).toHaveCount(0);
+});
+
+test("ground-mounted phased verticals use an explicit shared radial network", async ({ page }) => {
+  await openLab(page);
+  await expect(page.getByTestId("phased-results")).toBeVisible({ timeout: 60_000 });
+  await page.getByTestId("phased-radial-mode").selectOption("near-surface-explicit-wires");
+  await expect(page.getByTestId("phased-radial-topology")).toHaveValue("shared-bonded-network");
+  await expect(page.getByTestId("phased-ground")).toHaveValue("sommerfeld-norton");
+  await expect(page.getByTestId("phased-ground")).toBeDisabled();
+  await expect(page.getByTestId("phased-array-geometry-3d")).toHaveAttribute("data-wire-count", "20");
+  await expect(page.getByTestId("phased-warnings")).toContainText("cannot solve buried or exactly-on-soil wires");
+  await expect(page.getByTestId("phased-generated-nec")).toContainText("topology: shared-bonded-network");
+  await expect(page.getByTestId("phased-generated-nec")).toContainText("GE -1\nGN 2");
+  await expect(page.getByTestId("phased-results")).toBeVisible({ timeout: 90_000 });
+  await expect(page.getByTestId("phased-current-visualisation")).toBeVisible();
+  expect(Math.abs(numeric(await page.getByTestId("phased-result-fb").innerText()))).toBeLessThanOrEqual(0.05);
+  await expect(page.getByTestId("phased-result-heading")).toContainText("axis");
+  await expect(page.getByTestId("phased-result-current-1")).toContainText("1.0000 ∠ 0.0° A");
+  await expect(page.getByTestId("phased-result-current-2")).toContainText("1.0000 ∠ 0.0° A");
+
+  await page.getByTestId("phased-mode-physical").click();
+  await waitForNewResult(page);
+  await expect(page.getByTestId("phased-network-impedance")).toBeVisible();
+  await expect(page.getByTestId("phased-generated-nec")).toContainText("TL ");
+
+  await page.getByTestId("phased-radial-topology").selectOption("independent-per-element");
+  await expect(page.getByTestId("phased-errors")).toContainText("Independent near-surface radial fields overlap");
   await expect(page.getByTestId("phased-results")).toHaveCount(0);
 });
 

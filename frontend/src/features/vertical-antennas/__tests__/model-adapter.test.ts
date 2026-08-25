@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import { adaptVerticalToNec, segmentVerticalWires } from "../nec-adapter";
 import { buildVerticalWires, generateVerticalModel, regenerateVerticalStartingDimensions, startingVerticalModel, switchVerticalConfiguration, validateVerticalModel, wavelengthM } from "../model";
 import { nec2UserGuideExample10Equivalent } from "../validation-cases";
@@ -8,13 +9,33 @@ function distance(a: { x: number; y: number; z: number }, b: { x: number; y: num
 }
 
 describe("vertical antenna model", () => {
-  it("keeps ideal, explicit-radial, and simplified-screen configurations distinct", () => {
+  it("keeps ideal, near-surface, elevated, and simplified-screen configurations distinct", () => {
     const ideal = startingVerticalModel(7_100_000, "ground-mounted-ideal");
+    const surface = startingVerticalModel(7_100_000, "ground-mounted-explicit-radials");
     const explicit = startingVerticalModel(14_100_000, "elevated-explicit-radials");
     const screen = startingVerticalModel(28_500_000, "nec-radial-screen-approximation");
     expect(ideal).toMatchObject({ baseHeightM: 0, radials: { representation: "none", count: 0 }, ground: { kind: "perfect" } });
+    expect(surface).toMatchObject({ baseHeightM: 0.01, radials: { representation: "explicit-wires", count: 16, droopAngleRad: 0 }, ground: { kind: "sommerfeld-norton" } });
     expect(explicit).toMatchObject({ radials: { representation: "explicit-wires", count: 4 }, ground: { kind: "perfect" } });
     expect(screen).toMatchObject({ baseHeightM: 0, radials: { representation: "nec-ground-screen", count: 16 }, ground: { kind: "reflection-coefficient" } });
+  });
+
+  it("generates a horizontal, connected near-surface radial plane and labels the NEC-2 approximation", () => {
+    const model = startingVerticalModel(14_100_000, "ground-mounted-explicit-radials");
+    const generated = generateVerticalModel(model);
+    expect(generated.wires).toHaveLength(17);
+    expect(generated.wires.every((wire) => wire.startM.z === model.baseHeightM)).toBe(true);
+    expect(generated.wires.slice(1).every((wire) => wire.endM.z === model.baseHeightM)).toBe(true);
+    expect(generated.issues).toContainEqual(expect.objectContaining({ code: "surface-radial-nec2-approximation", severity: "warning" }));
+    expect(generated.issues.filter((issue) => issue.severity === "error")).toEqual([]);
+  });
+
+  it("rejects surface radials on the NEC interface or with droop", () => {
+    const initial = startingVerticalModel(14_100_000, "ground-mounted-explicit-radials");
+    const touching = { ...initial, baseHeightM: initial.radials.diameterM / 2 };
+    const drooping = { ...initial, radials: { ...initial.radials, droopAngleRad: 0.1 } };
+    expect(validateVerticalModel(touching)).toContainEqual(expect.objectContaining({ severity: "error", code: "surface-radial-intersection" }));
+    expect(validateVerticalModel(drooping)).toContainEqual(expect.objectContaining({ severity: "error", code: "surface-radial-plane" }));
   });
 
   it("generates the requested number, length, angle, and shared feed junction for explicit radials", () => {
@@ -65,6 +86,15 @@ describe("vertical antenna model", () => {
     expect(screen.baseHeightM).toBe(0);
   });
 
+  it("preserves radial diameter with a safe clearance when switching to near-surface wires", () => {
+    const explicit = startingVerticalModel(14_100_000, "elevated-explicit-radials");
+    const thickRadials = { ...explicit, radials: { ...explicit.radials, diameterM: 0.05 } };
+    const surface = switchVerticalConfiguration(thickRadials, "ground-mounted-explicit-radials");
+    expect(surface.radials.diameterM).toBe(0.05);
+    expect(surface.baseHeightM).toBeGreaterThan(surface.radials.diameterM / 2);
+    expect(validateVerticalModel(surface).filter((issue) => issue.severity === "error")).toEqual([]);
+  });
+
   it("represents the NEC-2 User's Guide Example 10 dimensions as six explicit radial wires", () => {
     const model = nec2UserGuideExample10Equivalent();
     const generated = generateVerticalModel(model);
@@ -101,6 +131,16 @@ describe("vertical NEC adapter", () => {
     expect(adapted.runRequest.deck).toBe(adapted.deck);
   });
 
+  it("emits near-surface radials as raised explicit wires over Sommerfeld/Norton ground", () => {
+    const generated = generateVerticalModel(startingVerticalModel(14_100_000, "ground-mounted-explicit-radials"));
+    const adapted = adaptVerticalToNec(generated);
+    expect(adapted.deck.match(/^GW /gm)).toHaveLength(17);
+    expect(adapted.deck).toContain("GE -1\nGN 2 0 0 0 13 0.005");
+    expect(adapted.deck).toContain("CM 16 radial wires are explicit NEC geometry");
+    const fixture = readFileSync(new URL("../../../../../validation/vertical/surface-16radial-20m-real.nec", import.meta.url), "utf8").replace(/\r\n/g, "\n");
+    expect(adapted.deck.replace(/\r\n/g, "\n")).toBe(fixture);
+  });
+
   it("uses NEC GN/RP radial-screen fields without pretending they are wire geometry", () => {
     const generated = generateVerticalModel(startingVerticalModel(28_500_000, "nec-radial-screen-approximation"));
     const adapted = adaptVerticalToNec(generated);
@@ -112,7 +152,7 @@ describe("vertical NEC adapter", () => {
   });
 
   it("uses bounded odd segmentation no longer than 0.02 wavelength", () => {
-    for (const configuration of ["ground-mounted-ideal", "elevated-explicit-radials", "nec-radial-screen-approximation"] as const) {
+    for (const configuration of ["ground-mounted-ideal", "ground-mounted-explicit-radials", "elevated-explicit-radials", "nec-radial-screen-approximation"] as const) {
       const model = startingVerticalModel(7_100_000, configuration);
       const wires = buildVerticalWires(model);
       const segmentation = segmentVerticalWires(model, wires);

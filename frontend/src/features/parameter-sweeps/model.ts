@@ -155,7 +155,7 @@ export function buildSweepModel(definition: ParameterSweepDefinition, values: Pa
   let model = startingPhasedArrayModel(frequencyHz);
   if (definition.ground.kind === "sommerfeld-norton") {
     const lambda = phasedWavelengthM(frequencyHz);
-    model = { ...model, elementBaseHeightM: lambda * 0.12, ground: commonGround(definition), radials: { ...model.radials, representation: "explicit-wires", count: 4 } };
+    model = { ...model, elementBaseHeightM: lambda * 0.12, ground: commonGround(definition), radials: { ...model.radials, representation: "elevated-explicit-wires", topology: "independent-per-element", count: 4 } };
   }
   if (values["array-spacing"] !== undefined) model.spacingM = values["array-spacing"]!;
   if (values["array-phase"] !== undefined) model.ideal = { ...model.ideal, phase2Deg: values["array-phase"]! };

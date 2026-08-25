@@ -1,15 +1,16 @@
 # HF Antenna Studio — Vertical Antenna Laboratory
 
-Status: implemented experimental workflow on `feature/vertical-antennas`
-Last reviewed: 2026-08-02
+Status: extended on `feature/ground-radial-systems`
+Last reviewed: 2026-08-25
 
 ## Scope and claim boundary
 
-The `/vertical-antennas` workbench models three deliberately different NEC-2 configurations:
+The `/vertical-antennas` workbench models four deliberately different NEC-2 configurations:
 
 1. an ideal ground-mounted quarter-wave-class monopole touching an infinite perfect ground plane;
-2. an elevated quarter-wave-class radiator with an explicit set of straight radial wires over perfect or Sommerfeld/Norton finite ground; and
-3. NEC-2's simplified radial-wire ground-screen approximation with finite-ground reflection coefficients.
+2. a ground-mounted physical layout represented by horizontal explicit radial wires raised slightly above Sommerfeld/Norton finite ground;
+3. an elevated quarter-wave-class radiator with an explicit set of straight radial wires over perfect or Sommerfeld/Norton finite ground; and
+4. NEC-2's simplified radial-wire ground-screen approximation with finite-ground reflection coefficients.
 
 They are not physically or numerically interchangeable. The UI, generated NEC comments, model summary, warnings, and validation rules state which representation is active. Frequency-generated dimensions are starting values, not resonance claims.
 
@@ -32,6 +33,7 @@ The model produces straight-wire geometry and explicit issues before NEC syntax 
 | UI mode | Geometry/cards | What it means | Important limitation |
 |---|---|---|---|
 | Ideal ground-mounted monopole | One wire starts at `z = 0`; `GE 1`, `GN 1`, `RP 0` | Infinite, perfectly conducting plane with the ground-contact current expansion | No soil loss or explicit radial/feed-line system; not a physical radial field |
+| Ground-mounted explicit radial field | Horizontal radial `GW` wires at a visible positive clearance; `GE -1`, `GN 2`, `RP 0` | Current-carrying NEC wires over Sommerfeld/Norton soil | NEC-2 cannot solve buried/exactly-on-soil wires; clearance is a raised-wire approximation |
 | Elevated explicit radials, perfect ground | Radiator plus N radial `GW` wires; `GE -1`, `GN 1`, `RP 0` | All radial currents are solved; an infinite perfect plane remains below them | Still an ideal lossless earth plane |
 | Elevated explicit radials, real ground | Same explicit wires; `GE -1`, `GN 2`, `RP 0` | NEC-2 Sommerfeld/Norton finite-ground interaction using entered conductivity/permittivity | No wire may touch or penetrate ground; no buried radials in this NEC-2 workflow |
 | NEC radial-screen approximation | Only the radiator is `GW` geometry; `GE 1`, `GN 0` with radial count/radius/wire radius, and `RP 4` | NEC reflection-coefficient ground plus its radial-density screen approximation | Screen wires have no segment currents; current at screen centre follows the perfect-ground solution; edge diffraction is omitted |
@@ -40,7 +42,7 @@ The official NEC-2 `GN` documentation defines `GN 0` as finite-ground reflection
 
 ## Controls and outputs
 
-Controls cover 1.8–54 MHz, radiator dimensions, elevated-feed height, radial count/length/diameter/droop, perfect versus real ground, conductivity, permittivity, display units, SWR reference, and amateur-band starts from 160 through 6 metres. Exact numeric fields accompany keyboard-operable sliders.
+Controls cover 1.8–54 MHz, radiator dimensions, elevated-feed height or near-surface NEC clearance, radial count/length/diameter/droop where applicable, perfect versus real ground, conductivity, permittivity, display units, SWR reference, and amateur-band starts from 160 through 6 metres. Exact numeric fields accompany keyboard-operable sliders.
 
 The workbench displays:
 
@@ -60,6 +62,7 @@ Execution is blocked for non-finite/out-of-range dimensions, incompatible ground
 
 Warnings identify:
 
+- every near-surface NEC-2 raised-wire approximation and its clearance sensitivity;
 - Sommerfeld/Norton wire clearance below 0.001λ;
 - more than 16 explicit wires at the feed junction;
 - segment length below four wire diameters;
@@ -89,7 +92,9 @@ Three exact application decks were run through the separate `nec2dxs11k.exe` ins
 | 20 m, 14.1 MHz | `D9BDDC57C2A5F1181E26AED0FED3C5041C4089668419A819581EF934343300AA` | 34.03 − j15.58 | 34.0296 − j15.5759 | 5.13 / 5.13 dBi | 90° |
 | 10 m, 28.5 MHz | `566B3FDD42CB56A0DEBE8AA3F63EEB5256958DD40FEC06E6A2244C6A9B511208` | 34.30 − j12.00 | 34.2984 − j11.9986 | 5.13 / 5.13 dBi | 90° |
 
-All pass the scripted tolerances of 0.02 Ω per R/X component, 0.01 dB gain, and 0.01° theta. This is independent implementation/package comparison evidence for these three ideal perfect-ground decks. It does not validate the real-ground or radial approximations.
+All pass the scripted tolerances of 0.02 Ω per R/X component, 0.01 dB gain, and 0.01° theta. This is independent implementation/package comparison evidence for these three ideal perfect-ground decks. That original v1 table does not validate the real-ground or radial approximations.
+
+The post-v1 ground-radial work adds exact same-deck 4NEC2 comparisons for the specialist and reusable-template 20-m, sixteen-radial `GN 2` models. They pass the committed R/X, gain, take-off and azimuth-symmetry tolerances. This is cross-build evidence at one clearance and segmentation, not broad physical validation of real soil or ground-laid conductors. Exact hashes and results are recorded in [`GROUND_RADIAL_SYSTEMS.md`](GROUND_RADIAL_SYSTEMS.md).
 
 ## Independent numerical sanity
 

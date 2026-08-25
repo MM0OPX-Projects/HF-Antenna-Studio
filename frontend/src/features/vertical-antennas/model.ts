@@ -1,4 +1,5 @@
 import { HF_AMATEUR_BANDS } from "../antenna-templates/bands";
+import { defaultNearSurfaceClearanceM, validateNearSurfaceRadialPlane } from "../ground-radials/model";
 import { SPEED_OF_LIGHT_M_PER_S } from "../verified-dipole/model";
 import type {
   GeneratedVerticalModel,
@@ -21,6 +22,7 @@ export function startingVerticalModel(
 ): VerticalAntennaModel {
   const lambda = wavelengthM(frequencyHz);
   const elevated = configuration === "elevated-explicit-radials";
+  const nearSurface = configuration === "ground-mounted-explicit-radials";
   const approximation = configuration === "nec-radial-screen-approximation";
   return {
     schemaVersion: 1,
@@ -29,16 +31,18 @@ export function startingVerticalModel(
     frequencyHz,
     radiatorLengthM: lambda * 0.2375,
     radiatorDiameterM: 0.002,
-    baseHeightM: elevated ? lambda * 0.12 : 0,
+    baseHeightM: elevated ? lambda * 0.12 : nearSurface ? defaultNearSurfaceClearanceM(0.002) : 0,
     radials: {
-      representation: elevated ? "explicit-wires" : approximation ? "nec-ground-screen" : "none",
-      count: elevated ? 4 : approximation ? 16 : 0,
+      representation: elevated || nearSurface ? "explicit-wires" : approximation ? "nec-ground-screen" : "none",
+      count: elevated ? 4 : nearSurface ? 16 : approximation ? 16 : 0,
       lengthM: lambda * 0.25,
       droopAngleRad: elevated ? 25 * Math.PI / 180 : 0,
       diameterM: 0.002,
     },
     ground: approximation
       ? { kind: "reflection-coefficient", conductivitySPerM: 0.005, relativePermittivity: 13 }
+      : nearSurface
+        ? { kind: "sommerfeld-norton", conductivitySPerM: 0.005, relativePermittivity: 13 }
       : { kind: "perfect" },
     referenceImpedanceOhm: 50,
     provenance: { dimensionsAreStartingPoints: true, manualDimensions: false },
@@ -51,7 +55,11 @@ export function regenerateVerticalStartingDimensions(model: VerticalAntennaModel
     ...model,
     frequencyHz,
     radiatorLengthM: lambda * 0.2375,
-    baseHeightM: model.configuration === "elevated-explicit-radials" ? lambda * 0.12 : 0,
+    baseHeightM: model.configuration === "elevated-explicit-radials"
+      ? lambda * 0.12
+      : model.configuration === "ground-mounted-explicit-radials"
+        ? defaultNearSurfaceClearanceM(model.radials.diameterM)
+        : 0,
     radials: { ...model.radials, lengthM: lambda * 0.25 },
     provenance: { ...model.provenance, manualDimensions: false },
   };
@@ -59,10 +67,14 @@ export function regenerateVerticalStartingDimensions(model: VerticalAntennaModel
 
 export function switchVerticalConfiguration(model: VerticalAntennaModel, configuration: VerticalConfiguration): VerticalAntennaModel {
   const next = startingVerticalModel(model.frequencyHz, configuration);
+  const radialDiameterM = model.radials.diameterM;
   return {
     ...next,
     radiatorDiameterM: model.radiatorDiameterM,
-    radials: { ...next.radials, diameterM: model.radials.diameterM },
+    baseHeightM: configuration === "ground-mounted-explicit-radials"
+      ? defaultNearSurfaceClearanceM(radialDiameterM)
+      : next.baseHeightM,
+    radials: { ...next.radials, diameterM: radialDiameterM },
     referenceImpedanceOhm: model.referenceImpedanceOhm,
   };
 }
@@ -125,6 +137,14 @@ export function validateVerticalModel(model: VerticalAntennaModel, wires = build
     if (model.ground.kind !== "perfect") issues.push({ severity: "error", code: "ideal-requires-perfect", message: "The ground-contact ideal monopole is valid here only with perfect ground." });
     if (model.baseHeightM !== 0) issues.push({ severity: "error", code: "ideal-base-height", message: "The ideal ground-mounted radiator base must be exactly at z = 0." });
     if (model.radials.representation !== "none" || model.radials.count !== 0) issues.push({ severity: "error", code: "ideal-radials", message: "The ideal infinite ground plane does not contain explicit radial wires." });
+  }
+  if (model.configuration === "ground-mounted-explicit-radials") {
+    if (model.ground.kind !== "sommerfeld-norton") issues.push({ severity: "error", code: "surface-requires-sommerfeld", message: "The near-surface explicit radial model requires Sommerfeld/Norton real ground." });
+    if (model.radials.representation !== "explicit-wires") issues.push({ severity: "error", code: "surface-representation", message: "The near-surface model requires explicit current-carrying radial wires." });
+    if (model.radials.count < 4) issues.push({ severity: "error", code: "surface-radial-count", message: "The near-surface radial field requires at least four explicit radial wires." });
+    if (Math.abs(model.radials.droopAngleRad) > 1e-12) issues.push({ severity: "error", code: "surface-radial-plane", message: "Near-surface radial wires must remain in one horizontal plane; use the elevated mode for drooping radials." });
+    issues.push(...validateNearSurfaceRadialPlane({ wireAxisHeightM: model.baseHeightM, wireDiameterM: model.radials.diameterM, wavelengthM: wavelengthM(model.frequencyHz) }));
+    if (model.radials.count > 64) issues.push({ severity: "warning", code: "surface-large-junction", message: "More than 64 radial wires meet at one feed junction; verify the NEC segment-count and junction convergence." });
   }
   if (model.configuration === "elevated-explicit-radials") {
     if (model.radials.representation !== "explicit-wires") issues.push({ severity: "error", code: "explicit-representation", message: "The elevated ground plane requires explicit radial wires." });
