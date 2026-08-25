@@ -55,6 +55,7 @@ Choose start/stop or centre/span, number of points, band preset, and reference i
 - Model comparison supports four states and warns when frequency, ground, reference impedance, or cut conditions differ.
 - One- and bounded two-dimensional sweeps retain the exact parameter/model/NEC lineage for each point. Job-size limits protect responsiveness.
 - The optimiser changes permitted parameters inside declared bounds and rejects invalid models. It retains the best evaluated candidates and reproducibility settings. It never proves a global optimum.
+- For vertical and phased-array work, choose the radial representation explicitly. Comparison, sweep, and optimiser `.hfas` projects preserve that identity; raised near-surface NEC wires are not buried or exact soil-contact models.
 
 ## Measurement comparison
 

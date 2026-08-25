@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { clonePreset, comparisonConditionKey, comparisonConditionWarnings, comparisonLabel, validateComparisonDefinition } from "../model";
+import { clonePreset, comparisonConditionKey, comparisonConditionWarnings, comparisonLabel, createDefaultComparisonConditions, validateComparisonDefinition, validateComparisonRadialCounts } from "../model";
 import type { ComparisonConditions } from "../types";
 
-const conditions: ComparisonConditions = { frequencyMhz: 14.1, ground: { kind: "perfect" }, referenceImpedanceOhm: 50, azimuthElevationDeg: 10, elevationBearingDeg: 0 };
+const conditions: ComparisonConditions = createDefaultComparisonConditions();
 
 describe("model comparison definitions", () => {
   it("provides four independent states for every requested example family", () => {
@@ -29,5 +29,15 @@ describe("model comparison definitions", () => {
     ], definitions, conditions);
     expect(warnings.join(" ")).toContain("different frequency, ground, reference-impedance, cut, or sweep conditions");
     expect(warnings.join(" ")).toContain("differ from the current common-condition controls");
+  });
+
+  it("blocks two-radial slots before a near-surface comparison reaches NEC", () => {
+    const realConditions: ComparisonConditions = {
+      ...conditions,
+      ground: { kind: "sommerfeld-norton", conductivitySPerM: 0.005, relativePermittivity: 13 },
+      radialSystems: { ...conditions.radialSystems, verticalMode: "near-surface" },
+    };
+    expect(validateComparisonRadialCounts(clonePreset("vertical"), realConditions).join(" ")).toContain("Model 1");
+    expect(validateComparisonRadialCounts(clonePreset("vertical").map((item) => ({ ...item, parameterValue: Math.max(4, item.parameterValue) })), realConditions)).toEqual([]);
   });
 });

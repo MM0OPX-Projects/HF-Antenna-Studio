@@ -11,13 +11,17 @@ import type { LumpedLoad, TransmissionLine, SimulationResult } from "../api/nec"
 import type { EditorJunction } from "./editor-junctions";
 import type { NecImportState } from "../engine/types";
 import type { GeometryGroundFlag } from "../engine/geometry-ground";
+import type { ComparisonConditions, ComparisonSlotDefinition } from "../features/model-comparison/types";
+import type { SweepConfig } from "../features/frequency-analyser/types";
+import type { ParameterSweepDefinition } from "../features/parameter-sweeps/types";
+import type { OptimisationDefinition } from "../features/antenna-optimiser/types";
 
 // ---------------------------------------------------------------------------
 // Schema
 // ---------------------------------------------------------------------------
 
 /** Current schema version. Increment when the format changes. */
-export const PROJECT_SCHEMA_VERSION = 4;
+export const PROJECT_SCHEMA_VERSION = 5;
 
 /** File extension (without dot) */
 export const PROJECT_FILE_EXTENSION = "hfas";
@@ -44,7 +48,7 @@ export interface ProjectFile {
   /** ISO 8601 creation timestamp */
   created_at: string;
   /** Which mode the project was saved from */
-  mode: "simulator" | "editor";
+  mode: "simulator" | "editor" | "model-comparison" | "parameter-sweep" | "antenna-optimiser";
 
   /** Simulator mode state */
   simulator?: {
@@ -75,6 +79,16 @@ export interface ProjectFile {
     necImport?: NecImportState | null;
   };
 
+  /** Reproducibility inputs only; calculated comparison results are cache data. */
+  modelComparison?: {
+    definitions: ComparisonSlotDefinition[];
+    conditions: ComparisonConditions;
+    sweep: SweepConfig;
+  };
+
+  parameterSweep?: { definition: ParameterSweepDefinition };
+  antennaOptimiser?: { definition: OptimisationDefinition };
+
   /** Cached simulation result (optional — can be large) */
   result?: SimulationResult | null;
 }
@@ -95,6 +109,17 @@ function validateCurrentProjectFile(data: unknown): ProjectFile {
     throw new Error("Invalid project file: not an object");
   }
   const obj = data as Record<string, unknown>;
+  const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
+  const finiteNumber = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value);
+  const allowedFamilies = new Set(["dipole", "vertical", "yagi", "phased-array"]);
+  const allowedParameterIds = new Set(["dipole-height", "dipole-length", "vertical-length", "radial-count", "yagi-director-spacing", "yagi-height", "array-spacing", "array-phase"]);
+  const validGround = (value: unknown): boolean => isRecord(value) && (value.kind === "perfect" || (value.kind === "sommerfeld-norton" && finiteNumber(value.conductivitySPerM) && finiteNumber(value.relativePermittivity)));
+  const hasRadialSchema = (value: unknown): boolean => {
+    if (!isRecord(value) || value.schemaVersion !== 1) return false;
+    if (value.verticalMode !== "elevated-independent" && value.verticalMode !== "near-surface") return false;
+    if (!["perfect-ground-image", "elevated-independent", "near-surface-independent", "near-surface-shared"].includes(String(value.phasedMode))) return false;
+    return ["radialLengthWavelengths", "radialDiameterM", "nearSurfaceClearanceM", "elevatedHeightWavelengths", "elevatedDroopAngleDeg", "phasedRadialCount"].every((field) => finiteNumber(value[field]));
+  };
 
   if (typeof obj.version !== "number") {
     throw new Error("Invalid project file: missing 'version' field");
@@ -104,8 +129,8 @@ function validateCurrentProjectFile(data: unknown): ProjectFile {
       `Project file version ${obj.version} is newer than supported (${PROJECT_SCHEMA_VERSION}). Please update HF Antenna Studio.`,
     );
   }
-  if (obj.mode !== "simulator" && obj.mode !== "editor") {
-    throw new Error("Invalid project file: 'mode' must be 'simulator' or 'editor'");
+  if (!(["simulator", "editor", "model-comparison", "parameter-sweep", "antenna-optimiser"] as const).includes(obj.mode as ProjectFile["mode"])) {
+    throw new Error("Invalid project file: 'mode' must be one of simulator, editor, model-comparison, parameter-sweep, or antenna-optimiser");
   }
 
   if (obj.mode === "simulator") {
@@ -207,6 +232,37 @@ function validateCurrentProjectFile(data: unknown): ProjectFile {
     }
   }
 
+  if (obj.mode === "model-comparison") {
+    const workspace = obj.modelComparison as Record<string, unknown> | undefined;
+    const conditions = workspace?.conditions as Record<string, unknown> | undefined;
+    const definitionsValid = Array.isArray(workspace?.definitions) && workspace.definitions.length === 4 && workspace.definitions.every((definition) => isRecord(definition) && typeof definition.id === "string" && allowedFamilies.has(String(definition.family)) && finiteNumber(definition.parameterValue));
+    const sweep = workspace?.sweep as Record<string, unknown> | undefined;
+    const conditionsValid = Boolean(conditions && finiteNumber(conditions.frequencyMhz) && validGround(conditions.ground) && hasRadialSchema(conditions.radialSystems) && (conditions.referenceImpedanceOhm === 50 || conditions.referenceImpedanceOhm === 75) && finiteNumber(conditions.azimuthElevationDeg) && finiteNumber(conditions.elevationBearingDeg));
+    const sweepValid = Boolean(sweep && (sweep.mode === "start-stop" || sweep.mode === "center-span") && finiteNumber(sweep.startMhz) && finiteNumber(sweep.stopMhz) && finiteNumber(sweep.points) && finiteNumber(sweep.referenceOhms));
+    if (!workspace || !definitionsValid || !conditionsValid || !sweepValid) {
+      throw new Error("Invalid project file: model-comparison mode requires four definitions, conditions, and sweep settings");
+    }
+  }
+
+  if (obj.mode === "parameter-sweep") {
+    const definition = (obj.parameterSweep as Record<string, unknown> | undefined)?.definition as Record<string, unknown> | undefined;
+    const axesValid = Array.isArray(definition?.axes) && definition.axes.every((axis) => isRecord(axis) && allowedParameterIds.has(String(axis.parameterId)) && finiteNumber(axis.start) && finiteNumber(axis.stop) && finiteNumber(axis.points));
+    if (!definition || definition.schemaVersion !== 2 || (definition.mode !== "one-dimensional" && definition.mode !== "two-dimensional") || !allowedFamilies.has(String(definition.family)) || !finiteNumber(definition.frequencyMhz) || !validGround(definition.ground) || !hasRadialSchema(definition.radialSystems) || (definition.referenceImpedanceOhm !== 50 && definition.referenceImpedanceOhm !== 75) || !axesValid) throw new Error("Invalid project file: parameter-sweep mode requires a complete schema-v2 definition");
+  }
+
+  if (obj.mode === "antenna-optimiser") {
+    const definition = (obj.antennaOptimiser as Record<string, unknown> | undefined)?.definition as Record<string, unknown> | undefined;
+    const variablesValid = Array.isArray(definition?.variables) && definition.variables.every((variable) => isRecord(variable) && allowedParameterIds.has(String(variable.parameterId)) && finiteNumber(variable.minimum) && finiteNumber(variable.maximum));
+    const objective = definition?.objective as Record<string, unknown> | undefined;
+    const weights = objective?.weights as Record<string, unknown> | undefined;
+    const objectiveValid = Boolean(objective && ["lowest-swr", "maximum-forward-gain", "maximum-front-to-back", "target-feed-resistance", "target-zero-reactance", "target-take-off-angle", "weighted-multi-objective"].includes(String(objective.kind)) && finiteNumber(objective.targetResistanceOhm) && finiteNumber(objective.targetTakeOffAngleDeg) && weights && ["swr", "gain", "frontToBack", "resistance", "reactance", "takeOffAngle"].every((field) => finiteNumber(weights[field])));
+    const constraints = definition?.constraints as Record<string, unknown> | undefined;
+    const constraintsValid = Boolean(constraints && ["maximumSwr", "minimumGainDbi", "minimumFrontToBackDb", "maximumTakeOffAngleDeg"].every((field) => constraints[field] === null || finiteNumber(constraints[field])));
+    const algorithm = definition?.algorithm as Record<string, unknown> | undefined;
+    const algorithmValid = Boolean(algorithm && algorithm.id === "bounded-coordinate-pattern-search-v1" && ["maximumEvaluations", "initialStepFraction", "stepShrinkFactor", "minimumStepFraction"].every((field) => finiteNumber(algorithm[field])));
+    if (!definition || definition.schemaVersion !== 2 || !allowedFamilies.has(String(definition.family)) || !finiteNumber(definition.frequencyMhz) || !validGround(definition.ground) || !hasRadialSchema(definition.radialSystems) || (definition.referenceImpedanceOhm !== 50 && definition.referenceImpedanceOhm !== 75) || !variablesValid || !objectiveValid || !constraintsValid || !algorithmValid) throw new Error("Invalid project file: antenna-optimiser mode requires a complete schema-v2 definition");
+  }
+
   return data as ProjectFile;
 }
 
@@ -255,6 +311,9 @@ export function migrateProjectFile(data: unknown): ProjectMigrationResult {
     // not invent one: restore code intentionally uses the template-derived
     // range and the migration report explains the limitation.
     migrations.push("v3 to v4: retained legacy simulator frequency behaviour; explicit sweep intent was unavailable");
+  }
+  if (sourceVersion < 5) {
+    migrations.push("v4 to v5: added project modes for comparison, parameter sweeps, and optimisation; legacy project inputs were retained unchanged");
   }
 
   copy.version = PROJECT_SCHEMA_VERSION;
@@ -360,6 +419,27 @@ export function createEditorProject(
     },
     result: result ?? null,
   };
+}
+
+function projectEnvelope(mode: ProjectFile["mode"]): Pick<ProjectFile, "version" | "app_version" | "created_at" | "mode"> {
+  return {
+    version: PROJECT_SCHEMA_VERSION,
+    app_version: typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "unknown",
+    created_at: new Date().toISOString(),
+    mode,
+  };
+}
+
+export function createModelComparisonProject(definitions: ComparisonSlotDefinition[], conditions: ComparisonConditions, sweep: SweepConfig): ProjectFile {
+  return { ...projectEnvelope("model-comparison"), modelComparison: { definitions: structuredClone(definitions), conditions: structuredClone(conditions), sweep: structuredClone(sweep) }, result: null };
+}
+
+export function createParameterSweepProject(definition: ParameterSweepDefinition): ProjectFile {
+  return { ...projectEnvelope("parameter-sweep"), parameterSweep: { definition: structuredClone(definition) }, result: null };
+}
+
+export function createAntennaOptimiserProject(definition: OptimisationDefinition): ProjectFile {
+  return { ...projectEnvelope("antenna-optimiser"), antennaOptimiser: { definition: structuredClone(definition) }, result: null };
 }
 
 /**

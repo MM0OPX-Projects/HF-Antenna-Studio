@@ -15,11 +15,13 @@ This is an experimental workflow included in v1.0.0 to test bounded orchestratio
 | Family | Dimensions allowed to vary | Feed/objective limitations |
 |---|---|---|
 | Horizontal dipole | height; total length | Single-port impedance objectives available |
-| Elevated vertical with explicit radials | radiator length; radial count | Single-port impedance objectives available |
+| Quarter-wave vertical with explicit elevated or raised near-surface radials | radiator length; radial count | Single-port impedance objectives available |
 | Three-element Yagi | first-director spacing; boom height | Single-port and directional objectives available |
 | Two-element ideal-current phased array | element spacing; element-2 phase | Directional objectives only; no synthetic R, X, or SWR |
 
 One or two dimensions may be enabled. User limits must stay inside the existing parameter registry and contain the generated starting design. Integer variables use integer candidate values. Existing family geometry, ground, segmentation, feed, and solver-result validators remain authoritative.
+
+Vertical and phased-array definitions explicitly retain radial representation/topology, count, length, diameter, clearance, elevated height, and droop. Perfect-ground image, elevated independent, raised near-surface independent, and shared-bonded systems are not treated as interchangeable. Near-surface `GW` wires have positive clearance over Sommerfeld/Norton soil and are never described as buried or exact soil contact.
 
 ## Objectives
 
@@ -101,7 +103,7 @@ The completed result records:
 - up to five unique feasible models ordered by objective score;
 - the best solution found and the explicit false global-optimum flag.
 
-The locally downloaded `hf-antenna-studio-antenna-optimisation.json` contains this complete evidence and may disclose private antenna dimensions. No upload or network resource is used. FNV-1a-32 fingerprints detect accidental association errors; the full model and deck are authoritative and the fingerprint is not a cryptographic signature.
+The locally downloaded `hf-antenna-studio-antenna-optimisation.json` contains this complete evidence and may disclose private antenna dimensions. Schema-v5 `.hfas` projects additionally preserve the optimiser input definition and radial identity; search history/results are recalculated rather than canonical project input. No upload or network resource is used. FNV-1a-32 fingerprints detect accidental association errors; the full model and deck are authoritative and the fingerprint is not a cryptographic signature.
 
 ## Visualisation
 
@@ -134,7 +136,7 @@ The locally downloaded `hf-antenna-studio-antenna-optimisation.json` contains th
 ## Known limitations and manual checks
 
 - Only four families, two declared dimensions per family, and one/two-variable searches are implemented.
-- There is no random/multistart search, global certificate, adaptive surrogate, Pareto frontier, manufacturing-tolerance objective, multi-frequency objective, persisted resume, or optimizer-to-project import.
+- There is no random/multistart search, global certificate, adaptive surrogate, Pareto frontier, manufacturing-tolerance objective, multi-frequency objective, or persisted search resume. The input definition can be saved as `.hfas`, but candidate history is not resumed.
 - Constraints apply to solved RF metrics only; arbitrary expressions and geometry relationships are not yet user-definable.
 - Each candidate requests full family result output. Optimisation-specific safe solver batching is not implemented.
 - Integer/discontinuous parameter landscapes can terminate early when the shrinking step rounds to visited values.

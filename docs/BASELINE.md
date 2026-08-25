@@ -123,7 +123,7 @@ Input deck construction and output parsing have unit tests. Those tests verify f
 | Element current magnitude and phase | Present | Parsed per segment; magnitude colouring and point inspection expose phase |
 | Free-space, perfect, preset real, and custom real ground | Present | Card generation unit-tested; average real ground exercised in browser |
 | NEC import/export | Present | Parser/generator unit tests pass; browser round-trip not in the baseline smoke suite |
-| Native project save/load | Present | Current `.hfas` schema v4 local library/import/export and legacy `.antennasim` import; browser lifecycle is automated, while native OS path/dialog behavior remains future packaged-host work |
+| Native project save/load | Present | Current `.hfas` schema v5 local library/import/export covers simulator, editor, comparison, parameter-sweep, and optimiser inputs plus legacy `.antennasim` import; browser lifecycle is automated, while native OS path/dialog behavior remains future packaged-host work |
 | Loads and transmission lines | Present in advanced editor | Deck generation unit-tested; not independently solver-validated |
 | Matching and Touchstone export | Present | Unit tests pass; not independently measured or externally validated |
 | Parameter optimization | Present | Not accepted as validated or stable by this baseline |

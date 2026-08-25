@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { buildComparisonSweepRequest, createDipoleSweepPlanForTest, maximumSegmentWavelengthsAtFrequency } from "../service";
+import { createDefaultComparisonConditions } from "../model";
 import type { ComparisonConditions } from "../types";
 
-const conditions: ComparisonConditions = { frequencyMhz: 14.1, ground: { kind: "perfect" }, referenceImpedanceOhm: 50, azimuthElevationDeg: 10, elevationBearingDeg: 0 };
+const conditions: ComparisonConditions = createDefaultComparisonConditions();
 
 describe("comparison solver plans", () => {
   it("reuses the validated dipole adapter with the requested exact height and frequency", () => {

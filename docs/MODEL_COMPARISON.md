@@ -7,7 +7,7 @@ Status: implemented experimental browser/Wasm feature on `feature/model-comparis
 The `/model-comparison` route solves four explicit antenna slots and presents one side-by-side result table, compatible radiation overlays, compatible impedance-sweep overlays, warnings, and a standalone offline HTML report. Available comparison families are:
 
 - centre-fed horizontal dipole, parameterised by height;
-- elevated quarter-wave vertical with explicit radial wires, parameterised by radial count;
+- quarter-wave vertical with explicit elevated or raised near-surface radial wires, parameterised by radial count;
 - two-element vertical phased array in ideal current/phase mode, parameterised by element-2 phase;
 - three-element horizontal Yagi, parameterised by boom height.
 
@@ -20,6 +20,7 @@ One condition block applies to all slots in a run:
 - frequency;
 - infinite perfect ground or Sommerfeld/Norton real ground;
 - conductivity and relative permittivity for real ground;
+- vertical elevated/near-surface radial representation and phased-array perfect-image/elevated/independent-near-surface/shared-bonded topology, with radial length, diameter, count, clearance, height, and droop where applicable;
 - 50- or 75-ohm reference impedance;
 - common azimuth-cut elevation;
 - common elevation-cut compass bearing;
@@ -28,6 +29,8 @@ One condition block applies to all slots in a run:
 Cut controls use 10-degree increments. This is the common subset of the existing 2-degree and 5-degree solver grids, so an overlay never compares different nearest angular samples. Azimuth points are transformed to compass coordinates (`0° = +Y/north`, `90° = +X/east`) at the comparison boundary. The UI does not change each family’s canonical solver coordinates.
 
 Changing a condition after calculation retains the metric snapshots but marks them stale and removes them from overlays. Results with different condition identities are never silently overlaid. Model edits receive the same treatment. A new run replaces the old set; solver failure or cancellation removes partial results.
+
+Radial selections are part of that condition identity and of schema-v5 `.hfas` comparison projects. Near-surface means explicit `GW` axes at positive clearance over Sommerfeld/Norton soil; it is not buried-wire or exact soil-contact modelling. Incompatible selections are blocked or converted visibly when the ground model changes.
 
 ## Solver and result path
 
@@ -95,6 +98,6 @@ The feature adds no third-party dependency, external artwork, reference-data lic
 - Phased-array physical feed-network comparisons are not included.
 - Pattern interpolation between angular samples is not performed; controls deliberately use the common 10-degree grid.
 - Sweep geometry is not re-segmented per frequency.
-- Reports cannot yet be re-imported as editable comparison projects.
+- HTML reports are evidence exports rather than import files. Editable comparison inputs can be saved and reopened as schema-v5 `.hfas` projects; calculated report results are recomputed.
 - Values should be cross-checked with the existing family reference cases; a comparison does not strengthen the underlying model’s validation status.
 - Manually review report printing, colour differentiation, keyboard flow, long-warning/deck layout, cancellation timing, and Windows 11 browser/GPU behaviour.

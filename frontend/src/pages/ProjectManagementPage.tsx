@@ -9,7 +9,14 @@ function formatDate(value: string): string {
 }
 
 function modeLabel(record: LocalProjectRecord): string {
-  return record.project.mode === "editor" ? "Wire Editor" : "Template Simulator";
+  const labels: Record<LocalProjectRecord["project"]["mode"], string> = {
+    simulator: "Template Simulator",
+    editor: "Wire Editor",
+    "model-comparison": "Model Comparison",
+    "parameter-sweep": "Parameter Sweep",
+    "antenna-optimiser": "Antenna Optimiser",
+  };
+  return labels[record.project.mode];
 }
 
 export function ProjectManagementPage() {
@@ -106,6 +113,9 @@ export function ProjectManagementPage() {
               }, "A new local project copy was saved.")} className="rounded-md border border-border px-3 py-2 text-sm hover:border-accent">Save As</button>
               <button type="button" onClick={() => run(() => session.newProject("simulator"))} className="rounded-md border border-border px-3 py-2 text-sm hover:border-accent">New template project</button>
               <button type="button" onClick={() => run(() => session.newProject("editor"))} className="rounded-md border border-border px-3 py-2 text-sm hover:border-accent">New wire project</button>
+              <button type="button" onClick={() => run(() => session.newProject("model-comparison"))} className="rounded-md border border-border px-3 py-2 text-sm hover:border-accent">New comparison</button>
+              <button type="button" onClick={() => run(() => session.newProject("parameter-sweep"))} className="rounded-md border border-border px-3 py-2 text-sm hover:border-accent">New parameter sweep</button>
+              <button type="button" onClick={() => run(() => session.newProject("antenna-optimiser"))} className="rounded-md border border-border px-3 py-2 text-sm hover:border-accent">New optimiser</button>
             </div>
           </div>
 

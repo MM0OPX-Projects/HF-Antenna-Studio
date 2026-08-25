@@ -1,6 +1,7 @@
 import { buildSweepModel, builtParameterValue, defaultAxis, parameterSweepDefinitionKey, parametersForFamily, PARAMETER_DEFINITIONS, type BuiltSweepModel } from "../parameter-sweeps/model";
 import type { ParameterId, ParameterSweepDefinition, ParameterSweepFamily } from "../parameter-sweeps/types";
 import type { OptimisationDefinition, OptimisationObjectiveKind, OptimisationVariable } from "./types";
+import { createDefaultRadialWorkflowSettings, validateRadialWorkflowSettings } from "../ground-radials/workflow";
 
 export const MAX_OPTIMISER_EVALUATIONS = 121;
 export const MAX_RETAINED_SOLUTIONS = 5;
@@ -23,7 +24,7 @@ export const OBJECTIVES_BY_FAMILY: Record<ParameterSweepFamily, OptimisationObje
 };
 
 function asSweepDefinition(definition: OptimisationDefinition): ParameterSweepDefinition {
-  return { schemaVersion: 1, mode: "one-dimensional", family: definition.family, frequencyMhz: definition.frequencyMhz, ground: structuredClone(definition.ground), referenceImpedanceOhm: definition.referenceImpedanceOhm, axes: [] };
+  return { schemaVersion: 2, mode: "one-dimensional", family: definition.family, frequencyMhz: definition.frequencyMhz, ground: structuredClone(definition.ground), radialSystems: structuredClone(definition.radialSystems), referenceImpedanceOhm: definition.referenceImpedanceOhm, axes: [] };
 }
 
 export function buildOptimisationModel(definition: OptimisationDefinition, parameters: Partial<Record<ParameterId, number>>): BuiltSweepModel {
@@ -43,10 +44,11 @@ export function defaultOptimisationVariable(family: ParameterSweepFamily, parame
 
 export function createDefaultOptimisationDefinition(): OptimisationDefinition {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     family: "dipole",
     frequencyMhz: 14.1,
     ground: { kind: "perfect" },
+    radialSystems: createDefaultRadialWorkflowSettings(),
     referenceImpedanceOhm: 50,
     variables: [defaultOptimisationVariable("dipole", "dipole-length", 14.1)],
     objective: { kind: "lowest-swr", targetResistanceOhm: 50, targetTakeOffAngleDeg: 20, weights: { swr: 1, gain: 0.1, frontToBack: 0.1, resistance: 0, reactance: 0, takeOffAngle: 0 } },
@@ -75,6 +77,7 @@ function activeWeightedTerms(definition: OptimisationDefinition): Array<{ suppor
 
 export function validateOptimisationDefinition(definition: OptimisationDefinition): string[] {
   const errors: string[] = [];
+  if (definition.schemaVersion !== 2) errors.push("Unsupported optimiser schema version.");
   if (!Number.isFinite(definition.frequencyMhz) || definition.frequencyMhz < 1.8 || definition.frequencyMhz > 54) errors.push("Frequency must be from 1.8 to 54 MHz.");
   if (definition.variables.length < 1 || definition.variables.length > 2) errors.push("Select one or two dimensions to vary.");
   if (new Set(definition.variables.map((variable) => variable.parameterId)).size !== definition.variables.length) errors.push("Optimisation dimensions must be unique.");
@@ -112,6 +115,7 @@ export function validateOptimisationDefinition(definition: OptimisationDefinitio
     if (!Number.isFinite(definition.ground.conductivitySPerM) || definition.ground.conductivitySPerM < 0.00001 || definition.ground.conductivitySPerM > 10) errors.push("Ground conductivity must be from 0.00001 to 10 S/m.");
     if (!Number.isFinite(definition.ground.relativePermittivity) || definition.ground.relativePermittivity < 1 || definition.ground.relativePermittivity > 100) errors.push("Ground relative permittivity must be from 1 to 100.");
   }
+  if (definition.family === "vertical" || definition.family === "phased-array") errors.push(...validateRadialWorkflowSettings(definition.radialSystems, new Set([definition.family]), definition.ground));
   return [...new Set(errors)];
 }
 

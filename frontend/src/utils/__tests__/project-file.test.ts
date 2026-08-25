@@ -12,6 +12,9 @@ import {
   validateProjectFile,
   createSimulatorProject,
   createEditorProject,
+  createModelComparisonProject,
+  createParameterSweepProject,
+  createAntennaOptimiserProject,
   estimateProjectSize,
   migrateProjectFile,
   parseProjectText,
@@ -19,6 +22,9 @@ import {
   MAX_PROJECT_FILE_CHARACTERS,
 } from "../project-file";
 import type { ProjectFile } from "../project-file";
+import { clonePreset, createDefaultComparisonConditions, createDefaultComparisonSweep } from "../../features/model-comparison/model";
+import { createDefaultSweepDefinition } from "../../features/parameter-sweeps/model";
+import { createDefaultOptimisationDefinition } from "../../features/antenna-optimiser/model";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -196,6 +202,55 @@ describe("validateProjectFile — error cases", () => {
     expect(migrated.editor!.junctions).toEqual([]);
   });
 
+  it("preserves radial-system identity in comparison, sweep, and optimiser projects", () => {
+    const conditions = createDefaultComparisonConditions();
+    conditions.ground = { kind: "sommerfeld-norton", conductivitySPerM: 0.005, relativePermittivity: 13 };
+    conditions.radialSystems = { ...conditions.radialSystems, verticalMode: "near-surface", phasedMode: "near-surface-shared" };
+    const comparison = createModelComparisonProject(clonePreset("mixed"), conditions, createDefaultComparisonSweep());
+
+    const sweepDefinition = createDefaultSweepDefinition();
+    sweepDefinition.family = "vertical";
+    sweepDefinition.ground = structuredClone(conditions.ground);
+    sweepDefinition.radialSystems = structuredClone(conditions.radialSystems);
+    sweepDefinition.axes = [{ parameterId: "radial-count", start: 4, stop: 16, points: 4 }];
+    const sweep = createParameterSweepProject(sweepDefinition);
+
+    const optimiserDefinition = createDefaultOptimisationDefinition();
+    optimiserDefinition.family = "vertical";
+    optimiserDefinition.ground = structuredClone(conditions.ground);
+    optimiserDefinition.radialSystems = structuredClone(conditions.radialSystems);
+    optimiserDefinition.variables = [{ parameterId: "vertical-length", minimum: 3.2, maximum: 6.4 }];
+    const optimiser = createAntennaOptimiserProject(optimiserDefinition);
+
+    expect(validateProjectFile(JSON.parse(JSON.stringify(comparison))).modelComparison?.conditions.radialSystems.phasedMode).toBe("near-surface-shared");
+    expect(validateProjectFile(JSON.parse(JSON.stringify(sweep))).parameterSweep?.definition.radialSystems.verticalMode).toBe("near-surface");
+    expect(validateProjectFile(JSON.parse(JSON.stringify(optimiser))).antennaOptimiser?.definition.radialSystems.verticalMode).toBe("near-surface");
+  });
+
+  it("round-trips structurally valid drafts even when RF preflight must block calculation", () => {
+    const conditions = createDefaultComparisonConditions();
+    conditions.ground = { kind: "sommerfeld-norton", conductivitySPerM: 0.005, relativePermittivity: 13 };
+    conditions.radialSystems = { ...conditions.radialSystems, verticalMode: "near-surface" };
+    const draft = createModelComparisonProject(clonePreset("vertical"), conditions, createDefaultComparisonSweep());
+    const reopened = validateProjectFile(JSON.parse(JSON.stringify(draft)));
+    expect(reopened.modelComparison?.definitions[0]?.parameterValue).toBe(2);
+    expect(reopened.modelComparison?.conditions.radialSystems.verticalMode).toBe("near-surface");
+  });
+
+  it("rejects workflow files whose nested structures could crash their destination page", () => {
+    const comparison = createModelComparisonProject(clonePreset("mixed"), createDefaultComparisonConditions(), createDefaultComparisonSweep());
+    (comparison.modelComparison!.definitions[0] as { family: string }).family = "unknown";
+    expect(() => validateProjectFile(comparison)).toThrow("model-comparison");
+
+    const sweep = createParameterSweepProject(createDefaultSweepDefinition());
+    (sweep.parameterSweep!.definition.axes[0] as { parameterId: string }).parameterId = "unknown";
+    expect(() => validateProjectFile(sweep)).toThrow("schema-v2 definition");
+
+    const optimiser = createAntennaOptimiserProject(createDefaultOptimisationDefinition());
+    delete (optimiser.antennaOptimiser!.definition.objective as { weights?: unknown }).weights;
+    expect(() => validateProjectFile(optimiser)).toThrow("schema-v2 definition");
+  });
+
   it("migrates on a copy and leaves the older input object unchanged", () => {
     const source = makeEditorProject();
     source.version = 1;
@@ -208,7 +263,8 @@ describe("validateProjectFile — error cases", () => {
     expect(migrated.sourceVersion).toBe(1);
     expect(migrated.project.version).toBe(PROJECT_SCHEMA_VERSION);
     expect(migrated.project.editor?.junctions).toEqual([]);
-    expect(migrated.migrations).toHaveLength(3);
+    expect(migrated.migrations).toHaveLength(4);
+    expect(migrated.migrations[migrated.migrations.length - 1]).toContain("v4 to v5");
     expect(JSON.stringify(source)).toBe(sourceText);
   });
 
@@ -220,7 +276,7 @@ describe("validateProjectFile — error cases", () => {
 
     expect(parsed.originalText).toBe(text);
     expect(parsed.project.version).toBe(PROJECT_SCHEMA_VERSION);
-    expect(parsed.migrations).toHaveLength(1);
+    expect(parsed.migrations).toHaveLength(2);
   });
 
   it("accepts current and legacy project filenames case-insensitively", () => {

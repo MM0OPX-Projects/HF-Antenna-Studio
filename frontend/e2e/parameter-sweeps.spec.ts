@@ -40,14 +40,17 @@ test("a three-point dipole height sweep preserves exact model/NEC evidence and u
 test("a bounded vertical length/radial-count grid renders as a selectable heat map", async ({ page }) => {
   await openSweeps(page);
   await page.getByTestId("parameter-family").selectOption("vertical");
+  await page.getByTestId("parameter-ground").selectOption("sommerfeld-norton");
+  await page.getByTestId("parameter-vertical-radial-mode").selectOption("near-surface");
+  await expect(page.getByTestId("parameter-radial-clearance")).toBeVisible();
   await page.getByTestId("parameter-mode-2d").click();
   await expect(page.getByTestId("parameter-axis-select-1")).toHaveValue("vertical-length");
   await expect(page.getByTestId("parameter-axis-select-2")).toHaveValue("radial-count");
   await page.getByTestId("parameter-axis-start-1").fill("4");
   await page.getByTestId("parameter-axis-stop-1").fill("5");
   await page.getByTestId("parameter-axis-points-1").fill("2");
-  await page.getByTestId("parameter-axis-start-2").fill("2");
-  await page.getByTestId("parameter-axis-stop-2").fill("4");
+  await page.getByTestId("parameter-axis-start-2").fill("4");
+  await page.getByTestId("parameter-axis-stop-2").fill("8");
   await page.getByTestId("parameter-axis-points-2").fill("2");
   await expect(page.getByTestId("parameter-job-count")).toHaveText("4/81");
   await page.getByTestId("run-parameter-sweep").click();

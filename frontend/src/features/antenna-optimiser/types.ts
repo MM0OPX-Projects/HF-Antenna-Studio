@@ -1,4 +1,5 @@
 import type { ParameterId, ParameterSweepFamily, ParameterSweepGround, SolvedSweepModel, SweepMetrics } from "../parameter-sweeps/types";
+import type { RadialWorkflowSettings } from "../ground-radials/workflow";
 
 export type OptimisationObjectiveKind =
   | "lowest-swr"
@@ -47,10 +48,11 @@ export interface OptimisationAlgorithmSettings {
 }
 
 export interface OptimisationDefinition {
-  schemaVersion: 1;
+  schemaVersion: 2;
   family: ParameterSweepFamily;
   frequencyMhz: number;
   ground: ParameterSweepGround;
+  radialSystems: RadialWorkflowSettings;
   referenceImpedanceOhm: 50 | 75;
   variables: OptimisationVariable[];
   objective: OptimisationObjective;
@@ -78,7 +80,7 @@ export interface RetainedOptimisationSolution extends OptimisationCandidate {
 }
 
 export interface OptimisationResult {
-  schemaVersion: 1;
+  schemaVersion: 2;
   id: string;
   definitionKey: string;
   definition: OptimisationDefinition;

@@ -1,3 +1,5 @@
+import type { RadialWorkflowSettings } from "../ground-radials/workflow";
+
 export type ParameterSweepFamily = "dipole" | "vertical" | "yagi" | "phased-array";
 
 export type ParameterId =
@@ -26,11 +28,12 @@ export interface ParameterAxis {
 }
 
 export interface ParameterSweepDefinition {
-  schemaVersion: 1;
+  schemaVersion: 2;
   mode: ParameterSweepMode;
   family: ParameterSweepFamily;
   frequencyMhz: number;
   ground: ParameterSweepGround;
+  radialSystems: RadialWorkflowSettings;
   referenceImpedanceOhm: 50 | 75;
   axes: ParameterAxis[];
 }
@@ -62,7 +65,7 @@ export interface ParameterSweepPoint extends SolvedSweepModel {
 }
 
 export interface ParameterSweepResult {
-  schemaVersion: 1;
+  schemaVersion: 2;
   id: string;
   definitionKey: string;
   definition: ParameterSweepDefinition;

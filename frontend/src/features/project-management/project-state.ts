@@ -4,19 +4,65 @@ import { useSimulationStore } from "../../stores/simulationStore";
 import { getDefaultTemplate, getTemplate, templateMap } from "../../templates";
 import { getDefaultParams } from "../../templates/types";
 import {
+  createAntennaOptimiserProject,
   createEditorProject,
+  createModelComparisonProject,
+  createParameterSweepProject,
   createSimulatorProject,
   type ProjectFile,
 } from "../../utils/project-file";
+import { clonePreset, createDefaultComparisonConditions, createDefaultComparisonSweep } from "../model-comparison/model";
+import type { ComparisonConditions, ComparisonSlotDefinition } from "../model-comparison/types";
+import type { SweepConfig } from "../frequency-analyser/types";
+import { createDefaultSweepDefinition } from "../parameter-sweeps/model";
+import type { ParameterSweepDefinition } from "../parameter-sweeps/types";
+import { createDefaultOptimisationDefinition } from "../antenna-optimiser/model";
+import type { OptimisationDefinition } from "../antenna-optimiser/types";
 
 export type ManagedProjectMode = ProjectFile["mode"];
 
+export interface ComparisonWorkspaceState {
+  definitions: ComparisonSlotDefinition[];
+  conditions: ComparisonConditions;
+  sweep: SweepConfig;
+}
+
+let comparisonWorkspace: ComparisonWorkspaceState = { definitions: clonePreset("mixed"), conditions: createDefaultComparisonConditions(), sweep: createDefaultComparisonSweep() };
+let parameterSweepWorkspace = createDefaultSweepDefinition();
+let optimiserWorkspace = createDefaultOptimisationDefinition();
+
+export function getComparisonWorkspace(): ComparisonWorkspaceState { return structuredClone(comparisonWorkspace); }
+export function setComparisonWorkspace(state: ComparisonWorkspaceState): void { comparisonWorkspace = structuredClone(state); }
+export function getParameterSweepWorkspace(): ParameterSweepDefinition { return structuredClone(parameterSweepWorkspace); }
+export function setParameterSweepWorkspace(definition: ParameterSweepDefinition): void { parameterSweepWorkspace = structuredClone(definition); }
+export function getOptimiserWorkspace(): OptimisationDefinition { return structuredClone(optimiserWorkspace); }
+export function setOptimiserWorkspace(definition: OptimisationDefinition): void { optimiserWorkspace = structuredClone(definition); }
+
+export function routeForProjectMode(mode: ManagedProjectMode): string {
+  if (mode === "editor") return "/editor";
+  if (mode === "model-comparison") return "/model-comparison";
+  if (mode === "parameter-sweep") return "/parameter-sweeps";
+  if (mode === "antenna-optimiser") return "/antenna-optimiser";
+  return "/";
+}
+
 export function projectModeForRoute(pathname: string): ManagedProjectMode {
-  return pathname.startsWith("/editor") ? "editor" : "simulator";
+  if (pathname.startsWith("/editor")) return "editor";
+  if (pathname.startsWith("/model-comparison")) return "model-comparison";
+  if (pathname.startsWith("/parameter-sweeps")) return "parameter-sweep";
+  if (pathname.startsWith("/antenna-optimiser")) return "antenna-optimiser";
+  return "simulator";
+}
+
+export function isManagedProjectRoute(pathname: string): boolean {
+  return ["/", "/editor", "/model-comparison", "/parameter-sweeps", "/antenna-optimiser"].includes(pathname);
 }
 
 /** Capture only reproducibility inputs. Solver results are deliberately cache data. */
 export function captureProject(mode: ManagedProjectMode): ProjectFile {
+  if (mode === "model-comparison") return createModelComparisonProject(comparisonWorkspace.definitions, comparisonWorkspace.conditions, comparisonWorkspace.sweep);
+  if (mode === "parameter-sweep") return createParameterSweepProject(parameterSweepWorkspace);
+  if (mode === "antenna-optimiser") return createAntennaOptimiserProject(optimiserWorkspace);
   if (mode === "editor") {
     const state = useEditorStore.getState();
     return createEditorProject(
@@ -48,6 +94,21 @@ export function captureProject(mode: ManagedProjectMode): ProjectFile {
 
 export function restoreProject(project: ProjectFile): void {
   useSimulationStore.getState().reset();
+  if (project.mode === "model-comparison") {
+    if (!project.modelComparison) throw new Error("The model-comparison project has no comparison definition.");
+    setComparisonWorkspace(project.modelComparison);
+    return;
+  }
+  if (project.mode === "parameter-sweep") {
+    if (!project.parameterSweep) throw new Error("The parameter-sweep project has no sweep definition.");
+    setParameterSweepWorkspace(project.parameterSweep.definition);
+    return;
+  }
+  if (project.mode === "antenna-optimiser") {
+    if (!project.antennaOptimiser) throw new Error("The optimiser project has no optimisation definition.");
+    setOptimiserWorkspace(project.antennaOptimiser.definition);
+    return;
+  }
   if (project.mode === "simulator") {
     const model = project.simulator;
     if (!model) throw new Error("The simulator project has no simulator model.");
@@ -87,6 +148,18 @@ export function restoreProject(project: ProjectFile): void {
 }
 
 export function createNewProject(mode: ManagedProjectMode): ProjectFile {
+  if (mode === "model-comparison") {
+    setComparisonWorkspace({ definitions: clonePreset("mixed"), conditions: createDefaultComparisonConditions(), sweep: createDefaultComparisonSweep() });
+    return captureProject(mode);
+  }
+  if (mode === "parameter-sweep") {
+    setParameterSweepWorkspace(createDefaultSweepDefinition());
+    return captureProject(mode);
+  }
+  if (mode === "antenna-optimiser") {
+    setOptimiserWorkspace(createDefaultOptimisationDefinition());
+    return captureProject(mode);
+  }
   if (mode === "simulator") {
     const template = getDefaultTemplate();
     useAntennaStore.getState().setTemplate(template);

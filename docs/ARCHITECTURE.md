@@ -127,7 +127,7 @@ The initial native project format should be a human-inspectable UTF-8 JSON file 
 
 Migrations are one-way functions between explicit schema versions. Loading a newer unknown version is a visible error. Saving an older imported version requires user confirmation and never overwrites the original until an atomic write succeeds.
 
-Implementation checkpoint (2026-08-06): `feature/project-management` implements the browser-local portion of this contract for the Template Simulator and Wire Editor. Native schema v4 persists explicit simulator sweep intent; schemas 1-3 migrate on detached copies with a visible report; named records use atomic collection replacement and optimistic revisions; and a separate recovery journal is flushed on a bounded interval and page lifecycle events. See `PROJECT_FILE_FORMAT.md`. This does not yet satisfy the packaged-host filesystem, run-manifest, complete runtime-schema, oversized-input, or Windows path/encoding gates.
+Implementation checkpoint (extended 2026-08-25): the browser-local contract covers the Template Simulator, Wire Editor, Model Comparison, Parameter Sweeps, and Antenna Optimiser. Schema v5 persists explicit simulator sweep intent plus the three engineering-workflow input definitions and radial identity; schemas 1-4 migrate on detached copies with a visible report. Named records use atomic collection replacement and optimistic revisions, and a separate recovery journal is flushed on a bounded interval and page lifecycle events. See `PROJECT_FILE_FORMAT.md`. This does not yet satisfy the packaged-host filesystem, run-manifest, complete runtime-schema, oversized-input, or Windows path/encoding gates.
 
 ### NEC document model and compiler
 

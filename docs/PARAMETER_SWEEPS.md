@@ -9,7 +9,7 @@ The `/parameter-sweeps` route runs controlled one- or two-dimensional studies th
 | Family | Parameters | Solved metrics |
 |---|---|---|
 | Horizontal dipole | height; total length | SWR, maximum gain, take-off angle, feed R and X |
-| Elevated vertical with explicit radials | radiator length; radial count | SWR, maximum gain, take-off angle, feed R and X |
+| Quarter-wave vertical with explicit radials | radiator length; radial count | SWR, maximum gain, take-off angle, feed R and X |
 | Three-element Yagi | first-director spacing; boom height | SWR, forward gain, take-off angle, axial front-to-back, feed R and X |
 | Two-element ideal-current phased array | element spacing; element-2 phase | forward gain, take-off angle, front-to-back |
 
@@ -61,11 +61,11 @@ The short FNV fingerprint detects accidental UI/evidence mismatches; it is not c
 Perfect ground and Sommerfeld/Norton real ground share one definition across a run. Conductivity and relative permittivity are explicit for real ground.
 
 - Dipole, vertical, and Yagi families map the selection into their existing ground schema.
-- The vertical remains an elevated system with explicit radial wires.
-- A real-ground phased array uses four explicit elevated radial wires per element.
-- A perfect-ground phased array uses the existing image-ground monopoles.
+- The vertical explicitly selects elevated wires or a raised near-surface field. A near-surface radial-count axis must start at four wires.
+- A phased array explicitly selects perfect-ground image, elevated independent, raised near-surface independent, or raised near-surface shared-bonded topology.
+- Radial count, length, diameter, clearance, elevated height, and droop are stored in every definition/model/cache key even when they are not the swept axis.
 
-These phased-array configurations are visibly distinguished and are not claimed to be physically equivalent.
+These configurations are visibly distinguished and are not claimed to be physically equivalent. Near-surface wires remain positive-clearance NEC-2 approximations, not buried or exact soil-contact conductors.
 
 ## Cancellation and caching
 
@@ -80,6 +80,8 @@ One-dimensional results use an interactive Cartesian plot with labelled paramete
 The selected point exposes all available metrics, exact model key, NEC fingerprint, solver provenance, warnings, and the complete deck. The result table retains every point.
 
 `hf-antenna-studio-parameter-sweep.json` is a local versioned reproducibility export. It contains the complete definition and every point/deck; it may therefore disclose private antenna dimensions. No network service or remote asset is used.
+
+The input definition can also be saved as a schema-v5 `.hfas` project. Reopening restores controls and radial identity; solved point arrays remain evidence/cache data and are recalculated.
 
 ## Automated evidence
 

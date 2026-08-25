@@ -90,6 +90,6 @@ export class ParameterSweepRunner {
       await yieldToUi();
     }
     const warnings = [...new Set(points.flatMap((point) => point.warnings))];
-    return { schemaVersion: 1, id: `parameter-sweep-${Date.now().toString(36)}`, definitionKey: parameterSweepDefinitionKey(captured), definition: captured, createdAt: startedAt.toISOString(), completedAt: new Date().toISOString(), elapsedMs: Math.max(0, performance.now() - started), totalJobs: coordinates.length, cacheHits, points, engines: [...new Set(points.map((point) => point.engine))], warnings };
+    return { schemaVersion: 2, id: `parameter-sweep-${Date.now().toString(36)}`, definitionKey: parameterSweepDefinitionKey(captured), definition: captured, createdAt: startedAt.toISOString(), completedAt: new Date().toISOString(), elapsedMs: Math.max(0, performance.now() - started), totalJobs: coordinates.length, cacheHits, points, engines: [...new Set(points.map((point) => point.engine))], warnings };
   }
 }

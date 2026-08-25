@@ -56,5 +56,11 @@ test("comparison examples expose dipole height, radial count, array phase and Ya
   await page.getByTestId("comparison-ground").selectOption("sommerfeld-norton");
   await expect(page.getByTestId("comparison-conductivity")).toBeVisible();
   await expect(page.getByTestId("comparison-permittivity")).toBeVisible();
+  await page.getByTestId("comparison-preset-vertical").click();
+  await expect(page.getByTestId("comparison-radial-workflow")).toBeVisible();
+  await page.getByTestId("comparison-vertical-radial-mode").selectOption("near-surface");
+  await expect(page.getByTestId("comparison-radial-clearance")).toBeVisible();
+  await expect(page.getByTestId("comparison-errors")).toContainText("at least four explicit radial wires");
+  await expect(page.getByTestId("run-comparison")).toBeDisabled();
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 });

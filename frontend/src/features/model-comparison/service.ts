@@ -3,13 +3,14 @@ import { WasmEngine } from "../../engine/wasm";
 import type { NecDeckRunRequest } from "../../engine/wasm/worker";
 import { deriveAnalyserPoints, validateSweepConfig } from "../frequency-analyser/math";
 import type { AnalyserSweep, SweepConfig } from "../frequency-analyser/types";
-import { generatePhasedArray, phasedWavelengthM, startingPhasedArrayModel } from "../phased-arrays/model";
+import { generatePhasedArray } from "../phased-arrays/model";
 import { runPhasedArrayModel } from "../phased-arrays/service";
+import { createWorkflowPhasedModel, createWorkflowVerticalModel } from "../ground-radials/workflow";
 import { adaptDipoleToNec } from "../verified-dipole/nec-adapter";
 import { SPEED_OF_LIGHT_M_PER_S, type HorizontalDipoleModel } from "../verified-dipole/model";
 import { runVerifiedDipole } from "../verified-dipole/service";
 import { adaptVerticalToNec } from "../vertical-antennas/nec-adapter";
-import { generateVerticalModel, startingVerticalModel } from "../vertical-antennas/model";
+import { generateVerticalModel } from "../vertical-antennas/model";
 import { runVerticalModel } from "../vertical-antennas/service";
 import { adaptYagiToNec } from "../yagi-beams/nec-adapter";
 import { generateYagiModel, startingYagiModel } from "../yagi-beams/model";
@@ -110,10 +111,7 @@ export async function runComparisonSlot(
     metrics = { gainDbi: run.result.maximumGainDbi, takeOffAngleDeg: run.result.takeOffAngleDeg, frontToBackDb: direction.frontToBackDb, beamwidthDeg: direction.beamwidthDeg, resistanceOhm: run.result.resistanceOhm, reactanceOhm: run.result.reactanceOhm, swr: run.result.swr };
     radiationPattern = run.result.radiationPattern; generatedNec = run.result.generatedNec; engine = run.result.engine; warnings = run.result.warnings; totalSegments = run.adapted.segmentation.segments;
   } else if (definition.family === "vertical") {
-    const model = startingVerticalModel(frequencyHz, "elevated-explicit-radials");
-    model.radials.count = Math.round(definition.parameterValue);
-    model.referenceImpedanceOhm = conditions.referenceImpedanceOhm;
-    model.ground = conditions.ground.kind === "perfect" ? { kind: "perfect" } : { kind: "sommerfeld-norton", ...realGround(conditions)! };
+    const model = createWorkflowVerticalModel(frequencyHz, conditions.ground, conditions.radialSystems, definition.parameterValue, conditions.referenceImpedanceOhm);
     const generated = generateVerticalModel(model); const adapted = adaptVerticalToNec(generated); const result = await runVerticalModel(generated, { signal: options.signal });
     const direction = baseMetrics(result.azimuthPattern);
     metrics = { gainDbi: result.maximumGainDbi, takeOffAngleDeg: result.takeOffAngleDeg, frontToBackDb: direction.frontToBackDb, beamwidthDeg: direction.beamwidthDeg, resistanceOhm: result.resistanceOhm, reactanceOhm: result.reactanceOhm, swr: result.swr };
@@ -127,14 +125,8 @@ export async function runComparisonSlot(
     metrics = { gainDbi: result.forwardGainDbi, takeOffAngleDeg: result.takeOffAngleDeg, frontToBackDb: result.frontToBackDb, beamwidthDeg: result.beamwidthDeg, resistanceOhm: result.resistanceOhm, reactanceOhm: result.reactanceOhm, swr: result.swr };
     radiationPattern = result.radiationPattern; generatedNec = result.generatedNec; engine = result.engine; warnings = result.warnings; totalSegments = adapted.segmentation.totalSegments;
   } else {
-    const model = startingPhasedArrayModel(frequencyHz);
+    const model = createWorkflowPhasedModel(frequencyHz, conditions.ground, conditions.radialSystems);
     model.ideal.phase2Deg = definition.parameterValue;
-    model.ground = conditions.ground.kind === "perfect" ? { kind: "perfect" } : { kind: "sommerfeld-norton", ...realGround(conditions)! };
-    if (conditions.ground.kind === "sommerfeld-norton") {
-      const lambda = phasedWavelengthM(frequencyHz);
-      model.elementBaseHeightM = lambda * 0.12;
-      model.radials = { ...model.radials, representation: "elevated-explicit-wires", topology: "independent-per-element", count: 4, lengthM: lambda * 0.25, droopAngleRad: 20 * Math.PI / 180 };
-    }
     const result = await runPhasedArrayModel(generatePhasedArray(model), { signal: options.signal });
     const direction = baseMetrics(result.azimuthPattern);
     metrics = { gainDbi: result.forwardGainDbi, takeOffAngleDeg: result.takeOffAngleDeg, frontToBackDb: result.frontToBackDb, beamwidthDeg: direction.beamwidthDeg, resistanceOhm: null, reactanceOhm: null, swr: null };

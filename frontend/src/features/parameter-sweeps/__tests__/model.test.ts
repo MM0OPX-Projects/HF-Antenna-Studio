@@ -3,7 +3,7 @@ import { MAX_PARAMETER_SWEEP_JOBS, axisValues, buildSweepModel, builtParameterVa
 import type { ParameterId, ParameterSweepDefinition, ParameterSweepFamily } from "../types";
 
 function definition(family: ParameterSweepFamily, axes: ParameterSweepDefinition["axes"], mode: ParameterSweepDefinition["mode"] = "one-dimensional"): ParameterSweepDefinition {
-  return { schemaVersion: 1, mode, family, frequencyMhz: 14.1, ground: { kind: "perfect" }, referenceImpedanceOhm: 50, axes };
+  return { ...createDefaultSweepDefinition(), mode, family, axes };
 }
 
 describe("parameter sweep model planning", () => {
@@ -43,5 +43,24 @@ describe("parameter sweep model planning", () => {
 
   it("provides a valid reproducible default definition", () => {
     expect(validateParameterSweepDefinition(createDefaultSweepDefinition())).toEqual([]);
+  });
+
+  it("rejects near-surface radial-count sweeps below the four-wire geometry limit", () => {
+    const candidate = definition("vertical", [{ parameterId: "radial-count", start: 2, stop: 8, points: 4 }]);
+    candidate.ground = { kind: "sommerfeld-norton", conductivitySPerM: 0.005, relativePermittivity: 13 };
+    candidate.radialSystems = { ...candidate.radialSystems, verticalMode: "near-surface" };
+    expect(validateParameterSweepDefinition(candidate).join(" ")).toContain("must start at four");
+  });
+
+  it("changes exact vertical and phased-array model identity when radial systems change", () => {
+    const vertical = definition("vertical", [{ parameterId: "radial-count", start: 4, stop: 8, points: 2 }]);
+    const elevated = buildSweepModel(vertical, { "radial-count": 4 });
+    const nearSurface = buildSweepModel({ ...vertical, ground: { kind: "sommerfeld-norton", conductivitySPerM: 0.005, relativePermittivity: 13 }, radialSystems: { ...vertical.radialSystems, verticalMode: "near-surface" } }, { "radial-count": 4 });
+    expect(elevated.modelKey).not.toBe(nearSurface.modelKey);
+    expect(nearSurface.family === "vertical" && nearSurface.model.baseHeightM).toBeCloseTo(vertical.radialSystems.nearSurfaceClearanceM, 12);
+
+    const phased = definition("phased-array", [{ parameterId: "array-phase", start: 0, stop: 180, points: 2 }]);
+    const shared = buildSweepModel({ ...phased, ground: { kind: "sommerfeld-norton", conductivitySPerM: 0.005, relativePermittivity: 13 }, radialSystems: { ...phased.radialSystems, phasedMode: "near-surface-shared" } }, { "array-phase": 90 });
+    expect(shared.family === "phased-array" && shared.model.radials.topology).toBe("shared-bonded-network");
   });
 });

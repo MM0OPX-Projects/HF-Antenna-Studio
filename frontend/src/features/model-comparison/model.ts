@@ -1,11 +1,12 @@
 import type { ComparisonConditions, ComparisonFamily, ComparisonSlotDefinition } from "./types";
 import type { SweepConfig } from "../frequency-analyser/types";
+import { createDefaultRadialWorkflowSettings } from "../ground-radials/workflow";
 
 export const COMPARISON_COLORS = ["#3b82f6", "#f59e0b", "#10b981", "#a855f7"] as const;
 
 export const FAMILY_PARAMETERS: Record<ComparisonFamily, { familyLabel: string; parameterLabel: string; unit: string; min: number; max: number; step: number }> = {
   dipole: { familyLabel: "Horizontal dipole", parameterLabel: "Height", unit: "m", min: 0.5, max: 80, step: 0.5 },
-  vertical: { familyLabel: "Elevated vertical", parameterLabel: "Radial count", unit: "", min: 2, max: 32, step: 1 },
+  vertical: { familyLabel: "Quarter-wave vertical", parameterLabel: "Radial count", unit: "", min: 2, max: 32, step: 1 },
   "phased-array": { familyLabel: "Two-element phased array", parameterLabel: "Element 2 phase", unit: "°", min: -360, max: 360, step: 5 },
   yagi: { familyLabel: "Three-element Yagi", parameterLabel: "Boom height", unit: "m", min: 0.5, max: 80, step: 0.5 },
 };
@@ -24,6 +25,21 @@ export const COMPARISON_PRESETS = {
 
 export function clonePreset(name: keyof typeof COMPARISON_PRESETS): ComparisonSlotDefinition[] {
   return COMPARISON_PRESETS[name].map((definition) => ({ ...definition }));
+}
+
+export function createDefaultComparisonConditions(): ComparisonConditions {
+  return {
+    frequencyMhz: 14.1,
+    ground: { kind: "perfect" },
+    radialSystems: createDefaultRadialWorkflowSettings(),
+    referenceImpedanceOhm: 50,
+    azimuthElevationDeg: 10,
+    elevationBearingDeg: 0,
+  };
+}
+
+export function createDefaultComparisonSweep(): SweepConfig {
+  return { mode: "start-stop", startMhz: 13.8, stopMhz: 14.4, points: 11, referenceOhms: 50 };
 }
 
 export function comparisonDefinitionKey(definition: ComparisonSlotDefinition): string {
@@ -46,6 +62,13 @@ export function validateComparisonDefinition(definition: ComparisonSlotDefinitio
   if (!Number.isFinite(definition.parameterValue) || definition.parameterValue < meta.min || definition.parameterValue > meta.max) errors.push(`${meta.parameterLabel} must be between ${meta.min} and ${meta.max}${meta.unit}.`);
   if (definition.family === "vertical" && !Number.isInteger(definition.parameterValue)) errors.push("Radial count must be a whole number.");
   return errors;
+}
+
+export function validateComparisonRadialCounts(definitions: ComparisonSlotDefinition[], conditions: ComparisonConditions): string[] {
+  if (conditions.radialSystems.verticalMode !== "near-surface") return [];
+  return definitions.flatMap((definition, index) => definition.family === "vertical" && definition.parameterValue < 4
+    ? [`Model ${index + 1}: near-surface vertical models require at least four explicit radial wires.`]
+    : []);
 }
 
 export function comparisonConditionWarnings(

@@ -1,5 +1,6 @@
 import type { PatternData } from "../../api/nec";
 import type { AnalyserSweep, SweepConfig } from "../frequency-analyser/types";
+import type { RadialWorkflowSettings } from "../ground-radials/workflow";
 
 export type ComparisonFamily = "dipole" | "vertical" | "phased-array" | "yagi";
 
@@ -16,6 +17,7 @@ export type ComparisonGround =
 export interface ComparisonConditions {
   frequencyMhz: number;
   ground: ComparisonGround;
+  radialSystems: RadialWorkflowSettings;
   referenceImpedanceOhm: 50 | 75;
   azimuthElevationDeg: number;
   elevationBearingDeg: number;

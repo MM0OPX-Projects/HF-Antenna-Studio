@@ -1,7 +1,8 @@
-import { generatePhasedArray, phasedWavelengthM, startingPhasedArrayModel } from "../phased-arrays/model";
+import { generatePhasedArray } from "../phased-arrays/model";
 import type { PhasedArrayModel } from "../phased-arrays/schema";
+import { createDefaultRadialWorkflowSettings, createWorkflowPhasedModel, createWorkflowVerticalModel, validateRadialWorkflowSettings } from "../ground-radials/workflow";
 import { createDefaultDipoleModel, SPEED_OF_LIGHT_M_PER_S, type HorizontalDipoleModel } from "../verified-dipole/model";
-import { generateVerticalModel, startingVerticalModel } from "../vertical-antennas/model";
+import { generateVerticalModel } from "../vertical-antennas/model";
 import type { VerticalAntennaModel } from "../vertical-antennas/schema";
 import { generateYagiModel, startingYagiModel } from "../yagi-beams/model";
 import type { YagiAntennaModel } from "../yagi-beams/schema";
@@ -34,7 +35,7 @@ export const PARAMETER_DEFINITIONS: Record<ParameterId, ParameterDefinition> = {
 
 export const FAMILY_LABELS: Record<ParameterSweepFamily, string> = {
   dipole: "Horizontal dipole",
-  vertical: "Elevated vertical with explicit radials",
+  vertical: "Quarter-wave vertical with explicit radials",
   yagi: "Three-element Yagi",
   "phased-array": "Two-element ideal-current phased array",
 };
@@ -72,7 +73,7 @@ export function defaultAxis(parameterId: ParameterId, frequencyMhz: number, poin
 }
 
 export function createDefaultSweepDefinition(): ParameterSweepDefinition {
-  return { schemaVersion: 1, mode: "one-dimensional", family: "dipole", frequencyMhz: 14.1, ground: { kind: "perfect" }, referenceImpedanceOhm: 50, axes: [defaultAxis("dipole-height", 14.1)] };
+  return { schemaVersion: 2, mode: "one-dimensional", family: "dipole", frequencyMhz: 14.1, ground: { kind: "perfect" }, radialSystems: createDefaultRadialWorkflowSettings(), referenceImpedanceOhm: 50, axes: [defaultAxis("dipole-height", 14.1)] };
 }
 
 export function axisValues(axis: ParameterAxis): number[] {
@@ -94,6 +95,7 @@ export function parameterSweepDefinitionKey(definition: ParameterSweepDefinition
 
 export function validateParameterSweepDefinition(definition: ParameterSweepDefinition): string[] {
   const errors: string[] = [];
+  if (definition.schemaVersion !== 2) errors.push("Unsupported parameter-sweep schema version.");
   const expectedAxes = definition.mode === "one-dimensional" ? 1 : 2;
   if (definition.axes.length !== expectedAxes) errors.push(`${definition.mode === "one-dimensional" ? "One-dimensional" : "Two-dimensional"} sweeps require exactly ${expectedAxes} axis${expectedAxes === 1 ? "" : "es"}.`);
   if (!Number.isFinite(definition.frequencyMhz) || definition.frequencyMhz < 1.8 || definition.frequencyMhz > 54) errors.push("Frequency must be from 1.8 to 54 MHz.");
@@ -101,6 +103,7 @@ export function validateParameterSweepDefinition(definition: ParameterSweepDefin
     if (!Number.isFinite(definition.ground.conductivitySPerM) || definition.ground.conductivitySPerM < 0.00001 || definition.ground.conductivitySPerM > 10) errors.push("Ground conductivity must be from 0.00001 to 10 S/m.");
     if (!Number.isFinite(definition.ground.relativePermittivity) || definition.ground.relativePermittivity < 1 || definition.ground.relativePermittivity > 100) errors.push("Ground relative permittivity must be from 1 to 100.");
   }
+  if (definition.family === "vertical" || definition.family === "phased-array") errors.push(...validateRadialWorkflowSettings(definition.radialSystems, new Set([definition.family]), definition.ground));
   if (new Set(definition.axes.map((axis) => axis.parameterId)).size !== definition.axes.length) errors.push("Two-dimensional axes must use different parameters.");
   definition.axes.forEach((axis, index) => {
     const parameter = PARAMETER_DEFINITIONS[axis.parameterId];
@@ -110,6 +113,7 @@ export function validateParameterSweepDefinition(definition: ParameterSweepDefin
     const maximumPoints = definition.mode === "two-dimensional" ? MAX_TWO_DIMENSIONAL_AXIS_POINTS : MAX_PARAMETER_SWEEP_JOBS;
     if (!Number.isInteger(axis.points) || axis.points < 2 || axis.points > maximumPoints) errors.push(`${prefix} point count must be an integer from 2 to ${maximumPoints}.`);
     if (parameter.integer && (!Number.isInteger(axis.start) || !Number.isInteger(axis.stop))) errors.push(`${prefix} start and stop must be whole numbers.`);
+    if (definition.family === "vertical" && definition.radialSystems.verticalMode === "near-surface" && axis.parameterId === "radial-count" && axis.start < 4) errors.push(`${prefix} near-surface radial-count sweeps must start at four or more explicit wires.`);
     if (new Set(axisValues(axis)).size !== axis.points) errors.push(`${prefix} does not produce ${axis.points} distinct values; reduce the point count or widen the range.`);
   });
   if (parameterSweepJobCount(definition) > MAX_PARAMETER_SWEEP_JOBS) errors.push(`Sweep requests ${parameterSweepJobCount(definition)} jobs; the maximum is ${MAX_PARAMETER_SWEEP_JOBS}.`);
@@ -137,8 +141,8 @@ export function buildSweepModel(definition: ParameterSweepDefinition, values: Pa
     return { family: "dipole", model, modelKey: JSON.stringify(model), issues: [] };
   }
   if (definition.family === "vertical") {
-    let model = startingVerticalModel(frequencyHz, "elevated-explicit-radials");
-    model = { ...model, ground: commonGround(definition), referenceImpedanceOhm: definition.referenceImpedanceOhm, provenance: { ...model.provenance, manualDimensions: true } };
+    let model = createWorkflowVerticalModel(frequencyHz, definition.ground, definition.radialSystems, 4, definition.referenceImpedanceOhm);
+    model = { ...model, provenance: { ...model.provenance, manualDimensions: true } };
     if (values["vertical-length"] !== undefined) model.radiatorLengthM = values["vertical-length"]!;
     if (values["radial-count"] !== undefined) model.radials = { ...model.radials, count: values["radial-count"]! };
     const generated = generateVerticalModel(model);
@@ -152,11 +156,7 @@ export function buildSweepModel(definition: ParameterSweepDefinition, values: Pa
     const generated = generateYagiModel(model);
     return { family: "yagi", model, modelKey: JSON.stringify(model), issues: generated.issues.map((issue) => `${issue.severity}: ${issue.message}`) };
   }
-  let model = startingPhasedArrayModel(frequencyHz);
-  if (definition.ground.kind === "sommerfeld-norton") {
-    const lambda = phasedWavelengthM(frequencyHz);
-    model = { ...model, elementBaseHeightM: lambda * 0.12, ground: commonGround(definition), radials: { ...model.radials, representation: "elevated-explicit-wires", topology: "independent-per-element", count: 4 } };
-  }
+  let model = createWorkflowPhasedModel(frequencyHz, definition.ground, definition.radialSystems);
   if (values["array-spacing"] !== undefined) model.spacingM = values["array-spacing"]!;
   if (values["array-phase"] !== undefined) model.ideal = { ...model.ideal, phase2Deg: values["array-phase"]! };
   model = { ...model, provenance: { ...model.provenance, manualDimensions: true } };

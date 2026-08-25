@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { buildComparisonHtml } from "../exports";
+import { createDefaultComparisonConditions } from "../model";
 import type { ComparisonResult, ComparisonRunConfig } from "../types";
 
-const config: ComparisonRunConfig = { conditions: { frequencyMhz: 14.1, ground: { kind: "perfect" }, referenceImpedanceOhm: 50, azimuthElevationDeg: 10, elevationBearingDeg: 0 }, sweep: { mode: "start-stop", startMhz: 14, stopMhz: 14.2, points: 3, referenceOhms: 50 } };
+const config: ComparisonRunConfig = { conditions: createDefaultComparisonConditions(), sweep: { mode: "start-stop", startMhz: 14, stopMhz: 14.2, points: 3, referenceOhms: 50 } };
 const result: ComparisonResult = {
   slotId: "one", label: "Dipole <unsafe>", color: "#3b82f6", family: "dipole", definitionKey: "definition", conditionKey: "condition", conditions: config.conditions, sweepConfig: config.sweep,
   metrics: { gainDbi: 7, takeOffAngleDeg: 25, frontToBackDb: 0, beamwidthDeg: 90, resistanceOhm: 50, reactanceOhm: 2, swr: 1.04 },
@@ -20,6 +21,8 @@ describe("comparison HTML report", () => {
     expect(html).toContain("Different conditions &lt;warning&gt;");
     expect(html).toContain("No physical port &lt;by design&gt;");
     expect(html).toContain("CM &lt;deck&gt;");
+    expect(html).toContain("Radial definition:");
+    expect(html).toContain("perfect-ground-image");
     expect(html).not.toContain("<unsafe>");
   });
 });

@@ -1,15 +1,24 @@
 import { useAntennaStore } from "../../../stores/antennaStore";
 import { useEditorStore } from "../../../stores/editorStore";
-import { createEditorProject, createSimulatorProject } from "../../../utils/project-file";
-import { captureProject, restoreProject } from "../project-state";
+import { createAntennaOptimiserProject, createEditorProject, createModelComparisonProject, createParameterSweepProject, createSimulatorProject } from "../../../utils/project-file";
+import { clonePreset, createDefaultComparisonConditions, createDefaultComparisonSweep } from "../../model-comparison/model";
+import { createDefaultSweepDefinition } from "../../parameter-sweeps/model";
+import { createDefaultOptimisationDefinition } from "../../antenna-optimiser/model";
+import { captureProject, projectModeForRoute, restoreProject, routeForProjectMode } from "../project-state";
 
 describe("managed project state", () => {
   const originalSimulator = captureProject("simulator");
   const originalEditor = captureProject("editor");
+  const originalComparison = captureProject("model-comparison");
+  const originalSweep = captureProject("parameter-sweep");
+  const originalOptimiser = captureProject("antenna-optimiser");
 
   afterEach(() => {
     restoreProject(originalSimulator);
     restoreProject(originalEditor);
+    restoreProject(originalComparison);
+    restoreProject(originalSweep);
+    restoreProject(originalOptimiser);
   });
 
   it("restores simulator parameters, ground, and explicit sweep intent", () => {
@@ -59,5 +68,38 @@ describe("managed project state", () => {
     expect(state.ground).toEqual({ type: "custom", custom_conductivity: 0.005, custom_permittivity: 13 });
     expect(state.frequencySegments).toEqual([{ start_mhz: 28, stop_mhz: 29, steps: 7 }]);
     expect(state.geometryGroundFlag).toBe(-1);
+  });
+
+  it("restores comparison radial topology and maps every managed workflow route", () => {
+    const conditions = createDefaultComparisonConditions();
+    conditions.ground = { kind: "sommerfeld-norton", conductivitySPerM: 0.002, relativePermittivity: 15 };
+    conditions.radialSystems = { ...conditions.radialSystems, verticalMode: "near-surface", phasedMode: "near-surface-shared", phasedRadialCount: 24 };
+    restoreProject(createModelComparisonProject(clonePreset("vertical"), conditions, createDefaultComparisonSweep()));
+    const captured = captureProject("model-comparison");
+    expect(captured.modelComparison?.conditions.radialSystems).toMatchObject({ verticalMode: "near-surface", phasedMode: "near-surface-shared", phasedRadialCount: 24 });
+    expect(projectModeForRoute("/model-comparison")).toBe("model-comparison");
+    expect(projectModeForRoute("/parameter-sweeps")).toBe("parameter-sweep");
+    expect(projectModeForRoute("/antenna-optimiser")).toBe("antenna-optimiser");
+    expect(routeForProjectMode("model-comparison")).toBe("/model-comparison");
+  });
+
+  it("restores parameter-sweep and optimiser input definitions without cached results", () => {
+    const sweep = createDefaultSweepDefinition();
+    sweep.family = "phased-array";
+    sweep.ground = { kind: "sommerfeld-norton", conductivitySPerM: 0.003, relativePermittivity: 18 };
+    sweep.radialSystems = { ...sweep.radialSystems, phasedMode: "near-surface-shared", phasedRadialCount: 20 };
+    sweep.axes = [{ parameterId: "array-phase", start: 0, stop: 360, points: 5 }];
+    restoreProject(createParameterSweepProject(sweep));
+    expect(captureProject("parameter-sweep").parameterSweep?.definition).toMatchObject({ family: "phased-array", radialSystems: { phasedMode: "near-surface-shared", phasedRadialCount: 20 } });
+
+    const optimiser = createDefaultOptimisationDefinition();
+    optimiser.family = "phased-array";
+    optimiser.ground = structuredClone(sweep.ground);
+    optimiser.radialSystems = structuredClone(sweep.radialSystems);
+    optimiser.variables = [{ parameterId: "array-phase", minimum: 0, maximum: 360 }];
+    optimiser.objective.kind = "maximum-forward-gain";
+    optimiser.objective.weights = { ...optimiser.objective.weights, swr: 0, resistance: 0, reactance: 0 };
+    restoreProject(createAntennaOptimiserProject(optimiser));
+    expect(captureProject("antenna-optimiser").antennaOptimiser?.definition).toMatchObject({ family: "phased-array", radialSystems: { phasedMode: "near-surface-shared", phasedRadialCount: 20 } });
   });
 });

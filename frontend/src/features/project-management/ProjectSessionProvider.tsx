@@ -21,7 +21,9 @@ import {
 import {
   captureProject,
   createNewProject,
+  isManagedProjectRoute,
   projectModeForRoute,
+  routeForProjectMode,
   restoreProject,
   type ManagedProjectMode,
 } from "./project-state";
@@ -60,7 +62,7 @@ interface ProjectSessionValue {
 const ProjectSessionContext = createContext<ProjectSessionValue | null>(null);
 
 function projectFingerprint(project: ProjectFile): string {
-  return JSON.stringify({ mode: project.mode, simulator: project.simulator, editor: project.editor });
+  return JSON.stringify({ mode: project.mode, simulator: project.simulator, editor: project.editor, modelComparison: project.modelComparison, parameterSweep: project.parameterSweep, antennaOptimiser: project.antennaOptimiser });
 }
 
 function filenameStem(filename: string): string {
@@ -108,7 +110,7 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     routeRef.current = location.pathname;
-    if (location.pathname === "/editor" || location.pathname === "/") {
+    if (isManagedProjectRoute(location.pathname)) {
       const nextMode = projectModeForRoute(location.pathname);
       modeRef.current = nextMode;
       fingerprintRef.current = projectFingerprint(captureProject(nextMode));
@@ -222,7 +224,7 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
       const recovered: RecoveryRecord = {
         schemaVersion: 1,
         savedAt: new Date().toISOString(),
-        route: mode === "editor" ? "/editor" : "/",
+        route: routeForProjectMode(mode),
         projectId: null,
         projectRevision: null,
         projectName: "Untitled project",
@@ -232,7 +234,7 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
       setRecovery(recovered);
       setStatus("dirty");
       setError(null);
-      navigate(mode === "editor" ? "/editor" : "/");
+      navigate(routeForProjectMode(mode));
     } finally {
       restoringRef.current = false;
     }
@@ -284,7 +286,7 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
     setLastSavedAt(record.updatedAt);
     setStatus("saved");
     setError(null);
-    navigate(record.project.mode === "editor" ? "/editor" : "/");
+    navigate(routeForProjectMode(record.project.mode));
   }, [beginRestore, library, navigate]);
 
   const rename = useCallback((id: string, name: string) => {
@@ -361,7 +363,7 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
     setCurrent(matching);
     setStatus("dirty");
     setError(null);
-    navigate(recovered.project.mode === "editor" ? "/editor" : "/");
+    navigate(routeForProjectMode(recovered.project.mode));
   }, [beginRestore, library, navigate]);
 
   const discardRecovery = useCallback(() => {

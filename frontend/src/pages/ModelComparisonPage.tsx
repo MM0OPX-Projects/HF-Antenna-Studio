@@ -1,17 +1,18 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Card } from "../components/ui/Card";
+import { ProjectActions } from "../components/ui/ProjectActions";
 import { HeightPolarPlot, type PolarSeries } from "../features/height-lab/HeightPolarPlot";
 import type { PatternDisplayMode } from "../features/height-lab/types";
 import { ComparisonSweepChart } from "../features/model-comparison/ComparisonSweepChart";
 import { exportComparisonHtml } from "../features/model-comparison/exports";
-import { COMPARISON_COLORS, COMPARISON_PRESETS, FAMILY_PARAMETERS, clonePreset, comparisonConditionKey, comparisonConditionWarnings, comparisonDefinitionKey, validateComparisonDefinition } from "../features/model-comparison/model";
+import { GroundRadialWorkflowControls } from "../features/ground-radials/GroundRadialWorkflowControls";
+import { radialSettingsForGround, radialWorkflowSummary, validateRadialWorkflowSettings } from "../features/ground-radials/workflow";
+import { COMPARISON_COLORS, COMPARISON_PRESETS, FAMILY_PARAMETERS, clonePreset, comparisonConditionKey, comparisonConditionWarnings, comparisonDefinitionKey, validateComparisonDefinition, validateComparisonRadialCounts } from "../features/model-comparison/model";
 import { runComparisonSlot } from "../features/model-comparison/service";
 import type { ComparisonConditions, ComparisonFamily, ComparisonResult, ComparisonRunPhase, ComparisonSlotDefinition } from "../features/model-comparison/types";
 import { validateSweepConfig } from "../features/frequency-analyser/math";
 import type { SweepConfig } from "../features/frequency-analyser/types";
-
-const DEFAULT_CONDITIONS: ComparisonConditions = { frequencyMhz: 14.1, ground: { kind: "perfect" }, referenceImpedanceOhm: 50, azimuthElevationDeg: 10, elevationBearingDeg: 0 };
-const DEFAULT_SWEEP: SweepConfig = { mode: "start-stop", startMhz: 13.8, stopMhz: 14.4, points: 11, referenceOhms: 50 };
+import { captureProject, getComparisonWorkspace, setComparisonWorkspace } from "../features/project-management/project-state";
 
 function NumericInput({ label, value, onChange, min, max, step, testId }: { label: string; value: number; onChange: (value: number) => void; min: number; max: number; step: number; testId: string }) {
   return <label className="space-y-1"><span className="text-[10px] uppercase tracking-wide text-text-secondary">{label}</span><input data-testid={testId} type="number" value={value} min={min} max={max} step={step} onChange={(event) => onChange(event.target.valueAsNumber)} className="w-full rounded-md border border-border bg-background px-2 py-2 font-mono text-sm outline-none focus:border-accent" /></label>;
@@ -22,9 +23,10 @@ function metric(value: number | null, digits: number, unit: string) {
 }
 
 export function ModelComparisonPage() {
-  const [definitions, setDefinitions] = useState<ComparisonSlotDefinition[]>(() => clonePreset("mixed"));
-  const [conditions, setConditions] = useState<ComparisonConditions>(DEFAULT_CONDITIONS);
-  const [sweep, setSweep] = useState<SweepConfig>(DEFAULT_SWEEP);
+  const [initialWorkspace] = useState(() => getComparisonWorkspace());
+  const [definitions, setDefinitions] = useState<ComparisonSlotDefinition[]>(initialWorkspace.definitions);
+  const [conditions, setConditions] = useState<ComparisonConditions>(initialWorkspace.conditions);
+  const [sweep, setSweep] = useState<SweepConfig>(initialWorkspace.sweep);
   const [results, setResults] = useState<ComparisonResult[]>([]);
   const [phase, setPhase] = useState<ComparisonRunPhase>("idle");
   const [progress, setProgress] = useState(0);
@@ -32,13 +34,18 @@ export function ModelComparisonPage() {
   const [patternMode, setPatternMode] = useState<PatternDisplayMode>("normalised");
   const controllerRef = useRef<AbortController | null>(null);
 
+  useEffect(() => { setComparisonWorkspace({ definitions, conditions, sweep }); }, [conditions, definitions, sweep]);
+  const captureCurrentProject = () => { setComparisonWorkspace({ definitions, conditions, sweep }); return captureProject("model-comparison"); };
+
   const validationErrors = useMemo(() => [
     ...definitions.flatMap((definition, index) => validateComparisonDefinition(definition).map((message) => `Model ${index + 1}: ${message}`)),
+    ...validateComparisonRadialCounts(definitions, conditions),
     ...(!Number.isFinite(conditions.frequencyMhz) || conditions.frequencyMhz < 1.8 || conditions.frequencyMhz > 54 ? ["Common frequency must be from 1.8 to 54 MHz."] : []),
     ...(!Number.isFinite(conditions.azimuthElevationDeg) || conditions.azimuthElevationDeg < 10 || conditions.azimuthElevationDeg > 90 || conditions.azimuthElevationDeg % 10 !== 0 ? ["Azimuth-cut elevation must be a 10° increment from 10° to 90° so every family uses the same solved grid sample."] : []),
     ...(!Number.isFinite(conditions.elevationBearingDeg) || conditions.elevationBearingDeg < 0 || conditions.elevationBearingDeg > 350 || conditions.elevationBearingDeg % 10 !== 0 ? ["Elevation-cut bearing must be a 10° increment from 0° to 350° so every family uses the same solved grid sample."] : []),
     ...(conditions.ground.kind === "sommerfeld-norton" && (!Number.isFinite(conditions.ground.conductivitySPerM) || conditions.ground.conductivitySPerM < 0.00001 || conditions.ground.conductivitySPerM > 10) ? ["Ground conductivity must be from 0.00001 to 10 S/m."] : []),
     ...(conditions.ground.kind === "sommerfeld-norton" && (!Number.isFinite(conditions.ground.relativePermittivity) || conditions.ground.relativePermittivity < 1 || conditions.ground.relativePermittivity > 100) ? ["Relative permittivity must be from 1 to 100."] : []),
+    ...validateRadialWorkflowSettings(conditions.radialSystems, new Set(definitions.flatMap((definition) => definition.family === "vertical" || definition.family === "phased-array" ? [definition.family] : [])), conditions.ground),
     ...validateSweepConfig(sweep),
   ], [conditions, definitions, sweep]);
   const warnings = useMemo(() => comparisonConditionWarnings(results, definitions, conditions, sweep), [conditions, definitions, results, sweep]);
@@ -48,6 +55,7 @@ export function ModelComparisonPage() {
   const elevationSeries: PolarSeries[] = compatibleResults.map((result) => ({ id: result.slotId, label: result.label, color: result.color, points: result.elevationPattern }));
 
   const updateConditions = (update: Partial<ComparisonConditions>) => setConditions((current) => ({ ...current, ...update }));
+  const updateGround = (ground: ComparisonConditions["ground"]) => setConditions((current) => ({ ...current, ground, radialSystems: radialSettingsForGround(current.radialSystems, ground.kind) }));
   const updateFrequency = (frequencyMhz: number) => {
     updateConditions({ frequencyMhz });
     if (Number.isFinite(frequencyMhz)) setSweep((current) => ({ ...current, startMhz: Math.max(1.8, Number((frequencyMhz * 0.975).toFixed(6))), stopMhz: Math.min(54, Number((frequencyMhz * 1.025).toFixed(6))) }));
@@ -81,12 +89,12 @@ export function ModelComparisonPage() {
 
   return <main className="min-h-0 flex-1 overflow-y-auto bg-background px-4 py-5" data-testid="model-comparison-page">
     <div className="mx-auto max-w-[1600px] space-y-4">
-      <header className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">Controlled NEC comparison</p><h1 className="text-2xl font-bold">Model Comparison</h1><p className="mt-1 max-w-4xl text-sm text-text-secondary">Solve four antenna models under one frequency and ground definition. Only matching, current results share radiation and sweep overlays; incompatible snapshots remain visibly warned.</p></div><button data-testid="export-comparison-html" type="button" disabled={results.length === 0 || phase === "running"} onClick={() => exportComparisonHtml(results, { conditions, sweep }, warnings)} className="rounded-md border border-border px-3 py-2 text-xs font-semibold text-text-secondary hover:border-accent disabled:opacity-40">Export HTML report</button></header>
+      <header className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">Controlled NEC comparison</p><h1 className="text-2xl font-bold">Model Comparison</h1><p className="mt-1 max-w-4xl text-sm text-text-secondary">Solve four antenna models under one frequency and ground definition. Only matching, current results share radiation and sweep overlays; incompatible snapshots remain visibly warned.</p></div><div className="flex flex-wrap gap-2"><ProjectActions onSave={captureCurrentProject} /><button data-testid="export-comparison-html" type="button" disabled={results.length === 0 || phase === "running"} onClick={() => exportComparisonHtml(results, { conditions, sweep }, warnings)} className="rounded-md border border-border px-3 py-2 text-xs font-semibold text-text-secondary hover:border-accent disabled:opacity-40">Export HTML report</button></div></header>
 
       <Card className="space-y-4 p-4" data-testid="comparison-conditions"><div className="flex flex-wrap items-center justify-between gap-2"><div><h2 className="font-semibold">Common comparison conditions</h2><p className="text-xs text-text-secondary">These controls apply to every model in the next run. Existing snapshots are retained only to expose a mismatch.</p></div><span className="text-xs text-accent" data-testid="comparison-condition-summary">{conditions.frequencyMhz.toFixed(3)} MHz · {groundText} · {conditions.referenceImpedanceOhm} Ω</span></div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8">
           <NumericInput label="Frequency (MHz)" value={conditions.frequencyMhz} min={1.8} max={54} step={0.001} testId="comparison-frequency" onChange={updateFrequency} />
-          <label className="space-y-1"><span className="text-[10px] uppercase tracking-wide text-text-secondary">Ground model</span><select data-testid="comparison-ground" value={conditions.ground.kind} onChange={(event) => updateConditions({ ground: event.target.value === "perfect" ? { kind: "perfect" } : { kind: "sommerfeld-norton", conductivitySPerM: 0.005, relativePermittivity: 13 } })} className="w-full rounded-md border border-border bg-background px-2 py-2 text-sm"><option value="perfect">Perfect</option><option value="sommerfeld-norton">Sommerfeld/Norton</option></select></label>
+          <label className="space-y-1"><span className="text-[10px] uppercase tracking-wide text-text-secondary">Ground model</span><select data-testid="comparison-ground" value={conditions.ground.kind} onChange={(event) => updateGround(event.target.value === "perfect" ? { kind: "perfect" } : { kind: "sommerfeld-norton", conductivitySPerM: 0.005, relativePermittivity: 13 })} className="w-full rounded-md border border-border bg-background px-2 py-2 text-sm"><option value="perfect">Perfect</option><option value="sommerfeld-norton">Sommerfeld/Norton</option></select></label>
           {conditions.ground.kind === "sommerfeld-norton" && <><NumericInput label="Conductivity (S/m)" value={conditions.ground.conductivitySPerM} min={0.00001} max={10} step={0.001} testId="comparison-conductivity" onChange={(conductivitySPerM) => setConditions((current) => current.ground.kind === "sommerfeld-norton" ? { ...current, ground: { ...current.ground, conductivitySPerM } } : current)} /><NumericInput label="Relative permittivity" value={conditions.ground.relativePermittivity} min={1} max={100} step={1} testId="comparison-permittivity" onChange={(relativePermittivity) => setConditions((current) => current.ground.kind === "sommerfeld-norton" ? { ...current, ground: { ...current.ground, relativePermittivity } } : current)} /></>}
           <label className="space-y-1"><span className="text-[10px] uppercase tracking-wide text-text-secondary">Reference impedance</span><select data-testid="comparison-reference" value={conditions.referenceImpedanceOhm} onChange={(event) => { const referenceImpedanceOhm = Number(event.target.value) as 50 | 75; updateConditions({ referenceImpedanceOhm }); setSweep((current) => ({ ...current, referenceOhms: referenceImpedanceOhm })); }} className="w-full rounded-md border border-border bg-background px-2 py-2 text-sm"><option value="50">50 Ω</option><option value="75">75 Ω</option></select></label>
           <NumericInput label="Azimuth elevation (°)" value={conditions.azimuthElevationDeg} min={10} max={90} step={10} testId="comparison-azimuth-elevation" onChange={(azimuthElevationDeg) => updateConditions({ azimuthElevationDeg })} />
@@ -95,10 +103,11 @@ export function ModelComparisonPage() {
           <NumericInput label="Sweep stop (MHz)" value={sweep.stopMhz} min={1.8} max={54} step={0.001} testId="comparison-sweep-stop" onChange={(stopMhz) => setSweep((current) => ({ ...current, stopMhz }))} />
           <NumericInput label="Sweep points" value={sweep.points} min={3} max={401} step={1} testId="comparison-sweep-points" onChange={(points) => setSweep((current) => ({ ...current, points }))} />
         </div>
+        <GroundRadialWorkflowControls settings={conditions.radialSystems} showVertical={definitions.some((definition) => definition.family === "vertical")} showPhased={definitions.some((definition) => definition.family === "phased-array")} prefix="comparison" onChange={(radialSystems) => updateConditions({ radialSystems })} />
       </Card>
 
       <section className="space-y-3"><div className="flex flex-wrap items-center justify-between gap-2"><div><h2 className="font-semibold">Four model slots</h2><p className="text-xs text-text-secondary">Frequency-based dimensions are starting values, not resonance guarantees. The highlighted parameter is changed without tuning the model to expected results.</p></div><div className="flex flex-wrap gap-1">{(["mixed", "dipole", "vertical", "phased", "yagi"] as const).map((name) => <button key={name} type="button" data-testid={`comparison-preset-${name}`} onClick={() => applyPreset(name)} className="rounded border border-border px-2 py-1 text-xs capitalize text-text-secondary hover:border-accent">{name === "mixed" ? "Mixed example" : `${name} example`}</button>)}</div></div>
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">{definitions.map((definition, index) => { const meta = FAMILY_PARAMETERS[definition.family]; return <Card key={definition.id} className="space-y-3 p-3" data-testid={`comparison-slot-${index + 1}`}><div className="flex items-center justify-between"><span className="font-mono text-xs text-text-secondary">Model {index + 1}</span><span className="h-2.5 w-8 rounded" style={{ background: COMPARISON_COLORS[index] }} /></div><label className="space-y-1"><span className="text-[10px] uppercase tracking-wide text-text-secondary">Antenna family</span><select data-testid={`comparison-family-${index + 1}`} value={definition.family} onChange={(event) => chooseFamily(definition.id, event.target.value as ComparisonFamily)} className="w-full rounded-md border border-border bg-background px-2 py-2 text-sm"><option value="dipole">Horizontal dipole</option><option value="vertical">Elevated vertical</option><option value="phased-array">Two-element phased array</option><option value="yagi">Three-element Yagi</option></select></label><NumericInput label={`${meta.parameterLabel} ${meta.unit ? `(${meta.unit})` : ""}`} value={definition.parameterValue} min={meta.min} max={meta.max} step={meta.step} testId={`comparison-parameter-${index + 1}`} onChange={(parameterValue) => updateSlot(definition.id, { parameterValue })} /><p className="text-[10px] leading-relaxed text-text-secondary">{definition.family === "phased-array" ? "Ideal relative-current mode; no single input impedance exists." : definition.family === "vertical" ? "Explicit elevated radial wires over the common ground." : "Dimensions rescale from the common frequency; height remains exact."}</p></Card>; })}</div>
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">{definitions.map((definition, index) => { const meta = FAMILY_PARAMETERS[definition.family]; return <Card key={definition.id} className="space-y-3 p-3" data-testid={`comparison-slot-${index + 1}`}><div className="flex items-center justify-between"><span className="font-mono text-xs text-text-secondary">Model {index + 1}</span><span className="h-2.5 w-8 rounded" style={{ background: COMPARISON_COLORS[index] }} /></div><label className="space-y-1"><span className="text-[10px] uppercase tracking-wide text-text-secondary">Antenna family</span><select data-testid={`comparison-family-${index + 1}`} value={definition.family} onChange={(event) => chooseFamily(definition.id, event.target.value as ComparisonFamily)} className="w-full rounded-md border border-border bg-background px-2 py-2 text-sm"><option value="dipole">Horizontal dipole</option><option value="vertical">Quarter-wave vertical</option><option value="phased-array">Two-element phased array</option><option value="yagi">Three-element Yagi</option></select></label><NumericInput label={`${meta.parameterLabel} ${meta.unit ? `(${meta.unit})` : ""}`} value={definition.parameterValue} min={meta.min} max={meta.max} step={meta.step} testId={`comparison-parameter-${index + 1}`} onChange={(parameterValue) => updateSlot(definition.id, { parameterValue })} /><p className="text-[10px] leading-relaxed text-text-secondary">{definition.family === "phased-array" ? `Ideal relative-current mode; ${radialWorkflowSummary(conditions.radialSystems, "phased-array")}; no single input impedance exists.` : definition.family === "vertical" ? radialWorkflowSummary(conditions.radialSystems, "vertical") : "Dimensions rescale from the common frequency; height remains exact."}</p></Card>; })}</div>
       </section>
 
       {validationErrors.length > 0 && <ul className="rounded border border-red-500/40 bg-red-500/5 p-3 text-xs text-red-500" data-testid="comparison-errors">{validationErrors.map((message) => <li key={message}>{message}</li>)}</ul>}

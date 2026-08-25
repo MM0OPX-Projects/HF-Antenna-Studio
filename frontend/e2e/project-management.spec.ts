@@ -76,10 +76,29 @@ test("recovery survives reload and legacy imports are reviewed before migration"
     mimeType: "application/json",
     buffer: Buffer.from(JSON.stringify(legacy, null, 2)),
   });
-  await expect(page.getByText("Source schema 1; current schema 4.")).toBeVisible();
+  await expect(page.getByText("Source schema 1; current schema 5.")).toBeVisible();
   await expect(page.getByText(/explicit sweep intent was unavailable/)).toBeVisible();
   await page.getByRole("button", { name: "Import and open" }).click();
   await expect(page).toHaveURL(/\/$/);
   await page.goto("/projects");
   await expect(page.getByRole("heading", { name: "legacy-dipole" })).toBeVisible();
+});
+
+test("comparison projects reopen with exact real-ground radial identity", async ({ page }) => {
+  await openProjects(page);
+  await page.getByRole("button", { name: "New comparison" }).click();
+  await expect(page).toHaveURL(/\/model-comparison$/);
+  await page.getByTestId("comparison-preset-vertical").click();
+  await page.getByTestId("comparison-ground").selectOption("sommerfeld-norton");
+  await page.getByTestId("comparison-vertical-radial-mode").selectOption("near-surface");
+  await page.getByTestId("comparison-radial-clearance").fill("15");
+  await page.locator('button[title^="Save project"]').click();
+  await expect(page).toHaveURL(/\/projects$/);
+  await page.getByLabel("Project name").fill("Ground radial comparison");
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await page.getByRole("article").filter({ has: page.getByRole("heading", { name: "Ground radial comparison" }) }).getByRole("button", { name: "Open" }).click();
+  await expect(page).toHaveURL(/\/model-comparison$/);
+  await expect(page.getByTestId("comparison-ground")).toHaveValue("sommerfeld-norton");
+  await expect(page.getByTestId("comparison-vertical-radial-mode")).toHaveValue("near-surface");
+  await expect(page.getByTestId("comparison-radial-clearance")).toHaveValue("15");
 });

@@ -57,6 +57,18 @@ test("directional objectives, two dimensions, weights and constraints remain exp
   await expect(page.getByTestId("best-solution-found")).toContainText("Local bounded search");
 });
 
+test("vertical and phased-array searches expose explicit compatible radial topology", async ({ page }) => {
+  await openOptimiser(page);
+  await page.getByTestId("optimiser-family").selectOption("vertical");
+  await page.getByTestId("optimiser-ground").selectOption("sommerfeld-norton");
+  await page.getByTestId("optimiser-vertical-radial-mode").selectOption("near-surface");
+  await expect(page.getByTestId("optimiser-radial-clearance")).toBeVisible();
+  await page.getByTestId("optimiser-family").selectOption("phased-array");
+  await expect(page.getByTestId("optimiser-phased-radial-mode")).toHaveValue("near-surface-shared");
+  await page.getByTestId("optimiser-phased-radial-count").fill("24");
+  await expect(page.getByTestId("run-optimisation")).toBeEnabled();
+});
+
 test("evaluation limits, cancellation and narrow layout protect the UI", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await openOptimiser(page);
