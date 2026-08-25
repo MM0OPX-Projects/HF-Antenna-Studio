@@ -16,7 +16,7 @@
     "dev": "vite --host 0.0.0.0",
     "dev:wasm": "cross-env VITE_ENGINE=wasm vite --host 0.0.0.0",
     "build": "tsc -b && vite build",
-    "build:wasm": "cross-env VITE_ENGINE=wasm npm run build",
+    "build:wasm": "tsc -b && cross-env VITE_ENGINE=wasm vite build",
     "preview": "vite preview",
     "lint": "eslint .",
     "type-check": "tsc --noEmit",
