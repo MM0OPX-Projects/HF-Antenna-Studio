@@ -4,6 +4,7 @@
  */
 
 import { useCallback, useState } from "react";
+import { Link } from "react-router-dom";
 import { Card } from "../ui/Card";
 import { templates } from "../../templates";
 import type { AntennaTemplate } from "../../templates/types";
@@ -53,26 +54,37 @@ export function TemplatePicker({ selectedId, onSelect }: TemplatePickerProps) {
 
       {/* Selected template card (always shown as compact summary) */}
       {!expanded && (
-        <Card
-          selected
-          onClick={() => setExpanded(true)}
-          className="px-3 py-2 cursor-pointer"
-        >
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-mono w-8 text-center shrink-0">
-              {selectedTemplate.icon}
-            </span>
-            <div className="min-w-0 flex-1">
-              <div className="text-sm font-medium text-text-primary truncate">
-                {selectedTemplate.nameShort}
+        <>
+          <Card
+            selected
+            onClick={() => setExpanded(true)}
+            className="px-3 py-2 cursor-pointer"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-mono w-8 text-center shrink-0">
+                {selectedTemplate.icon}
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-medium text-text-primary truncate">
+                  {selectedTemplate.nameShort}
+                </div>
+                <div className="text-[11px] text-text-secondary truncate">
+                  {selectedTemplate.description}
+                </div>
               </div>
-              <div className="text-[11px] text-text-secondary truncate">
-                {selectedTemplate.description}
-              </div>
+              <span className="text-[10px] text-text-secondary">Change</span>
             </div>
-            <span className="text-[10px] text-text-secondary">Change</span>
-          </div>
-        </Card>
+          </Card>
+          {selectedTemplate.id === "vertical" && (
+            <div className="rounded-md border border-emerald-500/30 bg-emerald-500/10 p-2.5 text-[11px] leading-relaxed text-text-secondary" data-testid="vertical-template-scope">
+              <b className="text-text-primary">This template is an elevated ground plane.</b>{" "}
+              For ground-mounted radials, soil controls, or an ideal monopole, open the{" "}
+              <Link to="/vertical-antennas" className="font-semibold text-emerald-500 underline underline-offset-2">Vertical laboratory</Link>.
+              For two-element arrays, use the{" "}
+              <Link to="/phased-arrays" className="font-semibold text-orange-500 underline underline-offset-2">Phased Arrays laboratory</Link>.
+            </div>
+          )}
+        </>
       )}
 
       {/* Expanded template list */}

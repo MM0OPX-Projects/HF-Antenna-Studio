@@ -68,4 +68,4 @@ Set-Location ..
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\package-windows.ps1 -SkipDependencyInstall
 ```
 
-The package script verifies synchronized versions and creates the installer and `package-manifest.json` under `src-tauri\target\release\bundle\nsis`. The clean Windows workflow additionally installs, launches, executes a real solver calculation with networking disabled, checks logs and registration, uninstalls, and verifies user-data preservation. See [WINDOWS_PACKAGING.md](WINDOWS_PACKAGING.md).
+The package script verifies synchronized versions and creates the installer and `package-manifest.json` under `src-tauri\target\release\bundle\nsis`. The clean Windows workflow additionally installs, launches, executes real verified-dipole and post-v1 explicit-radial solver calculations with networking disabled, checks logs and registration, returns to the start screen, uninstalls, and verifies user-data preservation. See [WINDOWS_PACKAGING.md](WINDOWS_PACKAGING.md).

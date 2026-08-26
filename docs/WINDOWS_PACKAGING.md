@@ -129,12 +129,15 @@ The clean `windows-latest` workflow performs:
 - installed WebView2 startup;
 - package identity and diagnostic IPC checks;
 - a real verified-dipole solve while the WebView context is offline;
+- real single-vertical and phased-array solves using explicit raised radial wires over Sommerfeld/Norton ground while the WebView context is offline;
 - rejection of any external HTTP/HTTPS request during that solve;
 - diagnostic-log creation;
 - silent uninstall and launcher removal; and
 - uninstall/reinstall confirmation that an actual WebView local-storage sentinel survives, plus an application-data-directory preservation check.
 
 The workflow artifact is a release-candidate build, retained for 14 days. The exact accepted installer is promoted to the GitHub release with its manifest, corresponding-source ZIP and source checksum. It is unsigned. SmartScreen reputation, code signing, upgrade/repair, Windows ARM64, enterprise policy, non-ASCII Windows profiles, endpoint security, 100–200% DPI, High Contrast, Narrator, GPU/software rendering, and a genuinely air-gapped installer remain accepted unvalidated platform combinations rather than v1.0.0 claims.
+
+The post-v1 ground-radial branch extends the installed-app smoke beyond the frozen v1 dipole gate. The browser-equivalent offline checks pass locally; the native install/uninstall rerun requires the Windows Rust/NSIS build host and remains pending until the branch can run there. Once that gate passes, it proves bundled solver execution, current-table parsing, navigation, and absence of external requests for the exact raised-wire models. It does not broaden the numerical-validation limits in `VALIDATION_REPORT.md`.
 
 ## Known limitations
 

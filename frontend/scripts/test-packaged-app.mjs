@@ -47,6 +47,14 @@ page.on("request", (request) => {
   }
 });
 
+async function navigateTo(path, heading) {
+  await page.evaluate((nextPath) => {
+    history.pushState({}, "", nextPath);
+    dispatchEvent(new PopStateEvent("popstate"));
+  }, path);
+  await page.getByRole("heading", { name: heading }).waitFor({ timeout: 30_000 });
+}
+
 await page.waitForLoadState("domcontentloaded");
 await page.evaluate(({ key, contentId }) => {
   localStorage.setItem(key, JSON.stringify({ contentId, seenAt: Date.now() }));
@@ -61,11 +69,7 @@ await page.getByRole("link", { name: /^HF Antenna Studio/ }).waitFor({
 });
 const changelog = page.getByRole("button", { name: "Got it" });
 await changelog.waitFor({ state: "hidden", timeout: 15_000 });
-await page.evaluate(() => {
-  history.pushState({}, "", "/verified-dipole");
-  dispatchEvent(new PopStateEvent("popstate"));
-});
-await page.getByRole("heading", { name: "Centre-fed horizontal dipole" }).waitFor({ timeout: 15_000 });
+await navigateTo("/verified-dipole", "Centre-fed horizontal dipole");
 
 const runtime = await page.evaluate(async () => window.__TAURI__.core.invoke("get_runtime_info"));
 if (!runtime.packaged || runtime.version !== expectedVersion) {
@@ -84,6 +88,33 @@ if (phase === "initial") {
   const resultText = await page.getByTestId("dipole-results").innerText();
   if (!resultText.includes("Ω")) throw new Error("Packaged solver result did not contain impedance units.");
   await page.getByText("wasm-nec2c", { exact: false }).waitFor();
+
+  await navigateTo("/vertical-antennas", "Vertical antennas");
+  await page.getByTestId("vertical-mode-ground-mounted-explicit-radials").click();
+  await page.getByTestId("run-vertical-nec").click();
+  await page.getByTestId("vertical-results").waitFor({ timeout: 60_000 });
+  const verticalDeck = await page.getByTestId("vertical-generated-nec").innerText();
+  if (!verticalDeck.includes("GE -1\nGN 2")) throw new Error("Packaged ground-mounted vertical did not use the explicit real-ground radial deck.");
+  await page.getByTestId("radial-current-path").waitFor({ timeout: 15_000 });
+
+  await navigateTo("/phased-arrays", "Two-element phased vertical arrays");
+  await page.getByTestId("phased-radial-mode").selectOption("near-surface-explicit-wires");
+  await page.getByTestId("phased-generated-nec")
+    .filter({ hasText: "topology: shared-bonded-network" })
+    .filter({ hasText: "GE -1\nGN 2" })
+    .waitFor({ timeout: 30_000 });
+  await page.getByTestId("phased-results").waitFor({ timeout: 120_000 });
+  const phasedDeck = await page.getByTestId("phased-generated-nec").innerText();
+  if (!phasedDeck.includes("topology: shared-bonded-network") || !phasedDeck.includes("GE -1\nGN 2")) {
+    throw new Error("Packaged phased array did not use the explicit shared real-ground radial deck.");
+  }
+  await page.getByTestId("phased-current-visualisation").waitFor({ timeout: 15_000 });
+
+  await page.evaluate(() => {
+    history.pushState({}, "", "/");
+    dispatchEvent(new PopStateEvent("popstate"));
+  });
+  await page.getByRole("button", { name: /Run( Simulation)?/ }).first().waitFor({ timeout: 15_000 });
 } else if (phase === "verify-preserved") {
   const preserved = await page.evaluate((key) => localStorage.getItem(key), storageKey);
   if (preserved !== storageValue) throw new Error("WebView project-profile storage did not survive uninstall/reinstall.");

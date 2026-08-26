@@ -30,6 +30,8 @@ The Vertical Antennas laboratory offers all four representations. Its ground-mou
 
 The quarter-wave vertical in the reusable template studio uses the same representation and ground defaults. Its normal parameter quantisation produces 5.060 m radiator and 5.300 m radials at 14.1 MHz; those exact dimensions have their own comparator fixture.
 
+The primary Simulator's older **Ground Plane Vertical** remains an elevated-radial model. When it is selected, the template picker now says so explicitly and links directly to the specialist Vertical and Phased Arrays laboratories. It does not silently reinterpret that existing model as ground mounted.
+
 ## Phased verticals
 
 Near-surface phased arrays support two explicit topologies:
@@ -69,5 +71,6 @@ The single-vertical browser tests reproduce the comparator R/X, gain, take-off, 
 
 - Buried wires, exact soil contact, ground rods/stakes, soil stratification, corrosion, and conductor/soil contact impedance are not modelled.
 - Clearance, radial count/length, and segmentation convergence still require a systematic multi-band campaign before broad accuracy claims.
+- The post-v1 Windows package smoke now requires the explicit single and shared phased radial decks to execute offline in the installed application. Its browser-equivalent offline test passes locally, but the native installed-app rerun remains pending on a Windows build host with Rust/NSIS. When it passes, that is packaging/integration evidence, not an additional physical-accuracy oracle.
 - Cross-connected meshes other than the implemented centre-bond topology require the arbitrary wire editor and explicit junction review.
 - Real installations also depend on feed-line common mode, bonding, nearby conductors, terrain, and measured soil properties.

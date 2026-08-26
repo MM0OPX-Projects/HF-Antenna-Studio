@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Added one shared explicit radial-system contract to Model Comparison, Parameter Sweeps, and Antenna Optimiser, including compatible elevated, raised near-surface, perfect-image, independent, and shared-bonded choices
 - Added schema-v5 `.hfas` project, autosave, recovery, migration, and reopen support for comparison, parameter-sweep, and optimiser inputs with exact radial identity
 - Added unit and real-Wasm browser regressions for radial model keys, incompatible ground changes, near-surface validity limits, workflow controls, and project round trips
+- Added explicit Simulator cross-links to the single-vertical and phased-array radial laboratories, plus installed/offline package smoke coverage for both real-ground radial solver paths
 - Added a ground-mounted explicit-radial mode for the specialist vertical laboratory and reusable quarter-wave vertical template using visible positive wire clearance over Sommerfeld/Norton soil
 - Added ground-mounted phased vertical radial systems with non-overlapping per-element fields or an explicit shared centre-bonded radial network
 - Added shared NEC-2 surface-wire validity checks, current-carrying radial visualisation, exact-deck fixtures, real-Wasm UI regression coverage, and an independently pinned 4NEC2 comparator for three ground-radial decks

@@ -40,3 +40,28 @@ test("normal verified calculation does not require an external network", async (
   await expect(page.getByText("wasm-nec2c", { exact: false })).toBeVisible();
   expect(externalRequests).toEqual([]);
 });
+
+test("explicit single and phased ground-radial calculations remain local", async ({ context, page }) => {
+  const externalRequests: string[] = [];
+  await context.route(/^https?:\/\//, async (route) => {
+    const url = new URL(route.request().url());
+    if (url.hostname === "127.0.0.1" || url.hostname === "localhost") await route.continue();
+    else { externalRequests.push(route.request().url()); await route.abort("internetdisconnected"); }
+  });
+
+  await page.goto("/vertical-antennas");
+  await dismissChangelog(page);
+  await page.getByTestId("vertical-mode-ground-mounted-explicit-radials").click();
+  await page.getByTestId("run-vertical-nec").click();
+  await expect(page.getByTestId("vertical-results")).toBeVisible({ timeout: 45_000 });
+  await expect(page.getByTestId("vertical-generated-nec")).toContainText("GE -1\nGN 2");
+  await expect(page.getByTestId("radial-current-path")).toBeVisible();
+
+  await page.goto("/phased-arrays");
+  await page.getByTestId("phased-radial-mode").selectOption("near-surface-explicit-wires");
+  await expect(page.getByTestId("phased-results")).toBeVisible({ timeout: 90_000 });
+  await expect(page.getByTestId("phased-generated-nec")).toContainText("topology: shared-bonded-network");
+  await expect(page.getByTestId("phased-generated-nec")).toContainText("GE -1\nGN 2");
+  await expect(page.getByTestId("phased-current-visualisation")).toBeVisible();
+  expect(externalRequests).toEqual([]);
+});
