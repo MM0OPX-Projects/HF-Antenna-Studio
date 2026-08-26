@@ -10,9 +10,11 @@
  * - Smooth pattern fill with gradient
  */
 
-import { useMemo } from "react";
+import { useMemo, useState, type KeyboardEvent, type PointerEvent } from "react";
 import type { PatternData } from "../../api/nec";
 import { useChartTheme } from "../../hooks/useChartTheme";
+import { PatternAngleInspector } from "./PatternAngleInspector";
+import { clampElevationAngle, gainAtAngle, type GainPatternPoint } from "./pattern-angle";
 
 interface PatternPolarProps {
   pattern: PatternData;
@@ -22,6 +24,25 @@ interface PatternPolarProps {
   size?: number;
   /** When true, SVG fills its container instead of using fixed pixel dimensions */
   responsive?: boolean;
+}
+
+function bestPhiIndex(pattern: PatternData): number {
+  let bestPhi = 0;
+  let bestGain = -Infinity;
+  for (let ti = 0; ti < pattern.theta_count; ti++) {
+    for (let pi = 0; pi < pattern.phi_count; pi++) {
+      const gain = pattern.gain_dbi[ti]?.[pi] ?? -999;
+      if (gain > bestGain) {
+        bestGain = gain;
+        bestPhi = pi;
+      }
+    }
+  }
+  return bestPhi;
+}
+
+function compassBearing(phiDeg: number): number {
+  return ((-90 - phiDeg) % 360 + 360) % 360;
 }
 
 /** Extract a cut from the 2D gain array */
@@ -58,17 +79,7 @@ function extractCut(
     return points;
   } else {
     // Elevation cut — find the phi of max gain and extract theta cut
-    let bestPhi = 0;
-    let bestGain = -Infinity;
-    for (let ti = 0; ti < theta_count; ti++) {
-      for (let pi = 0; pi < phi_count; pi++) {
-        const g = gain_dbi[ti]?.[pi] ?? -999;
-        if (g > bestGain) {
-          bestGain = g;
-          bestPhi = pi;
-        }
-      }
-    }
+    const bestPhi = bestPhiIndex(pattern);
 
     const points: { angle: number; gain: number }[] = [];
     for (let ti = 0; ti < theta_count; ti++) {
@@ -107,6 +118,7 @@ function polarToXY(
 
 export function PatternPolar({ pattern, mode, size = 200, responsive = false }: PatternPolarProps) {
   const ct = useChartTheme();
+  const [selectedElevationDeg, setSelectedElevationDeg] = useState(5);
   const cut = useMemo(() => extractCut(pattern, mode), [pattern, mode]);
 
   const { minGain, maxGain } = useMemo(() => {
@@ -257,6 +269,75 @@ export function PatternPolar({ pattern, mode, size = 200, responsive = false }: 
   // Radial lines every 30 degrees
   const radialLines = Array.from({ length: 12 }, (_, i) => i * 30);
 
+  const elevationSeries = useMemo(() => {
+    if (mode !== "elevation") return [];
+    const bestPhi = bestPhiIndex(pattern);
+    const phi = pattern.phi_start + bestPhi * pattern.phi_step;
+    const primaryBearing = compassBearing(phi);
+    const makePoints = (side: "primary" | "opposite"): GainPatternPoint[] => cut
+      .filter((point) => side === "primary"
+        ? point.angle >= -1e-6 && point.angle <= 90 + 1e-6
+        : point.angle <= 1e-6 && point.angle >= -90 - 1e-6)
+      .map((point) => ({
+        angleDeg: 90 - Math.abs(point.angle),
+        gainDbi: point.gain,
+        normalizedDb: point.gain - maxGain,
+      }))
+      .sort((left, right) => left.angleDeg - right.angleDeg);
+    const primary = makePoints("primary");
+    const opposite = makePoints("opposite");
+    const result = [{
+      id: "primary",
+      label: `${primaryBearing.toFixed(0)}° bearing side`,
+      color: "#3B82F6",
+      points: primary,
+      thetaSign: 1,
+    }];
+    if (pattern.theta_start < 0 && opposite.length > 1) result.push({
+      id: "opposite",
+      label: `${((primaryBearing + 180) % 360).toFixed(0)}° bearing side`,
+      color: "#8B5CF6",
+      points: opposite,
+      thetaSign: -1,
+    });
+    return result;
+  }, [cut, maxGain, mode, pattern]);
+
+  const inspectorReadings = elevationSeries.map((series) => ({
+    id: series.id,
+    label: series.label,
+    color: series.color,
+    reading: gainAtAngle(series.points, selectedElevationDeg),
+  }));
+
+  const selectFromPointer = (event: PointerEvent<SVGSVGElement>) => {
+    if (mode !== "elevation") return;
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const renderedSize = Math.min(bounds.width, bounds.height);
+    const offsetX = (bounds.width - renderedSize) / 2;
+    const offsetY = (bounds.height - renderedSize) / 2;
+    const x = ((event.clientX - bounds.left - offsetX) / renderedSize) * vbSize;
+    const y = ((event.clientY - bounds.top - offsetY) / renderedSize) * vbSize;
+    let theta = Math.atan2(y - cy, x - cx) * 180 / Math.PI + 90;
+    while (theta > 180) theta -= 360;
+    while (theta <= -180) theta += 360;
+    if (Math.abs(theta) > 90) return;
+    setSelectedElevationDeg(Number(clampElevationAngle(90 - Math.abs(theta)).toFixed(1)));
+  };
+
+  const moveFromKeyboard = (event: KeyboardEvent<SVGSVGElement>) => {
+    if (mode !== "elevation") return;
+    const increment = event.shiftKey ? 5 : 1;
+    let next: number | null = null;
+    if (event.key === "ArrowRight" || event.key === "ArrowUp") next = selectedElevationDeg + increment;
+    if (event.key === "ArrowLeft" || event.key === "ArrowDown") next = selectedElevationDeg - increment;
+    if (event.key === "Home") next = 0;
+    if (event.key === "End") next = 90;
+    if (next === null) return;
+    event.preventDefault();
+    setSelectedElevationDeg(clampElevationAngle(next));
+  };
+
   // Cardinal labels
   const cardinalLabels = useMemo(() => {
     if (mode === "azimuth") {
@@ -287,8 +368,13 @@ export function PatternPolar({ pattern, mode, size = 200, responsive = false }: 
       width={responsive ? "100%" : size}
       height={responsive ? "100%" : size}
       viewBox={`0 0 ${vbSize} ${vbSize}`}
-      className={responsive ? "" : "mx-auto"}
+      className={`${responsive ? "" : "mx-auto"} ${mode === "elevation" ? "cursor-crosshair focus:outline-none focus:ring-2 focus:ring-accent" : ""}`}
       preserveAspectRatio="xMidYMid meet"
+      role="img"
+      aria-label={`${mode} radiation pattern${mode === "elevation" ? "; interactive gain-at-angle cursor" : ""}`}
+      tabIndex={mode === "elevation" ? 0 : undefined}
+      onPointerDown={selectFromPointer}
+      onKeyDown={moveFromKeyboard}
     >
       {/* Grid circles */}
       {gridCircles.map((r) => (
@@ -412,6 +498,19 @@ export function PatternPolar({ pattern, mode, size = 200, responsive = false }: 
         </g>
       )}
 
+      {mode === "elevation" && elevationSeries.map((series) => {
+        const reading = gainAtAngle(series.points, selectedElevationDeg);
+        if (!reading) return null;
+        const theta = series.thetaSign * (90 - selectedElevationDeg);
+        const radius = gainToRadius(reading.gainDbi, minGain, maxGain);
+        const position = polarToXY(theta, radius, cx, cy, plotRadius);
+        const outer = polarToXY(theta, 1, cx, cy, plotRadius);
+        return <g key={series.id} data-testid={`elevation-angle-cursor-${series.id}`} pointerEvents="none">
+          <line x1={cx} y1={cy} x2={outer.x} y2={outer.y} stroke={series.color} strokeWidth="0.8" strokeDasharray="3 3" opacity="0.6" />
+          <circle cx={position.x} cy={position.y} r="4" fill={series.color} stroke="#FFFFFF" strokeWidth="1.5" data-testid={`elevation-angle-marker-${series.id}`} />
+        </g>;
+      })}
+
       {/* Gain labels on grid circles — rendered after pattern so they stay on top */}
       {gridCircles.map((r) => {
         const gainVal = minGain + (maxGain - minGain) * r;
@@ -443,6 +542,12 @@ export function PatternPolar({ pattern, mode, size = 200, responsive = false }: 
       {maxGain.toFixed(1)} dBi
       {beamwidthArcs ? ` | BW: ${beamwidthArcs.mainLobeBeamwidth.toFixed(0)}\u00B0` : ""}
     </div>
+    {mode === "elevation" && <PatternAngleInspector
+      angleDeg={selectedElevationDeg}
+      onAngleChange={setSelectedElevationDeg}
+      readings={inspectorReadings}
+      testId="simulator-elevation-angle-inspector"
+    />}
     {/* Legend */}
     <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 pt-1.5 shrink-0" style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "9px" }}>
       <span className="flex items-center gap-1">

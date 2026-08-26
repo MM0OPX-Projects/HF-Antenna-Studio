@@ -37,6 +37,7 @@ test("2/3/5-element perfect-ground fixtures reproduce the independent NEC-2D com
     expect(numeric(await page.getByTestId("yagi-result-takeoff").innerText())).toBe(reference.expected.takeOffAngleDeg);
     await expect(page.getByTestId("yagi-current-distribution")).toBeVisible();
     await expect(page.getByTestId("yagi-phase-driven")).toBeVisible();
+    await expect(page.getByTestId("elevation-angle-inspector-source-current")).toContainText("Interpolated between 4.0° and 6.0° NEC samples");
     await expect(page.getByTestId("radiation-pattern-3d").locator("canvas")).toBeVisible();
   }
 });

@@ -10,6 +10,7 @@ import { generateTemplateModel, hasTemplateErrors, initialTemplateParameters, st
 import { runTemplateModel, type TemplateSolverResult } from "../features/antenna-templates/service";
 import type { TemplateGround, TemplateId } from "../features/antenna-templates/schema";
 import { HeightRadiation3D } from "../features/height-lab/HeightRadiation3D";
+import { PatternPolar } from "../components/results/PatternPolar";
 
 type GroundPreset = "perfect" | "average" | "pastoral" | "dry" | "custom";
 const GROUND: Record<Exclude<GroundPreset, "custom">, TemplateGround> = {
@@ -142,6 +143,11 @@ export function AntennaTemplateStudioPage() {
             ].map(([label, value, testId]) => <div key={label} className="rounded border border-border bg-background/50 p-3"><p className="text-[10px] text-text-secondary">{label}</p><p data-testid={testId} className="mt-1 font-mono text-lg font-semibold">{value}</p></div>)}</section>}</Card>
 
             {result && <Card className="overflow-hidden p-3"><h2 className="px-1 pb-3 text-sm font-semibold">Interactive 3D radiation pattern</h2><HeightRadiation3D pattern={result.pattern} mode="absolute" pending={false} /></Card>}
+
+            {result && <section className="grid gap-4 lg:grid-cols-2" data-testid="template-pattern-cuts">
+              <Card className="overflow-hidden p-3"><h2 className="px-1 pb-2 text-sm font-semibold">Azimuth cut</h2><PatternPolar pattern={result.pattern} mode="azimuth" size={360} /></Card>
+              <Card className="overflow-hidden p-3"><h2 className="px-1 pb-2 text-sm font-semibold">Elevation cut</h2><PatternPolar pattern={result.pattern} mode="elevation" size={360} /></Card>
+            </section>}
 
             <details className="rounded-lg border border-border bg-surface p-4"><summary className="cursor-pointer text-sm font-semibold">Generated NEC model</summary><pre data-testid="template-generated-nec" className="mt-3 max-h-96 overflow-auto rounded bg-[#0b1020] p-4 text-xs leading-5 text-emerald-300">{adapted?.deck ?? "Resolve geometry errors to generate NEC."}</pre></details>
           </div>

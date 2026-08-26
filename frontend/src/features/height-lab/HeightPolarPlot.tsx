@@ -1,4 +1,6 @@
-import type { RefObject } from "react";
+import { useState, type KeyboardEvent, type PointerEvent, type RefObject } from "react";
+import { PatternAngleInspector } from "../../components/results/PatternAngleInspector";
+import { clampElevationAngle, gainAtAngle } from "../../components/results/pattern-angle";
 import type { NormalizedPatternPoint } from "../verified-dipole/result";
 import { displayedGain } from "./metrics";
 import type { PatternDisplayMode } from "./types";
@@ -50,10 +52,56 @@ function elevationPath(points: NormalizedPatternPoint[], mode: PatternDisplayMod
 }
 
 export function HeightPolarPlot({ plane, mode, series, svgRef }: HeightPolarPlotProps) {
+  const [selectedElevationDeg, setSelectedElevationDeg] = useState(5);
   const rings = mode === "absolute" ? [-20, -10, 0, 10] : [-30, -20, -10, 0];
   const minimum = mode === "absolute" ? -30 : -40;
+  const inspectorReadings = plane === "elevation" ? series.map((item) => ({
+    id: item.id,
+    label: item.label,
+    color: item.color,
+    reading: gainAtAngle(item.points, selectedElevationDeg),
+  })) : [];
+
+  const selectFromPointer = (event: PointerEvent<SVGSVGElement>) => {
+    if (plane !== "elevation") return;
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const x = ((event.clientX - bounds.left) / bounds.width) * 460;
+    const y = ((event.clientY - bounds.top) / bounds.height) * 285;
+    if (y > CY + 4) return;
+    let polarAngle = Math.atan2(CY - y, x - CX) * 180 / Math.PI;
+    if (polarAngle < 0) polarAngle += 360;
+    if (polarAngle > 180) return;
+    const elevation = polarAngle <= 90 ? polarAngle : 180 - polarAngle;
+    setSelectedElevationDeg(Number(clampElevationAngle(elevation).toFixed(1)));
+  };
+
+  const moveFromKeyboard = (event: KeyboardEvent<SVGSVGElement>) => {
+    if (plane !== "elevation") return;
+    const increment = event.shiftKey ? 5 : 1;
+    let next: number | null = null;
+    if (event.key === "ArrowRight" || event.key === "ArrowUp") next = selectedElevationDeg + increment;
+    if (event.key === "ArrowLeft" || event.key === "ArrowDown") next = selectedElevationDeg - increment;
+    if (event.key === "Home") next = 0;
+    if (event.key === "End") next = 90;
+    if (next === null) return;
+    event.preventDefault();
+    setSelectedElevationDeg(clampElevationAngle(next));
+  };
+
+  const selectedRadians = selectedElevationDeg * Math.PI / 180;
   return (
-    <svg ref={svgRef} viewBox="0 0 460 285" role="img" aria-label={`${plane} polar radiation pattern in ${mode} decibels`} className="w-full" data-testid={`${plane}-polar-plot`}>
+    <div>
+    <svg
+      ref={svgRef}
+      viewBox="0 0 460 285"
+      role="img"
+      aria-label={`${plane} polar radiation pattern in ${mode} decibels${plane === "elevation" ? "; interactive angle cursor" : ""}`}
+      className={`w-full ${plane === "elevation" ? "cursor-crosshair focus:outline-none focus:ring-2 focus:ring-accent" : ""}`}
+      data-testid={`${plane}-polar-plot`}
+      tabIndex={plane === "elevation" ? 0 : undefined}
+      onPointerDown={selectFromPointer}
+      onKeyDown={moveFromKeyboard}
+    >
       <rect width="460" height="285" rx="8" fill="var(--color-surface)" />
       <g fill="none" stroke="var(--color-border)" strokeWidth="1">
         {rings.map((value) => <circle key={value} cx={CX} cy={CY} r={radiusFor(value, mode)} />)}
@@ -81,7 +129,41 @@ export function HeightPolarPlot({ plane, mode, series, svgRef }: HeightPolarPlot
         strokeLinejoin="round"
         data-testid={`polar-series-${plane}-${item.id}`}
       />)}
+      {plane === "elevation" && series.length > 0 && <g data-testid="elevation-angle-cursor" pointerEvents="none">
+        <line
+          x1={CX}
+          y1={CY}
+          x2={CX + Math.cos(selectedRadians) * RADIUS}
+          y2={CY - Math.sin(selectedRadians) * RADIUS}
+          stroke="var(--color-text-primary)"
+          strokeWidth="1"
+          strokeDasharray="3 3"
+          opacity="0.65"
+        />
+        {inspectorReadings.map(({ id, color, reading }) => {
+          if (!reading) return null;
+          const value = mode === "absolute" ? reading.gainDbi : reading.normalizedDb;
+          const radius = radiusFor(value, mode);
+          return <circle
+            key={id}
+            cx={CX + Math.cos(selectedRadians) * radius}
+            cy={CY - Math.sin(selectedRadians) * radius}
+            r="4"
+            fill={color}
+            stroke="var(--color-surface)"
+            strokeWidth="2"
+            data-testid={`elevation-angle-marker-${id}`}
+          />;
+        })}
+        <text x={CX + Math.cos(selectedRadians) * (RADIUS + 12)} y={CY - Math.sin(selectedRadians) * (RADIUS + 12)} textAnchor="middle" dominantBaseline="middle" fill="var(--color-text-primary)" fontSize="10" fontWeight="600">{selectedElevationDeg.toFixed(1)}°</text>
+      </g>}
       {series.length === 0 && <text x={CX} y={CY - 25} textAnchor="middle" fill="var(--color-text-secondary)" fontSize="12">Waiting for the current NEC result</text>}
     </svg>
+    {plane === "elevation" && <PatternAngleInspector
+      angleDeg={selectedElevationDeg}
+      onAngleChange={setSelectedElevationDeg}
+      readings={inspectorReadings}
+    />}
+    </div>
   );
 }

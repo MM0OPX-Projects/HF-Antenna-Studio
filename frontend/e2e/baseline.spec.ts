@@ -116,7 +116,10 @@ for (const [name, baseline] of Object.entries(BASELINES)) {
     await page.getByRole("tab", { name: "Pattern", exact: true }).click();
     await expect(page.getByText("Radiation Pattern")).toBeVisible();
     await expect(page.getByText("Azimuth")).toBeVisible();
-    await expect(page.getByText("Elevation")).toBeVisible();
+    await expect(page.getByTestId("simulator-elevation-angle-inspector-input")).toHaveValue("5");
+    await expect(page.getByTestId("simulator-elevation-angle-inspector")).toContainText("No valid pattern samples bracket this angle");
+    await page.getByTestId("simulator-elevation-angle-inspector-input").fill("10");
+    await expect(page.locator('[data-testid^="simulator-elevation-angle-inspector-source-"]').filter({ hasText: "Exact NEC sample" }).first()).toBeVisible();
 
     await page.getByRole("tab", { name: "Z", exact: true }).click();
     await expect(page.getByText("Impedance vs Frequency")).toBeVisible();

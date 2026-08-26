@@ -45,6 +45,7 @@ test("40/20/10m ideal monopoles match the recorded local NEC regression and anal
     expect(gain).toBeLessThan(5.3);
     expect(takeOff).toBe(reference.expected.takeOffAngleDeg);
     expect(azimuthVariation).toBeLessThan(0.001);
+    await expect(page.getByTestId("elevation-angle-inspector-source-vertical-current")).toHaveText("Exact NEC sample");
   }
 });
 

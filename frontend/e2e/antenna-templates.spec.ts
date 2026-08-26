@@ -44,6 +44,8 @@ test("all eight templates generate geometry, feed/segments, NEC, and solve local
     expect(reactance, `${definition.id} reactance`).toBeCloseTo(reference.expected.reactanceOhm, 1);
     expect(gain, `${definition.id} gain`).toBeCloseTo(reference.expected.maximumGainDbi, 1);
     expect(takeOff, `${definition.id} take-off`).toBeCloseTo(reference.expected.takeOffAngleDeg, 1);
+    await expect(page.getByTestId("template-pattern-cuts"), `${definition.id} pattern cuts`).toBeVisible();
+    await expect(page.getByTestId("simulator-elevation-angle-inspector-source-primary"), `${definition.id} 5-degree sample`).toHaveText("Exact NEC sample");
   }
 });
 

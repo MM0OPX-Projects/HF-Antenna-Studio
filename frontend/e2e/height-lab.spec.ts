@@ -63,6 +63,18 @@ test("four saved traces overlay the current pattern and a fifth is refused", asy
 test("pattern modes, automatic sweep, reset, and exports remain interactive", async ({ page }) => {
   await openLab(page);
   await expect(page.getByTestId("height-results")).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByTestId("elevation-angle-inspector-input")).toHaveValue("5");
+  await expect(page.getByTestId("elevation-angle-inspector-source-current")).toHaveText("Exact NEC sample");
+  await page.getByTestId("elevation-angle-inspector-input").fill("7.5");
+  await expect(page.getByTestId("elevation-angle-inspector-source-current")).toContainText("Interpolated between 5.0° and 10.0° NEC samples");
+  await expect(page.getByTestId("elevation-angle-inspector-gain-current")).toContainText("dBi");
+  await page.getByTestId("elevation-polar-plot").focus();
+  await page.getByTestId("elevation-polar-plot").press("ArrowUp");
+  await expect(page.getByTestId("elevation-angle-inspector-input")).toHaveValue("8.5");
+  const plotBounds = await page.getByTestId("elevation-polar-plot").boundingBox();
+  expect(plotBounds).not.toBeNull();
+  await page.getByTestId("elevation-polar-plot").click({ position: { x: plotBounds!.width / 2, y: plotBounds!.height * 0.2 } });
+  expect(Number(await page.getByTestId("elevation-angle-inspector-input").inputValue())).toBeGreaterThan(80);
   const absolutePath = await page.getByTestId("polar-series-elevation-current").getAttribute("d");
   await page.getByTestId("mode-normalised").click();
   await expect(page.getByTestId("mode-normalised")).toHaveAttribute("aria-checked", "true");

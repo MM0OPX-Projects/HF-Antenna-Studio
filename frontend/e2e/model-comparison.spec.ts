@@ -20,6 +20,8 @@ test("four different antenna models solve under common conditions and export an 
   await expect(page.getByTestId("comparison-result-3")).toContainText("N/A");
   await expect(page.locator('[data-testid^="polar-series-azimuth-model-"]')).toHaveCount(4);
   await expect(page.locator('[data-testid^="polar-series-elevation-model-"]')).toHaveCount(4);
+  await expect(page.locator('[data-testid^="elevation-angle-inspector-gain-model-"]')).toHaveCount(4);
+  await expect(page.locator('[data-testid^="elevation-angle-inspector-source-model-"]')).toHaveCount(4);
   await expect(page.getByTestId("comparison-sweep-series-count")).toHaveText("3");
   await page.getByTestId("comparison-sweep-resistance").click();
   await expect(page.getByTestId("comparison-sweep-resistance")).toHaveAttribute("aria-pressed", "true");

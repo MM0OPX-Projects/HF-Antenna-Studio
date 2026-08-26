@@ -1,6 +1,9 @@
+import { useState, type KeyboardEvent, type PointerEvent } from "react";
 import type { NormalizedPatternPoint, VerifiedCurrentPoint } from "./result";
 import { CurrentVisualisationPanel } from "../current-visualisation/CurrentVisualisationPanel";
 import { adaptPositionedCurrents } from "../current-visualisation/adapters";
+import { PatternAngleInspector } from "../../components/results/PatternAngleInspector";
+import { clampElevationAngle, gainAtAngle } from "../../components/results/pattern-angle";
 
 interface PatternPlotProps {
   title: string;
@@ -12,6 +15,8 @@ function linePath(points: Array<{ x: number; y: number }>): string {
 }
 
 export function DipolePatternPlot({ title, points, xLabel }: PatternPlotProps) {
+  const [selectedElevationDeg, setSelectedElevationDeg] = useState(5);
+  const isElevation = title.toLowerCase() === "elevation";
   const width = 460;
   const height = 250;
   const pad = { left: 44, right: 18, top: 24, bottom: 36 };
@@ -21,11 +26,41 @@ export function DipolePatternPlot({ title, points, xLabel }: PatternPlotProps) {
   const sx = (value: number) => pad.left + ((value - xMin) / Math.max(1, xMax - xMin)) * (width - pad.left - pad.right);
   const sy = (value: number) => pad.top + ((0 - value) / 40) * (height - pad.top - pad.bottom);
   const path = linePath(points.map((point) => ({ x: sx(point.angleDeg), y: sy(point.normalizedDb) })));
+  const reading = isElevation ? gainAtAngle(points, selectedElevationDeg) : null;
+
+  const selectFromPointer = (event: PointerEvent<SVGSVGElement>) => {
+    if (!isElevation) return;
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const viewX = ((event.clientX - bounds.left) / bounds.width) * width;
+    const angle = xMin + ((viewX - pad.left) / (width - pad.left - pad.right)) * (xMax - xMin);
+    setSelectedElevationDeg(Number(clampElevationAngle(angle).toFixed(1)));
+  };
+
+  const moveFromKeyboard = (event: KeyboardEvent<SVGSVGElement>) => {
+    if (!isElevation) return;
+    const increment = event.shiftKey ? 5 : 1;
+    let next: number | null = null;
+    if (event.key === "ArrowRight" || event.key === "ArrowUp") next = selectedElevationDeg + increment;
+    if (event.key === "ArrowLeft" || event.key === "ArrowDown") next = selectedElevationDeg - increment;
+    if (event.key === "Home") next = 0;
+    if (event.key === "End") next = 90;
+    if (next === null) return;
+    event.preventDefault();
+    setSelectedElevationDeg(clampElevationAngle(next));
+  };
 
   return (
     <figure className="rounded-lg border border-border bg-background/40 p-3" data-testid={`${title.toLowerCase()}-pattern`}>
       <figcaption className="mb-2 text-sm font-semibold text-text-primary">{title} pattern</figcaption>
-      <svg viewBox={`0 0 ${width} ${height}`} className="w-full" role="img" aria-label={`${title} normalized gain plot`}>
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        className={`w-full ${isElevation ? "cursor-crosshair focus:outline-none focus:ring-2 focus:ring-accent" : ""}`}
+        role="img"
+        aria-label={`${title} normalized gain plot${isElevation ? "; interactive angle cursor" : ""}`}
+        tabIndex={isElevation ? 0 : undefined}
+        onPointerDown={selectFromPointer}
+        onKeyDown={moveFromKeyboard}
+      >
         {[-40, -30, -20, -10, 0].map((db) => (
           <g key={db}>
             <line x1={pad.left} x2={width - pad.right} y1={sy(db)} y2={sy(db)} stroke="currentColor" className="text-border" strokeWidth="1" />
@@ -39,7 +74,16 @@ export function DipolePatternPlot({ title, points, xLabel }: PatternPlotProps) {
         <text x="12" y={height / 2} textAnchor="middle" transform={`rotate(-90 12 ${height / 2})`} className="fill-text-secondary text-[10px]">Normalized gain (dB)</text>
         <path d={`${path} L${sx(xMax)},${sy(-40)} L${sx(xMin)},${sy(-40)} Z`} className="fill-accent/10" />
         <path d={path} fill="none" className="stroke-accent" strokeWidth="2.5" strokeLinejoin="round" />
+        {isElevation && reading && <g data-testid="elevation-angle-cursor" pointerEvents="none">
+          <line x1={sx(selectedElevationDeg)} x2={sx(selectedElevationDeg)} y1={pad.top} y2={height - pad.bottom} className="stroke-text-primary" strokeWidth="1" strokeDasharray="3 3" opacity="0.65" />
+          <circle cx={sx(selectedElevationDeg)} cy={sy(reading.normalizedDb)} r="4" className="fill-accent stroke-surface" strokeWidth="2" data-testid="elevation-angle-marker-dipole" />
+        </g>}
       </svg>
+      {isElevation && <PatternAngleInspector
+        angleDeg={selectedElevationDeg}
+        onAngleChange={setSelectedElevationDeg}
+        readings={[{ id: "dipole", label: "Current model", color: "#3b82f6", reading }]}
+      />}
     </figure>
   );
 }

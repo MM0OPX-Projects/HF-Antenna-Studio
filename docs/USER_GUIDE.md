@@ -43,6 +43,7 @@ Templates generate the shared internal antenna model and then the dedicated NEC 
 - `R + jX Ω` is the complex feed impedance at the selected source/reference point.
 - SWR is derived against the selected 50 Ω or 75 Ω reference; changing reference impedance changes SWR, not the solved antenna impedance.
 - Gain is absolute dBi only when the view says so. Normalised patterns have a 0 dB peak and do not preserve absolute gain.
+- Elevation-cut views include an **Angle above horizon** inspector. Type an angle from 0° to 90°, click the plot, or focus it and use the arrow keys (Shift+Arrow changes 5°). The readout shows absolute dBi and normalised dB for every visible trace. **Exact NEC sample** means that angle was solved directly; an **Interpolated** value is a labelled linear estimate in decibels between the two displayed NEC angular samples and is not another solver execution.
 - Take-off angle is elevation above the horizon at the selected sampled maximum, not guaranteed sub-grid precision.
 - F/B compares the declared forward and opposite axial samples. F/R may use a rear-region worst case and is labelled separately.
 - Current views use NEC segment results. A normalised legend must not be interpreted as absolute amperes.
