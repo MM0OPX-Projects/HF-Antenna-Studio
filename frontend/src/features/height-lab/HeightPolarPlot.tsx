@@ -1,6 +1,7 @@
 import { useState, type KeyboardEvent, type PointerEvent, type RefObject } from "react";
 import { PatternAngleInspector } from "../../components/results/PatternAngleInspector";
 import { clampElevationAngle, gainAtAngle } from "../../components/results/pattern-angle";
+import { usePointerDrag } from "../../components/results/usePointerDrag";
 import type { NormalizedPatternPoint } from "../verified-dipole/result";
 import { displayedGain } from "./metrics";
 import type { PatternDisplayMode } from "./types";
@@ -62,7 +63,7 @@ export function HeightPolarPlot({ plane, mode, series, svgRef }: HeightPolarPlot
     reading: gainAtAngle(item.points, selectedElevationDeg),
   })) : [];
 
-  const selectFromPointer = (event: PointerEvent<SVGSVGElement>) => {
+  const updateFromPointer = (event: PointerEvent<SVGSVGElement>) => {
     if (plane !== "elevation") return;
     const bounds = event.currentTarget.getBoundingClientRect();
     const x = ((event.clientX - bounds.left) / bounds.width) * 460;
@@ -74,6 +75,7 @@ export function HeightPolarPlot({ plane, mode, series, svgRef }: HeightPolarPlot
     const elevation = polarAngle <= 90 ? polarAngle : 180 - polarAngle;
     setSelectedElevationDeg(Number(clampElevationAngle(elevation).toFixed(1)));
   };
+  const pointerDrag = usePointerDrag(updateFromPointer);
 
   const moveFromKeyboard = (event: KeyboardEvent<SVGSVGElement>) => {
     if (plane !== "elevation") return;
@@ -96,10 +98,11 @@ export function HeightPolarPlot({ plane, mode, series, svgRef }: HeightPolarPlot
       viewBox="0 0 460 285"
       role="img"
       aria-label={`${plane} polar radiation pattern in ${mode} decibels${plane === "elevation" ? "; interactive angle cursor" : ""}`}
-      className={`w-full ${plane === "elevation" ? "cursor-crosshair focus:outline-none focus:ring-2 focus:ring-accent" : ""}`}
+      className={`w-full ${plane === "elevation" ? "cursor-crosshair select-none focus:outline-none focus:ring-2 focus:ring-accent" : ""}`}
       data-testid={`${plane}-polar-plot`}
       tabIndex={plane === "elevation" ? 0 : undefined}
-      onPointerDown={selectFromPointer}
+      style={plane === "elevation" ? { touchAction: "none" } : undefined}
+      {...(plane === "elevation" ? pointerDrag : {})}
       onKeyDown={moveFromKeyboard}
     >
       <rect width="460" height="285" rx="8" fill="var(--color-surface)" />

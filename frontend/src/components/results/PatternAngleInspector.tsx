@@ -48,7 +48,7 @@ export function PatternAngleInspector({
             <span className="text-xs text-text-secondary">°</span>
           </span>
         </label>
-        <span className="text-[10px] text-text-secondary">Click the elevation plot, type an angle, or focus the plot and use the arrow keys.</span>
+        <span className="text-[10px] text-text-secondary">Click or drag across the elevation plot, type an angle, or focus the plot and use the arrow keys.</span>
       </div>
       <div className="mt-2 grid gap-1" aria-live="polite">
         {readings.map(({ id, label, color, reading }) => (

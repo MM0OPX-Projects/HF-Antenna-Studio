@@ -120,6 +120,14 @@ for (const [name, baseline] of Object.entries(BASELINES)) {
     await expect(page.getByTestId("simulator-elevation-angle-inspector")).toContainText("No valid pattern samples bracket this angle");
     await page.getByTestId("simulator-elevation-angle-inspector-input").fill("10");
     await expect(page.locator('[data-testid^="simulator-elevation-angle-inspector-source-"]').filter({ hasText: "Exact NEC sample" }).first()).toBeVisible();
+    const elevationPlot = page.getByRole("img", { name: /elevation radiation pattern; interactive gain-at-angle cursor/i });
+    const elevationBounds = await elevationPlot.boundingBox();
+    expect(elevationBounds).not.toBeNull();
+    await page.mouse.move(elevationBounds!.x + elevationBounds!.width * 0.82, elevationBounds!.y + elevationBounds!.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(elevationBounds!.x + elevationBounds!.width / 2, elevationBounds!.y + elevationBounds!.height * 0.18, { steps: 6 });
+    await expect.poll(async () => Number(await page.getByTestId("simulator-elevation-angle-inspector-input").inputValue())).toBeGreaterThan(80);
+    await page.mouse.up();
 
     await page.getByRole("tab", { name: "Z", exact: true }).click();
     await expect(page.getByText("Impedance vs Frequency")).toBeVisible();

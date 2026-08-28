@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- Added a keyboard-, pointer-, and exact-number gain-at-angle inspector to every antenna elevation-cut workflow, reporting absolute dBi and normalised dB while distinguishing direct NEC angular samples from labelled linear interpolation
+- Added a keyboard-, click-and-drag-, and exact-number gain-at-angle inspector to every antenna elevation-cut workflow, reporting absolute dBi and normalised dB while distinguishing direct NEC angular samples from labelled linear interpolation
 - Added one shared explicit radial-system contract to Model Comparison, Parameter Sweeps, and Antenna Optimiser, including compatible elevated, raised near-surface, perfect-image, independent, and shared-bonded choices
 - Added schema-v5 `.hfas` project, autosave, recovery, migration, and reopen support for comparison, parameter-sweep, and optimiser inputs with exact radial identity
 - Added unit and real-Wasm browser regressions for radial model keys, incompatible ground changes, near-surface validity limits, workflow controls, and project round trips

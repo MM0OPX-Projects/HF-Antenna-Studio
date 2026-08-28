@@ -33,6 +33,15 @@ test("verified dipole executes the displayed NEC deck through local WASM", async
   await expect(page.getByTestId("elevation-pattern")).toBeVisible();
   await expect(page.getByTestId("elevation-angle-inspector-source-dipole")).toHaveText("Exact NEC sample");
   await expect(page.getByTestId("elevation-angle-inspector-gain-dipole")).toContainText("dBi");
+  const elevationPlot = page.getByTestId("elevation-pattern").locator("svg").first();
+  const elevationBounds = await elevationPlot.boundingBox();
+  expect(elevationBounds).not.toBeNull();
+  await page.mouse.move(elevationBounds!.x + elevationBounds!.width * 0.2, elevationBounds!.y + elevationBounds!.height / 2);
+  await page.mouse.down();
+  const pressedAngle = Number(await page.getByTestId("elevation-angle-inspector-input").inputValue());
+  await page.mouse.move(elevationBounds!.x + elevationBounds!.width * 0.8, elevationBounds!.y + elevationBounds!.height / 2, { steps: 6 });
+  await expect.poll(async () => Number(await page.getByTestId("elevation-angle-inspector-input").inputValue())).toBeGreaterThan(pressedAngle + 30);
+  await page.mouse.up();
   await expect(page.getByTestId("current-distribution")).toBeVisible();
   await expect(page.getByTestId("generated-nec")).toHaveText(deckBeforeRun);
   await expect(page.getByRole("alert")).toHaveCount(0);

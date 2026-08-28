@@ -73,8 +73,11 @@ test("pattern modes, automatic sweep, reset, and exports remain interactive", as
   await expect(page.getByTestId("elevation-angle-inspector-input")).toHaveValue("8.5");
   const plotBounds = await page.getByTestId("elevation-polar-plot").boundingBox();
   expect(plotBounds).not.toBeNull();
-  await page.getByTestId("elevation-polar-plot").click({ position: { x: plotBounds!.width / 2, y: plotBounds!.height * 0.2 } });
-  expect(Number(await page.getByTestId("elevation-angle-inspector-input").inputValue())).toBeGreaterThan(80);
+  await page.mouse.move(plotBounds!.x + plotBounds!.width * 0.84, plotBounds!.y + plotBounds!.height * 0.72);
+  await page.mouse.down();
+  await page.mouse.move(plotBounds!.x + plotBounds!.width / 2, plotBounds!.y + plotBounds!.height * 0.2, { steps: 8 });
+  await expect.poll(async () => Number(await page.getByTestId("elevation-angle-inspector-input").inputValue())).toBeGreaterThan(80);
+  await page.mouse.up();
   const absolutePath = await page.getByTestId("polar-series-elevation-current").getAttribute("d");
   await page.getByTestId("mode-normalised").click();
   await expect(page.getByTestId("mode-normalised")).toHaveAttribute("aria-checked", "true");

@@ -15,6 +15,7 @@ import type { PatternData } from "../../api/nec";
 import { useChartTheme } from "../../hooks/useChartTheme";
 import { PatternAngleInspector } from "./PatternAngleInspector";
 import { clampElevationAngle, gainAtAngle, type GainPatternPoint } from "./pattern-angle";
+import { usePointerDrag } from "./usePointerDrag";
 
 interface PatternPolarProps {
   pattern: PatternData;
@@ -310,7 +311,7 @@ export function PatternPolar({ pattern, mode, size = 200, responsive = false }: 
     reading: gainAtAngle(series.points, selectedElevationDeg),
   }));
 
-  const selectFromPointer = (event: PointerEvent<SVGSVGElement>) => {
+  const updateFromPointer = (event: PointerEvent<SVGSVGElement>) => {
     if (mode !== "elevation") return;
     const bounds = event.currentTarget.getBoundingClientRect();
     const renderedSize = Math.min(bounds.width, bounds.height);
@@ -324,6 +325,7 @@ export function PatternPolar({ pattern, mode, size = 200, responsive = false }: 
     if (Math.abs(theta) > 90) return;
     setSelectedElevationDeg(Number(clampElevationAngle(90 - Math.abs(theta)).toFixed(1)));
   };
+  const pointerDrag = usePointerDrag(updateFromPointer);
 
   const moveFromKeyboard = (event: KeyboardEvent<SVGSVGElement>) => {
     if (mode !== "elevation") return;
@@ -368,12 +370,13 @@ export function PatternPolar({ pattern, mode, size = 200, responsive = false }: 
       width={responsive ? "100%" : size}
       height={responsive ? "100%" : size}
       viewBox={`0 0 ${vbSize} ${vbSize}`}
-      className={`${responsive ? "" : "mx-auto"} ${mode === "elevation" ? "cursor-crosshair focus:outline-none focus:ring-2 focus:ring-accent" : ""}`}
+      className={`${responsive ? "" : "mx-auto"} ${mode === "elevation" ? "cursor-crosshair select-none focus:outline-none focus:ring-2 focus:ring-accent" : ""}`}
       preserveAspectRatio="xMidYMid meet"
       role="img"
       aria-label={`${mode} radiation pattern${mode === "elevation" ? "; interactive gain-at-angle cursor" : ""}`}
       tabIndex={mode === "elevation" ? 0 : undefined}
-      onPointerDown={selectFromPointer}
+      style={mode === "elevation" ? { touchAction: "none" } : undefined}
+      {...(mode === "elevation" ? pointerDrag : {})}
       onKeyDown={moveFromKeyboard}
     >
       {/* Grid circles */}

@@ -4,6 +4,7 @@ import { CurrentVisualisationPanel } from "../current-visualisation/CurrentVisua
 import { adaptPositionedCurrents } from "../current-visualisation/adapters";
 import { PatternAngleInspector } from "../../components/results/PatternAngleInspector";
 import { clampElevationAngle, gainAtAngle } from "../../components/results/pattern-angle";
+import { usePointerDrag } from "../../components/results/usePointerDrag";
 
 interface PatternPlotProps {
   title: string;
@@ -28,13 +29,14 @@ export function DipolePatternPlot({ title, points, xLabel }: PatternPlotProps) {
   const path = linePath(points.map((point) => ({ x: sx(point.angleDeg), y: sy(point.normalizedDb) })));
   const reading = isElevation ? gainAtAngle(points, selectedElevationDeg) : null;
 
-  const selectFromPointer = (event: PointerEvent<SVGSVGElement>) => {
+  const updateFromPointer = (event: PointerEvent<SVGSVGElement>) => {
     if (!isElevation) return;
     const bounds = event.currentTarget.getBoundingClientRect();
     const viewX = ((event.clientX - bounds.left) / bounds.width) * width;
     const angle = xMin + ((viewX - pad.left) / (width - pad.left - pad.right)) * (xMax - xMin);
     setSelectedElevationDeg(Number(clampElevationAngle(angle).toFixed(1)));
   };
+  const pointerDrag = usePointerDrag(updateFromPointer);
 
   const moveFromKeyboard = (event: KeyboardEvent<SVGSVGElement>) => {
     if (!isElevation) return;
@@ -54,11 +56,12 @@ export function DipolePatternPlot({ title, points, xLabel }: PatternPlotProps) {
       <figcaption className="mb-2 text-sm font-semibold text-text-primary">{title} pattern</figcaption>
       <svg
         viewBox={`0 0 ${width} ${height}`}
-        className={`w-full ${isElevation ? "cursor-crosshair focus:outline-none focus:ring-2 focus:ring-accent" : ""}`}
+        className={`w-full ${isElevation ? "cursor-crosshair select-none focus:outline-none focus:ring-2 focus:ring-accent" : ""}`}
         role="img"
         aria-label={`${title} normalized gain plot${isElevation ? "; interactive angle cursor" : ""}`}
         tabIndex={isElevation ? 0 : undefined}
-        onPointerDown={selectFromPointer}
+        style={isElevation ? { touchAction: "none" } : undefined}
+        {...(isElevation ? pointerDrag : {})}
         onKeyDown={moveFromKeyboard}
       >
         {[-40, -30, -20, -10, 0].map((db) => (
