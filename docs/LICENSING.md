@@ -11,7 +11,7 @@ HF Antenna Studio is distributed as a combined work under `GPL-3.0-or-later`. Th
 
 This conservative GPL position is required because:
 
-- HF Antenna Studio is derived from GPL-3.0-or-later EA1FUO/AntennaSim source;
+- HF Antenna Studio was forked from the GPL-3.0-or-later software AntennaSim by EA1FUO and its contributors;
 - the pinned KJ7LNW/nec2c solver tree contains a GPLv3 `COPYING` file alongside less uniform historical provenance wording; and
 - a process, worker, or Wasm boundary is an engineering mechanism, not an assumed licence exemption.
 
@@ -21,6 +21,7 @@ The project does not claim that a new name or repository removes inherited oblig
 
 ### EA1FUO/AntennaSim
 
+- Relationship: HF Antenna Studio was forked from the software **AntennaSim**; the project records this origin with explicit thanks and does not claim clean-room status.
 - Audited/import source: commit `96e153ceefffd25819e42142d591ca811b4790d3`.
 - Licence: GNU GPL version 3 or later in the upstream root licence.
 - Treatment: Git history and attribution retained; public README, product identity, documentation and UI claims replaced with HF Antenna Studio originals. Adapted source is included in corresponding source.

@@ -6,7 +6,7 @@ Project-creator credits, acknowledgements, and attributed engineering-reference 
 
 ## AntennaSim-derived source
 
-HF Antenna Studio began from EA1FUO/AntennaSim at commit `96e153ceefffd25819e42142d591ca811b4790d3`, distributed under GNU GPL version 3 or later. Git history retains original authorship and the repository retains the GPL text in `LICENSE`. HF Antenna Studio contributors have extensively modified the application and preserve that provenance rather than presenting the work as a clean-room implementation.
+HF Antenna Studio was forked from the software **AntennaSim**, created by EA1FUO with its contributors, at commit `96e153ceefffd25819e42142d591ca811b4790d3` and distributed under GNU GPL version 3 or later. The HF Antenna Studio project thanks them explicitly for making that foundation available. Git history retains original authorship and the repository retains the GPL text in `LICENSE`. HF Antenna Studio contributors have extensively modified the application and preserve AntennaSim's name, source, licence, and exact fork point rather than presenting the work as a clean-room implementation.
 
 Source: <https://github.com/EA1FUO/AntennaSim/tree/96e153ceefffd25819e42142d591ca811b4790d3>
 

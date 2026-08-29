@@ -16,7 +16,7 @@ The use of ChatGPT Codex as a software-development tool does not imply sponsorsh
 
 The project offers sincere thanks to:
 
-- **EA1FUO and the AntennaSim contributors**, whose GPL-licensed [AntennaSim project](https://github.com/EA1FUO/AntennaSim) provided the original application foundation. HF Antenna Studio retains the repository history and records the exact audited source commit in its licensing documentation.
+- **EA1FUO and every AntennaSim contributor**, with particular thanks for creating and sharing **[AntennaSim](https://github.com/EA1FUO/AntennaSim)** under the GNU GPL. **HF Antenna Studio was forked from AntennaSim** at audited commit `96e153ceefffd25819e42142d591ca811b4790d3`; it is not a clean-room application that merely resembles it. The original project supplied the software foundation from which this application developed, and its Git authorship, licence, project name, source link, and exact fork point are retained as permanent provenance.
 - **The KJ7LNW/nec2c maintainers and earlier NEC contributors**, whose [nec2c project](https://github.com/KJ7LNW/nec2c) makes a real NEC-2 calculation engine available for open-source use and reproducible WebAssembly builds. HF Antenna Studio does not present the electromagnetic solver as its own invention.
 - **The authors and maintainers of React, Three.js, Tauri, Recharts, Zustand, TypeScript, Vite, Vitest, Playwright, and the project's other open-source dependencies.** Their work makes the local interface, visualisation, packaging, and test infrastructure possible. Exact versions and licence information are recorded in the lockfiles, software bill of materials, and [`THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md).
 
