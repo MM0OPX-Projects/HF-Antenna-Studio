@@ -63,7 +63,7 @@ export function computeWireBBox(wires: WireData[], hasGround: boolean): Box3 {
   }
 
   const antennaSpan = getAntennaSpan(wires);
-  if (hasGround && bbox.min.y > 0 && bbox.min.y <= antennaSpan * 3) {
+  if (hasGround && bbox.min.y > 0 && bbox.min.y <= antennaSpan * 1.5) {
     bbox.min.y = 0;
   }
 

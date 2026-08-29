@@ -7,7 +7,7 @@ $cases = @(
     @{ Name = "delta-loop-20m-perfect"; Directional = $false; R = 103.861; X = -77.3984; Gain = 7.94; Theta = 48 },
     @{ Name = "diamond-loop-20m-perfect"; Directional = $false; R = 88.9143; X = -80.3723; Gain = 7.95; Theta = 90 },
     @{ Name = "cubical-quad-2el-20m-perfect"; Directional = $true; R = 84.0498; X = 10.183; Gain = 14.36; Theta = 72 },
-    @{ Name = "hexbeam-20m-perfect"; Directional = $true; R = 39.3944; X = 52.9702; Gain = 12.12; Theta = 62 }
+    @{ Name = "hexbeam-20m-perfect"; Directional = $true; R = 31.8707; X = 3.09544; Gain = 11.96; Theta = 62 }
 )
 if (-not (Test-Path -LiteralPath $EnginePath -PathType Leaf)) { throw "4NEC2 comparator engine not found: $EnginePath" }
 $tempBase = [IO.Path]::GetTempPath(); $tempRoot = Join-Path $tempBase ("hfas-loop-beams-" + [guid]::NewGuid().ToString("N")); New-Item -ItemType Directory -Path $tempRoot | Out-Null

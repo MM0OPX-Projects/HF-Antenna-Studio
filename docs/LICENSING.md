@@ -1,7 +1,7 @@
 # HF Antenna Studio licensing and attribution
 
 Status: v1.0.0 engineering compliance record; not legal advice
-Last reviewed: 2026-08-23
+Last reviewed: 2026-08-29
 
 ## Distribution position
 
@@ -43,6 +43,7 @@ The build uses Node/npm, Vite, TypeScript, Tailwind, ESLint, Vitest, Playwright,
 - No CDN font/image/icon package is required at runtime.
 - Project-authored NEC fixtures and comparator scripts are GPL-3.0-or-later.
 - External publications are linked and paraphrased; their PDFs, images, substantial prose and tables are not bundled.
+- The G3TXQ broadband Hexbeam generator uses project-authored coordinate code derived from factual half-driver, reflector and tip-spacing dimensions published by Steve Hunt G3TXQ and cross-checked against K4KIO's construction specifications. No source diagram, spreadsheet, EZNEC deck, article text, website artwork or commercial asset is bundled or copied into the interface.
 - 4NEC2 is installed separately by the validation operator. No 4NEC2 executable, model library, screenshot, artwork or raw packaged output is distributed.
 - AN-SOF and EZNEC are factual reference names only. No code, algorithm implementation, artwork, trade dress, help text or bundled asset is copied.
 - NanoVNA software/fixtures are not bundled. User measurement files remain user data.

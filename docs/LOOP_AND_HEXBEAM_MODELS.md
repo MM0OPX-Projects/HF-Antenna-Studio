@@ -1,7 +1,7 @@
 # Loop, Cubical-Quad, and Hexbeam Models
 
-Status: implemented experimental workflow on `feature/loop-and-hexbeam-models`
-Last reviewed: 2026-08-02
+Status: implemented experimental workflow; G3TXQ geometry correction revalidated locally
+Last reviewed: 2026-08-29
 
 ## Implemented scope
 
@@ -11,7 +11,7 @@ The `/loop-and-hexbeam-models` workbench provides five independently generated m
 - a vertical delta loop with independent base, height, apex offset, and bottom-centre, lower-left-corner-region, or left-side-region feed;
 - a vertical diamond loop with independent horizontal and vertical diagonals;
 - a two-, three-, or four-element cubical quad with independent reflector/driven/director perimeters and spacings; and
-- a single-band broadband-style hexbeam for the 20, 17, 15, 12, and 10 metre construction bands.
+- a single-band G3TXQ broadband Hexbeam wire path for the 20, 17, 15, 12, and 10 metre construction bands.
 
 All dimensions are SI values in a NEC-independent discriminated model. Controls update actual wire geometry immediately. A dedicated adapter generates the exact NEC deck, submits that same deck to the local Wasm worker after a 450 ms debounce, and withholds the prior result as soon as the model changes. The workbench displays R, X, complex impedance, 50/75-ohm SWR, peak gain, take-off angle, azimuth/elevation cuts, an orbitable 3D pattern, wire-current magnitude/phase, and the generated deck. Quad and hexbeam models additionally report explicit `+Y` forward/rear metrics and azimuth beamwidth.
 
@@ -19,7 +19,7 @@ No optimizer, matching network, multiband interaction model, frequency sweep, or
 
 ## Geometry and feed contracts
 
-Every coloured 3D path corresponds to a generated `GW` conductor. Dashed gray hexbeam supports are construction context only and never become NEC wires.
+Every coloured 3D path corresponds to a generated `GW` conductor. The six dashed gray radial spreaders and six perimeter cords are construction context only and never become NEC wires.
 
 Closed loops are assembled from endpoint-identical straight sections. The generator verifies that closed-loop endpoints have degree two. The hexbeam deliberately has four degree-one endpoints: two open driven-element tips and two open reflector tips. It rejects any other open-end count.
 
@@ -31,11 +31,11 @@ For quad and hexbeam models, intended forward is fixed at domain `+Y`, correspon
 
 ## Hexbeam scope and provenance
 
-The hexbeam generator represents a centre-fed M-style driven wire and a separate rear reflector path. Six radial support projections are rendered, but only the two wire elements are solved. Driver total length, reflector total length, tip separation, nominal side-spreader radius, height, and wire diameter are independent parameters.
+The Hexbeam generator now represents Steve Hunt G3TXQ's broadband topology directly in plan view: two half-wires form the centre-fed classic M-shaped driver, each open driver tip is separated from its corresponding reflector tip, and the reflector then follows five consecutive sides of a regular hexagonal perimeter. Ten conductive sections are emitted: one short feed bridge, four driven sections, and five reflector sections. The support frame is visual only.
 
-The starting driver, reflector, and tip-separation dimensions are selected factual values from Steve Hunt G3TXQ's [broadband hexbeam notes](https://karinya.net/g3txq/hexbeam/broadband/) and the construction description published by [K4KIO](https://www.hex-beam.com/overall/). The 20 m nominal spreader radius uses the published 130-inch turn-radius starting value; the smaller-band radii are wavelength-scaled starting geometry. The generator derives its rear support projection so the requested reflector wire length is exact.
+The starting half-driver, total-reflector, and tip-separation dimensions are the bare-wire values published in Steve Hunt G3TXQ's [broadband Hexbeam notes](https://karinya.net/g3txq/hexbeam/broadband/) and independently restated in K4KIO's [construction specifications](https://www.hex-beam.com/specs/). The engine derives the regular frame radius from those three electrical dimensions and the explicit source bridge. Consequently each driven half-wire length measured from the feed centre, the total five-side reflector length, and both tip gaps remain exact rather than moving a rear bend off the support perimeter. The 20 m starting model derives a `3.248 m` (`127.9 in`) idealised wire-frame radius; G3TXQ describes the practical antenna's turning radius as approximately `130 in`/`10.7 ft`, so this small construction/model distinction remains explicit.
 
-This is intentionally labelled **broadband-style**, not a faithful reproduction or endorsement of a G3TXQ/K4KIO product. The original antenna uses flexible three-dimensional support mechanics, construction-specific tie points, insulation, and commonly several vertically stacked band elements. This model is one flat, bare-wire band at a time. The selected dimensions establish provenance for starting values; they do not validate the application's bend construction or performance.
+This is a faithful implementation of the published **single-band two-dimensional wire topology**, not a reproduction or endorsement of a complete physical product. A practical antenna uses bowed flexible spreaders, construction-specific ties and insulation, conductor sag, a mast/feed system, and commonly several vertically stacked band wire sets. Those omitted details can change impedance and pattern. The source attribution validates the geometry choice and starting dimensions only; it does not validate construction performance.
 
 ## NEC adapter and validity policy
 
@@ -61,7 +61,7 @@ Five application-generated, perfect-ground, 14.175 MHz decks are committed in `v
 | Delta loop, bottom feed | 103.861 | -77.3984 | 7.94 | 48 degrees | 42 degrees |
 | Diamond loop, sloping feed | 88.9143 | -80.3723 | 7.95 | 90 degrees | 0 degrees |
 | Two-element cubical quad | 84.0498 | +10.1830 | 14.36 | 72 degrees | 18 degrees |
-| 20 m broadband-style hexbeam | 39.3944 | +52.9702 | 12.12 | 62 degrees | 28 degrees |
+| 20 m G3TXQ broadband Hexbeam path | 31.8707 | +3.0954 | 11.96 | 62 degrees | 28 degrees |
 
 All five gates pass. These comparisons catch deck, parser, coordinate, and cross-build discrepancies. They are not five independent physical experiments: both engines implement NEC-2, the decks were authored by this project, and perfect ground is an idealisation.
 
@@ -69,7 +69,7 @@ The browser validation additionally solves every delta feed position, a four-ele
 
 ## Review-loop findings
 
-- **Geometry review:** replaced the inherited generic two-W-wire hex template with explicit driven/reflection paths and non-conducting supports. All starting conductor lengths are tested from generated coordinates.
+- **Geometry review:** replaced both the inherited generic two-W-wire template and the first laboratory approximation with one shared G3TXQ generator. Tests prove the M-driver sequence, five-side reflector sequence, bilateral symmetry, exact half-driver/reflector lengths, exact open tip gaps, and non-conductive six-spreader/perimeter frame.
 - **Connectivity review:** closed loops require exact endpoint closure; quad loops remain independent parasitic conductors; hex driver and reflector each have the expected open ends.
 - **Feed review:** introduced the one-segment source bridge so no feed location relies on nearest-segment rounding. Delta orientation changes are derived from the bridge.
 - **Segmentation review:** retained geometry corners and source identity while enforcing wavelength, aspect-ratio, total-count, and 80-column portability limits.
@@ -80,7 +80,7 @@ The browser validation additionally solves every delta feed position, a four-ele
 
 - Straight bare perfect conductors omit insulation, resistive loss, wire sag, corner radius, fittings, support dielectric, feed gap hardware, balun/choke, feed line/common mode, mast, nearby objects, and terrain.
 - The cubical quad uses square loop elements. Round/tapered conductors, boom/support effects, matching systems, and non-square quad variants are absent.
-- The hexbeam is a flat single-band parametric abstraction. It does not model stacked-band coupling, support deflection, or a complete published construction. Its topology requires independent convergence and a package-authored/measurement comparison before any performance claim.
+- The Hexbeam is a flat single-band G3TXQ topology. It does not model stacked-band coupling, spreader bow/deflection, insulation, tie points, or a complete published construction. Its numerical results still require source/corner/segment convergence plus an independently authored reference model or controlled measurement before any performance claim.
 - The feed bridge is a controlled NEC delta-gap abstraction. Source-bridge length and corner/segment convergence studies remain required.
 - Perfect-ground cross-engine agreement does not validate Sommerfeld/Norton results. Finite-ground exact-deck comparisons remain open.
 - The 2-degree grid quantises peak direction. Pattern-grid and interpolation convergence remain open.

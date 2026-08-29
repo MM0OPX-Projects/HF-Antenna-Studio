@@ -41,20 +41,23 @@ describe("typed loop, quad, and hexbeam models", () => {
     expect(resizeCubicalQuad(startingCubicalQuadModel(), 4).directorPerimetersM).toHaveLength(2);
   });
 
-  it("builds six explicit broadband-style hex wire paths and preserves element dimensions", () => {
+  it("builds the canonical G3TXQ broadband paths and preserves element dimensions", () => {
     for (const band of ["20m", "17m", "15m", "12m", "10m"] as const) {
       const model = startingHexbeamModel(band); const generated = generateLoopBeamModel(model);
       expect(generated.issues.filter((issue) => issue.severity === "error"), band).toEqual([]);
-      expect(generated.supports, band).toHaveLength(6);
+      expect(generated.supports, band).toHaveLength(12);
       expect(generated.wires.filter((wire) => wire.family === "driven"), band).toHaveLength(5);
-      expect(generated.wires.filter((wire) => wire.family === "reflector"), band).toHaveLength(4);
-      expect(total(generated.wires, "driven"), band).toBeCloseTo(model.drivenTotalLengthM, 9);
+      expect(generated.wires.filter((wire) => wire.family === "reflector"), band).toHaveLength(5);
+      expect(total(generated.wires, "driven"), band).toBeCloseTo(model.drivenHalfLengthM * 2, 9);
       expect(total(generated.wires, "reflector"), band).toBeCloseTo(model.reflectorTotalLengthM, 9);
+      const leftDriverTip = generated.wires.find((wire) => wire.id === "driven-left-outer")!.endM;
+      const leftReflectorTip = generated.wires.find((wire) => wire.id === "reflector-left-tip")!.startM;
+      expect(Math.hypot(leftReflectorTip.x - leftDriverTip.x, leftReflectorTip.y - leftDriverTip.y), band).toBeCloseTo(model.endSpacingM, 9);
       expect(generated.intendedForwardAxis).toBe("+Y");
     }
     const shifted = startingHexbeamModel("20m", 15_000_000);
     expect(shifted.frequencyHz).toBe(15_000_000);
-    expect(shifted.drivenTotalLengthM / loopBeamWavelengthM(shifted.frequencyHz)).toBeCloseTo(startingHexbeamModel("20m").drivenTotalLengthM / loopBeamWavelengthM(startingHexbeamModel("20m").frequencyHz), 10);
+    expect(shifted.drivenHalfLengthM / loopBeamWavelengthM(shifted.frequencyHz)).toBeCloseTo(startingHexbeamModel("20m").drivenHalfLengthM / loopBeamWavelengthM(startingHexbeamModel("20m").frequencyHz), 10);
   });
 
   it("uses an exact one-segment source, safe segmentation, NEC ground cards, and portable line lengths", () => {
@@ -87,7 +90,7 @@ describe("typed loop, quad, and hexbeam models", () => {
   it("rejects invalid ground contact, broken array cardinality, and impossible hex dimensions", () => {
     const quad = startingCubicalQuadModel(); quad.centreHeightM = 0.1; quad.directorPerimetersM = [1];
     expect(validateLoopBeamModel(quad, generateLoopBeamModel(quad).wires, generateLoopBeamModel(quad).feedWireId).some((issue) => issue.severity === "error")).toBe(true);
-    const hex = startingHexbeamModel(); hex.drivenTotalLengthM = 1; hex.reflectorTotalLengthM = 1;
-    const invalid = generateLoopBeamModel(hex); expect(invalid.issues.some((issue) => issue.code === "hex-driver-fit")).toBe(true); expect(invalid.issues.some((issue) => issue.code === "hex-reflector-fit")).toBe(true); expect(() => adaptLoopBeamToNec(invalid)).toThrow();
+    const hex = startingHexbeamModel(); hex.drivenHalfLengthM = 0.1; hex.reflectorTotalLengthM = 1; hex.endSpacingM = 10;
+    const invalid = generateLoopBeamModel(hex); expect(invalid.issues.some((issue) => issue.code === "hex-driver-fit")).toBe(true); expect(invalid.issues.some((issue) => issue.code === "hex-canonical-geometry")).toBe(true); expect(() => adaptLoopBeamToNec(invalid)).toThrow();
   });
 });

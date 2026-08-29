@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Added one shared, source-attributed G3TXQ broadband Hexbeam geometry generator with exact M-driver half lengths, five-side perimeter reflector length, two tip gaps, derived regular-frame radius, explicit feed bridge, and non-conductive spreader/perimeter rendering
+- Added topology, symmetry, length, gap, source, NEC-deck identity, real-solver and external 4NEC2 regression coverage for the corrected Hexbeam geometry
 - Added a keyboard-, click-and-drag-, and exact-number gain-at-angle inspector to every antenna elevation-cut workflow, reporting absolute dBi and normalised dB while distinguishing direct NEC angular samples from labelled linear interpolation
 - Added one shared explicit radial-system contract to Model Comparison, Parameter Sweeps, and Antenna Optimiser, including compatible elevated, raised near-surface, perfect-image, independent, and shared-bonded choices
 - Added schema-v5 `.hfas` project, autosave, recovery, migration, and reopen support for comparison, parameter-sweep, and optimiser inputs with exact radial identity
@@ -20,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- Replaced both the inherited generic two-W-wire Hex Beam and the earlier rotated/derived-rear-path laboratory approximation with the canonical single-band G3TXQ broadband wire layout; old Hexbeam numerical fixtures were invalidated and recomputed from the changed NEC deck
+- Corrected loop/quad/Hexbeam 3D framing so elevated horizontal arrays are centred in the camera while the ground grid remains at its scaled physical offset, instead of appearing nearly edge-on at absolute model height
 - Split phased elevated, near-surface, and perfect-image radial representations at the typed-model level and blocked ambiguous independent-field crossings
 - Replaced the reusable quarter-wave template's perfect-ground-only start with a real-soil, sixteen-radial starting model; the ideal perfect-ground monopole remains in the Vertical Antennas laboratory
 

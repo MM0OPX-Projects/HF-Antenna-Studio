@@ -24,7 +24,7 @@ test("delta feed choices alter exact source geometry and derived orientation wit
 test("four-element quad and every hex construction-band preset regenerate connected wire paths", async ({ page }) => {
   await openLab(page); await page.getByTestId("loop-type-cubical-quad").click(); await page.getByTestId("quad-loop-count").selectOption("4"); await expect(page.getByTestId("loop-wire-count")).toHaveText("18"); await expect(page.getByTestId("loop-errors")).toHaveCount(0); await waitForSolved(page); await expect(page.getByTestId("loop-result-fb")).toBeVisible();
   await page.getByTestId("loop-type-hexbeam").click();
-  for (const band of ["20m", "17m", "15m", "12m", "10m"]) { await page.getByTestId("hex-band").selectOption(band); await expect(page.getByTestId("loop-wire-count"), band).toHaveText("9"); await expect(page.getByTestId("loop-errors"), band).toHaveCount(0); expect((await page.getByTestId("loop-generated-nec").textContent())?.match(/^GW /gm), band).toHaveLength(9); }
+  for (const band of ["20m", "17m", "15m", "12m", "10m"]) { await page.getByTestId("hex-band").selectOption(band); await expect(page.getByTestId("loop-wire-count"), band).toHaveText("10"); await expect(page.getByTestId("loop-errors"), band).toHaveCount(0); expect((await page.getByTestId("loop-generated-nec").textContent())?.match(/^GW /gm), band).toHaveLength(10); await expect(page.getByTestId("hex-frame-radius"), band).toContainText("m"); }
   await waitForSolved(page);
 });
 

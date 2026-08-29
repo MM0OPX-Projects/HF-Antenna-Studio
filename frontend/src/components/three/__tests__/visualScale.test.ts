@@ -128,6 +128,25 @@ describe("visual scale", () => {
     expect(computeWireBBox(elevated, true).min.y).toBeGreaterThan(9);
   });
 
+  it("prioritizes a compact beam when its ground is more than 1.5 antenna spans away", () => {
+    const compactBeam = [
+      {
+        tag: 1,
+        segments: 7,
+        x1: -3,
+        y1: 0,
+        z1: 12,
+        x2: 3,
+        y2: 0,
+        z2: 12,
+        radius: 0.001,
+      },
+    ];
+
+    expect(getAntennaSpan(compactBeam)).toBe(6);
+    expect(computeWireBBox(compactBeam, true).min.y).toBeGreaterThan(10);
+  });
+
   it("computes a full-scene camera frame for a 0.5 MHz dipole", () => {
     const wires = wireGeometryToWireData(
       dipoleTemplate.generateGeometry({

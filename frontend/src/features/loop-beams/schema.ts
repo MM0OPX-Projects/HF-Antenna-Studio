@@ -53,10 +53,9 @@ export type HexBand = "20m" | "17m" | "15m" | "12m" | "10m";
 export interface HexbeamModel extends CommonModel {
   kind: "hexbeam";
   band: HexBand;
-  drivenTotalLengthM: number;
+  drivenHalfLengthM: number;
   reflectorTotalLengthM: number;
   endSpacingM: number;
-  spreaderRadiusM: number;
   heightM: number;
 }
 

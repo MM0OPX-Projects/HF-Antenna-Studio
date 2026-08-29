@@ -6,5 +6,5 @@ export const LOOP_BEAM_PERFECT_GROUND_REGRESSION_CASES: LoopBeamRegressionCase[]
   { kind: "delta-loop", expected: { resistanceOhm: 103.861, reactanceOhm: -77.3984, peakGainDbi: 7.94, takeOffAngleDeg: 42 } },
   { kind: "diamond-loop", expected: { resistanceOhm: 88.9143, reactanceOhm: -80.3723, peakGainDbi: 7.95, takeOffAngleDeg: 0 } },
   { kind: "cubical-quad", expected: { resistanceOhm: 84.0498, reactanceOhm: 10.183, peakGainDbi: 14.36, takeOffAngleDeg: 18 } },
-  { kind: "hexbeam", expected: { resistanceOhm: 39.3944, reactanceOhm: 52.9702, peakGainDbi: 12.12, takeOffAngleDeg: 28 } },
+  { kind: "hexbeam", expected: { resistanceOhm: 31.8707, reactanceOhm: 3.09544, peakGainDbi: 11.96, takeOffAngleDeg: 28 } },
 ];

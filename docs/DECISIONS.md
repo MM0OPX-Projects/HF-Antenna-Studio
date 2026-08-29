@@ -27,7 +27,7 @@ Decision review date: 2026-08-25
 | D-018 | Keep perfect-ground contact, elevated explicit radials, and NEC radial-screen approximations as distinct vertical configurations | Accepted, experimental |
 | D-019 | Give directional models an explicit forward-axis and separate front/back from front/rear | Accepted, experimental |
 | D-020 | Use explicit source bridges for polygon and folded-wire feeds | Accepted, experimental |
-| D-021 | Treat initial hexbeam support as a disclosed single-band broadband-style topology | Accepted, experimental |
+| D-021 | Implement the attributed G3TXQ single-band broadband Hexbeam topology with bounded claims | Accepted, experimental; amended 2026-08-29 |
 | D-022 | Keep enforced ideal currents and physical TL feed networks as distinct phased-array modes | Accepted, experimental |
 | D-023 | Bind current views to parsed segment results and label every visual normalization | Accepted, experimental |
 | D-024 | Gate cross-model overlays on complete solved-condition and model identities | Accepted, experimental |
@@ -343,17 +343,19 @@ Represent three vertical configurations explicitly and never convert between the
 - Connectivity, aspect ratio, exact deck identity, output-current mapping, and solver failure are testable without embedding NEC syntax in the antenna schema.
 - This decision applies to the dedicated loop/quad/hex workflow; existing generic templates are not retroactively claimed to have this contract.
 
-## D-021 — Initial hexbeam support is a disclosed single-band broadband-style topology
+## D-021 — Implement the attributed G3TXQ single-band broadband Hexbeam topology with bounded claims
 
-**Decision:** Implement one band at a time as explicit M-style driven and rear-reflector wire paths on a six-arm visual support frame. Use attributed published conductor/tip-spacing facts as starting values, wavelength-scale smaller nominal support radii, and derive the rear projection needed to retain exact requested reflector length. Do not label the model as a faithful named-design reproduction or model stacked multiband coupling.
+**Decision:** Implement one band at a time using Steve Hunt G3TXQ's published broadband topology: a classic M-shaped driven element and a reflector constrained to five sides of a regular hexagonal perimeter. Use attributed published bare-wire half-driver, total-reflector and tip-spacing dimensions as starting values. Derive the idealised frame radius so both driver halves, the reflector and both gaps remain exact. Share this generator between the reusable Simulator template and the specialist workbench. Describe it as the G3TXQ single-band wire topology, but do not equate it with a complete physical or stacked multiband construction.
+
+This amends the initial approximation, which rotated the visual frame by 30 degrees, placed driver ends away from the canonical front-side edges, and derived a rear reflector projection outside a regular support perimeter. The inherited reusable template separately used two generic W wires. Both approximations are removed rather than grandfathered as alternate G3TXQ models.
 
 **Consequences:**
 
-- Users can inspect and change every conductive path dimension, separation, height, and diameter.
-- Visual supports never enter the NEC deck, and flexible construction mechanics are outside the model.
-- The topology can be cross-engine tested now without implying that its pattern matches a physical G3TXQ/K4KIO antenna.
+- Users can inspect and change the half-driver length, reflector length, tip separation, height and diameter; the idealised frame radius is a displayed derived value, not an independent dimension that can break path closure.
+- Six visual spreaders and six perimeter cords never enter the NEC deck, and flexible three-dimensional construction mechanics remain outside the model.
+- Geometry/source/length contracts and byte-identical cross-engine decks are tested without implying that the calculated pattern has been validated against a physical G3TXQ/K4KIO antenna.
 - Published/source-derived numbers require attribution but no proprietary asset, diagram, model deck, code, or output is copied.
-- A package-authored/reference construction and controlled convergence/measurement study are required before stronger hexbeam claims.
+- An independently authored established-package reference, controlled source/corner/segment convergence, and measurement study are required before stronger performance claims.
 
 ## D-022 — Distinct phased-array excitation modes
 

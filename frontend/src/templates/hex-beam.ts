@@ -1,22 +1,19 @@
 /**
  * Hex Beam antenna template.
  *
- * A broadband directional antenna using a hexagonal frame with wire
- * elements in a "W" shape. Compact, lightweight, and wind-resistant.
- * Provides Yagi-like performance in a much smaller turning radius.
+ * A single-band G3TXQ broadband Hexbeam using the published M-shaped
+ * driven element and the reflector path around five frame sides.
  *
  * Geometry (top view):
  *
- *          ___
- *         /   \       ← reflector follows hex perimeter
- *        / \_/ \      ← driven element (inner W shape)
- *        \     /
- *         \___/
- *           ^
- *      radiation direction
+ *          /\   /\       ← classic M-shaped driven element
+ *         /  \_/  \
+ *        ·         ·      ← insulated driver/reflector tip gaps
+ *         \       /
+ *          \_____/        ← broadband reflector on frame perimeter
  *
- * The antenna is modeled as a 2-element beam with W-shaped elements
- * on a hexagonal frame. Elements along X, beam direction along Y.
+ * The antenna is modelled as a two-element parasitic beam on a hexagonal
+ * frame. Element width is along X and intended forward direction is +Y.
  * NEC2 coordinates: X=east, Y=north, Z=up.
  */
 
@@ -29,33 +26,34 @@ import type {
 } from "./types";
 import { autoSegment } from "../engine/segmentation";
 import { MAX_FREQUENCY_MHZ, MIN_FREQUENCY_MHZ } from "../engine/limits";
+import { buildG3txqBroadbandHexbeam, g3txqFeedGapM } from "../engine/g3txq-hexbeam";
+
+const INCH_M = 0.0254;
+const G3TXQ_REFERENCE_FREQUENCY_MHZ = 14.175;
 
 export const hexBeamTemplate: AntennaTemplate = {
   id: "hex-beam",
-  name: "Hex Beam",
+  name: "G3TXQ Broadband Hexbeam",
   nameShort: "Hex",
   description:
-    "Compact broadband beam on a hex frame — Yagi performance, smaller footprint.",
+    "Single-band G3TXQ broadband wire geometry on a hexagonal support frame.",
   longDescription:
-    "The Hex Beam (or Hexagonal Beam) is a lightweight directional antenna that uses " +
-    "wire elements bent into a W shape on a hexagonal frame. It provides performance " +
-    "similar to a 2-element Yagi (5-6 dBi gain, 15-20 dB F/B) but with a significantly " +
-    "smaller turning radius — about 60% of a full-size Yagi. The W-shaped elements " +
-    "create broadband performance through capacitive end-loading. Hex beams are very " +
-    "popular for multi-band HF operations, often covering 20m through 6m on a single " +
-    "frame. Wind loading is very low due to the wire construction.",
+    "This template implements Steve Hunt G3TXQ's broadband Hexbeam topology: a classic " +
+    "M-shaped driven element and a separate reflector routed around five sides of a " +
+    "regular hexagonal frame. Published bare-wire 20 m dimensions are wavelength-scaled " +
+    "as starting values. It is a single-band NEC model, not a complete stacked multiband " +
+    "construction, and its dimensions are not a guarantee of resonance or performance.",
   icon: "W",
   category: "directional",
   difficulty: "intermediate",
-  bands: ["20m", "17m", "15m", "12m", "10m", "6m"],
+  bands: ["20m", "17m", "15m", "12m", "10m"],
   defaultGround: { type: "average" },
   tips: [
-    "Turning radius is ~60% of an equivalent Yagi — great for small towers.",
-    "Very low wind loading compared to aluminum Yagis.",
-    "The W shape provides natural broadbanding through end loading.",
-    "Can easily be multiband with multiple wire sets on the same frame.",
-    "Element sag affects performance — keep the frame level.",
-    "Typical gain 5-6 dBi with 15-20 dB F/B ratio.",
+    "The driver is M-shaped; the broadband reflector follows five frame sides.",
+    "Published dimensions are starting points and assume bare #14 or #16 copper wire.",
+    "Element sag, insulation, hardware, mast and feed-line common mode are not modelled.",
+    "A real multiband Hexbeam needs all band wire sets and their interaction modelled together.",
+    "Inspect segmentation convergence before relying on feed impedance or rear-null depth.",
   ],
   relatedTemplates: ["moxon", "yagi", "quad"],
 
@@ -100,124 +98,42 @@ export const hexBeamTemplate: AntennaTemplate = {
     const height = params.height ?? 12;
     const wireDiamMm = params.wire_diameter ?? 2.0;
 
-    const wavelength = 300.0 / freq;
+    const wavelength = 299.792458 / freq;
     const radius = wireDiamMm / 1000 / 2;
     const maxFreq = freq * 1.1;
+    const scale = G3TXQ_REFERENCE_FREQUENCY_MHZ / freq;
+    const geometry = buildG3txqBroadbandHexbeam({
+      drivenHalfLengthM: 218 * INCH_M * scale,
+      reflectorTotalLengthM: 412 * INCH_M * scale,
+      endSpacingM: 24 * INCH_M * scale,
+      feedGapM: g3txqFeedGapM(wavelength, wireDiamMm / 1000),
+      heightM: height,
+    });
 
-    // Hex beam dimensions (empirical from G3TXQ design)
-    // Driven element: W shape with total wire length ~0.46λ
-    // Reflector: W shape with total wire length ~0.50λ
-    // Hex frame size determines the spread
-
-    // Half-width of the hex frame (tip to center)
-    const halfWidth = wavelength * 0.23;
-    // Forward/backward depth of the W bends
-    const drivenDepth = wavelength * 0.07; // how far the W bends back
-    const reflectorDepth = wavelength * 0.07;
-    // Spacing between driven and reflector (center to center)
-    const spacing = wavelength * 0.08;
-
-    // Driven element: W shape centered at y=0
-    // Points: left tip → left bend → center feed → right bend → right tip
-    const dLeftTipX = -halfWidth;
-    const dLeftTipY = 0;
-    const dLeftBendX = -halfWidth * 0.4;
-    const dLeftBendY = -drivenDepth;
-    const dCenterX = 0;
-    const dCenterY = 0;
-    const dRightBendX = halfWidth * 0.4;
-    const dRightBendY = -drivenDepth;
-    const dRightTipX = halfWidth;
-    const dRightTipY = 0;
-
-    // Reflector: W shape behind driven
-    const rY = -spacing;
-    const rLeftTipX = -halfWidth * 1.05; // slightly wider
-    const rLeftTipY = rY;
-    const rLeftBendX = -halfWidth * 0.4;
-    const rLeftBendY = rY - reflectorDepth;
-    const rCenterX = 0;
-    const rCenterY = rY;
-    const rRightBendX = halfWidth * 0.4;
-    const rRightBendY = rY - reflectorDepth;
-    const rRightTipX = halfWidth * 1.05;
-    const rRightTipY = rY;
-
-    const segsArm = autoSegment(halfWidth * 0.6, maxFreq, 11);
-    const segsMid = autoSegment(halfWidth * 0.4, maxFreq, 7);
-
-    return [
-      // Driven element (4 wires forming the W)
-      // Wire 1: Left tip → Left bend
-      {
-        tag: 1, segments: segsArm,
-        x1: dLeftTipX, y1: dLeftTipY, z1: height,
-        x2: dLeftBendX, y2: dLeftBendY, z2: height,
+    return geometry.sections.map((section, index) => {
+      const lengthM = Math.hypot(section.endM.x - section.startM.x, section.endM.y - section.startM.y, section.endM.z - section.startM.z);
+      return {
+        tag: index + 1,
+        segments: section.source ? 1 : autoSegment(lengthM, maxFreq, 7),
+        x1: section.startM.x,
+        y1: section.startM.y,
+        z1: section.startM.z,
+        x2: section.endM.x,
+        y2: section.endM.y,
+        z2: section.endM.z,
         radius,
-      },
-      // Wire 2: Left bend → Center (feed)
-      {
-        tag: 2, segments: segsMid,
-        x1: dLeftBendX, y1: dLeftBendY, z1: height,
-        x2: dCenterX, y2: dCenterY, z2: height,
-        radius,
-      },
-      // Wire 3: Center → Right bend
-      {
-        tag: 3, segments: segsMid,
-        x1: dCenterX, y1: dCenterY, z1: height,
-        x2: dRightBendX, y2: dRightBendY, z2: height,
-        radius,
-      },
-      // Wire 4: Right bend → Right tip
-      {
-        tag: 4, segments: segsArm,
-        x1: dRightBendX, y1: dRightBendY, z1: height,
-        x2: dRightTipX, y2: dRightTipY, z2: height,
-        radius,
-      },
-      // Reflector element (4 wires forming the W)
-      // Wire 5: Left tip → Left bend
-      {
-        tag: 5, segments: segsArm,
-        x1: rLeftTipX, y1: rLeftTipY, z1: height,
-        x2: rLeftBendX, y2: rLeftBendY, z2: height,
-        radius,
-      },
-      // Wire 6: Left bend → Center
-      {
-        tag: 6, segments: segsMid,
-        x1: rLeftBendX, y1: rLeftBendY, z1: height,
-        x2: rCenterX, y2: rCenterY, z2: height,
-        radius,
-      },
-      // Wire 7: Center → Right bend
-      {
-        tag: 7, segments: segsMid,
-        x1: rCenterX, y1: rCenterY, z1: height,
-        x2: rRightBendX, y2: rRightBendY, z2: height,
-        radius,
-      },
-      // Wire 8: Right bend → Right tip
-      {
-        tag: 8, segments: segsArm,
-        x1: rRightBendX, y1: rRightBendY, z1: height,
-        x2: rRightTipX, y2: rRightTipY, z2: height,
-        radius,
-      },
-    ];
+      };
+    });
   },
 
   generateExcitation(
     _params: Record<string, number>,
     wires: WireGeometry[]
   ): Excitation {
-    // Feed at junction of wire 2 and 3 (center of driven W)
-    // Wire 2's last segment is the center feed point
-    const wire2 = wires[1]!;
+    const feedBridge = wires[0]!;
     return {
-      wire_tag: wire2.tag,
-      segment: wire2.segments,
+      wire_tag: feedBridge.tag,
+      segment: 1,
       voltage_real: 1.0,
       voltage_imag: 0.0,
     };
@@ -228,7 +144,7 @@ export const hexBeamTemplate: AntennaTemplate = {
     _wires: WireGeometry[]
   ): FeedpointData[] {
     const height = params.height ?? 12;
-    return [{ position: [0, 0, height], wireTag: 2 }];
+    return [{ position: [0, 0, height], wireTag: 1 }];
   },
 
   defaultFrequencyRange(params: Record<string, number>): FrequencyRange {

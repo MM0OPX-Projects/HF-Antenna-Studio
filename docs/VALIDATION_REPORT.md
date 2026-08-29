@@ -1,6 +1,6 @@
 # HF Antenna Studio Engineering Validation Report
 
-Campaign: `hfas-validation-campaign-2026-08-06`, rerun for release candidate `v1.0.0` on 2026-08-23
+Campaign: `hfas-validation-campaign-2026-08-06`, rerun for release candidate `v1.0.0` on 2026-08-23; corrected Hexbeam supplemental deck rerun 2026-08-29
 
 Status: **PASS within the exact models and tolerances recorded here; not a universal accuracy claim**
 
@@ -8,7 +8,9 @@ Status: **PASS within the exact models and tolerances recorded here; not a unive
 
 Nine primary cases covering all eight requested antenna families were rerun through HF Antenna Studio's pinned local nec2c/WebAssembly solver and checked against published NEC results, a separately installed established NEC-compatible package, and appropriate analytical symmetry/gain bounds. The external comparator campaign also reran seven supplemental decks, for 16 exact-deck external runs in total.
 
-No new calculation bug was confirmed. All primary metric differences are inside their declared pre-existing tolerances. The largest differences are the published 38 MHz dipole's `0.20 Ω` resistance and `0.32 Ω` reactance differences; these remain visible and are classified **Numerical tolerance** after a controlled exact-deck comparator showed that the application's 21-segment deck produces the same result in both solver builds. The publication used 11 segments.
+All nine primary metric differences remain inside their declared pre-existing tolerances. The largest differences are the published 38 MHz dipole's `0.20 Ω` resistance and `0.32 Ω` reactance differences; these remain visible and are classified **Numerical tolerance** after a controlled exact-deck comparator showed that the application's 21-segment deck produces the same result in both solver builds. The publication used 11 segments.
+
+A later geometry audit prompted by the G3TXQ drawing confirmed a **Bug** in the supplemental Hexbeam model: the reusable template used two generic W wires, while the specialist generator rotated the frame and derived a rear path that was not the published five-side reflector. Both paths now use one project-authored generator for the attributed G3TXQ single-band topology. The obsolete supplemental numbers were removed. The corrected exact deck produces `31.8707 + j3.09544 Ω`, `11.96 dBi`, and NEC peak theta `62°` in both the application pipeline and pinned 4NEC2 comparator. This is geometry/deck validation plus same-method cross-build evidence, not a measurement or complete multiband-construction validation.
 
 This report does not validate every antenna, ground, frequency, segmentation, feed system, or physical installation. Most exact-deck comparisons use the same NEC-2 method in different implementations. Agreement is evidence against deck-generation, parser, coordinate, and result-metric faults; it is not independent proof that NEC-2's physical assumptions fit an arbitrary real antenna.
 
@@ -139,12 +141,13 @@ No failed comparison is omitted.
 | VC-003 | Application R/X displays differ from external exact rows by up to 0.005 Ω | No | Numerical tolerance | Presentation rounding; raw external values and tolerances are recorded. No code change. |
 | VC-004 | NBS three-element Yagi sanity case has 12.1 dB F/B versus publication's roughly 8 dB | Expected/non-equivalent | Geometry difference | Folded versus straight driven element, construction/diameter, measurement reference and model planes differ. Used only as a broad beamwidth/rear-response sanity envelope. |
 | VC-005 | Broadside array has no unique heading | No; theoretical symmetry | Numerical tolerance | Equal opposite maxima are expected. UI correctly reports an axis/ambiguity rather than arbitrarily labelling one direction forward. |
+| VC-006 | The two existing Hexbeam generators did not reproduce the published G3TXQ broadband wire path | Yes | Bug | Replaced both with one shared M-driver/five-side-reflector generator; added exact path, symmetry, length, tip-gap, source and deck tests; regenerated the fixture and reran the independent 4NEC2 executable. Old `39.3944 + j52.9702 Ω` / `12.12 dBi` values are invalid for the corrected geometry. |
 
 Classification totals for the recorded campaign:
 
 | Classification | Primary cases | Secondary discrepancies | Open material failures |
 |---|---:|---:|---:|
-| Bug | 0 | 0 | 0 |
+| Bug | 0 | 1 | 0 |
 | Numerical tolerance | 9 | 4 | 0 |
 | Different solver implementation | 0 | 0 | 0 |
 | Different ground model | 0 | 0 | 0 |
@@ -155,15 +158,16 @@ The exact-deck cases use different solver builds but did not show a material dif
 
 ## Confirmed bugs and corrections
 
-No new confirmed calculation bug was found, so no electromagnetic calculation behaviour was changed.
+No calculation bug was found in the original nine-case primary campaign. The later Hexbeam audit confirmed the geometry/deck bug recorded as VC-006 and intentionally changed Hexbeam calculation behaviour. No solver algorithm or result was tuned toward an expected number: the wire topology was corrected first, then the changed deck was executed and its new results recorded.
 
-The campaign added evidence and test infrastructure rather than tuning calculations:
+The campaign and corrective rerun added evidence and test infrastructure:
 
 - added two deterministic dipole fixtures and a separate 4NEC2 comparator;
 - added an exact free-space axial-null gate and vertical azimuth-symmetry gate;
 - pinned primary decks and the comparator executable by SHA-256;
 - linked the campaign record to existing family regression constants;
-- added a unified fail-closed campaign runner.
+- added a unified fail-closed campaign runner; and
+- locked the corrected Hexbeam geometry and same-deck results through the browser solver and separately hashed 4NEC2 executable.
 
 Previously documented bugs—Yagi 80-column deck portability, incompatible `GN 2` radial-screen use, and absolute/local current-segment mapping—remain covered by their existing regressions, but they are not presented as discoveries of this campaign.
 
@@ -172,11 +176,13 @@ Previously documented bugs—Yagi 80-column deck portability, incompatible `GN 2
 The unified command also reruns these models beyond the nine primary states:
 
 - 40 m and 10 m ideal perfect-ground verticals;
-- diamond loop, two-element cubical quad, and single-band hexbeam;
+- diamond loop, two-element cubical quad, and the corrected single-band G3TXQ broadband Hexbeam wire path;
 - five-element Yagi; and
 - reversed end-fire phased array.
 
 All pass their existing exact-deck tolerances. The 4NEC2 runner executes 16 decks across five comparator families.
+
+For the corrected 20 m Hexbeam supplemental deck, the application and comparator record `R 31.8707 Ω`, `X +3.09544 Ω`, peak `11.96 dBi`, NEC theta `62°` / UI take-off `28°`, and forward phi `90°` (`+Y`). These values supersede the invalidated approximation; they are not compared to G3TXQ's published performance curves as an exact case because the application model is a flat single-band perfect-ground deck at a specified height rather than his documented free-space or practical multiband configurations.
 
 ## Automated regression fixtures
 
