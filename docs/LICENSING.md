@@ -3,6 +3,8 @@
 Status: v1.0.0 engineering compliance record; not legal advice
 Last reviewed: 2026-08-29
 
+Project-creator credits and professional thanks are recorded in [`ACKNOWLEDGEMENTS.md`](ACKNOWLEDGEMENTS.md). That page is complementary context; the licence and redistribution obligations remain those stated here, in the root `LICENSE`, and in `THIRD_PARTY_NOTICES.md`.
+
 ## Distribution position
 
 HF Antenna Studio is distributed as a combined work under `GPL-3.0-or-later`. The root `LICENSE` contains the complete GNU GPLv3 text and the package metadata uses the same SPDX expression. Release source includes the exact dependency lockfiles, solver submodule reference/source, build/test scripts, notices, and machine-readable frontend SBOM.

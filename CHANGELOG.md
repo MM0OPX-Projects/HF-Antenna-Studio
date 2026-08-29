@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Added a professional acknowledgements and source record crediting Colin Summers MM0OPX's product vision and direction, ChatGPT Codex's coding/documentation role, the inherited open-source foundations, and attributed antenna and validation references
 - Added one shared, source-attributed G3TXQ broadband Hexbeam geometry generator with exact M-driver half lengths, five-side perimeter reflector length, two tip gaps, derived regular-frame radius, explicit feed bridge, and non-conductive spreader/perimeter rendering
 - Added topology, symmetry, length, gap, source, NEC-deck identity, real-solver and external 4NEC2 regression coverage for the corrected Hexbeam geometry
 - Added a keyboard-, click-and-drag-, and exact-number gain-at-angle inspector to every antenna elevation-cut workflow, reporting absolute dBi and normalised dB while distinguishing direct NEC angular samples from labelled linear interpolation

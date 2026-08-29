@@ -56,6 +56,7 @@ No account, telemetry service, or calculation server is required. The packaged a
 
 ## Documentation
 
+- [Acknowledgements and sources](docs/ACKNOWLEDGEMENTS.md)
 - [User guide](docs/USER_GUIDE.md)
 - [Installation and troubleshooting](docs/INSTALLATION.md)
 - [Engineering validation report](docs/VALIDATION_REPORT.md)
@@ -90,6 +91,8 @@ The Windows package command and its clean-install acceptance test are documented
 Contributions are welcome through the [HF Antenna Studio repository](https://github.com/MM0OPX-Projects/HF-Antenna-Studio). Contributors must use the DCO sign-off and document the origin and licence of code, antenna reference data, model decks, and assets. Do not submit copied proprietary application code, artwork, screenshots, manuals, or reverse-engineered assets. Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
 
 HF Antenna Studio began from the GPL-licensed [EA1FUO/AntennaSim](https://github.com/EA1FUO/AntennaSim) codebase at audited commit `96e153ceefffd25819e42142d591ca811b4790d3`. Its interface, packaging, modelling adapters, validation infrastructure, and product documentation have subsequently been extensively changed. This project is not affiliated with or endorsed by AN-SOF, EZNEC, 4NEC2, or their authors. 4NEC2 is used only as a separately installed validation comparator and is not distributed here.
+
+HF Antenna Studio was conceived and directed by **Colin Summers, MM0OPX**. Its software implementation and documentation were coded by **ChatGPT Codex** under Colin's direction, review, and acceptance. With sincere thanks to the open-source developers, antenna researchers, radio amateurs, and technical authors whose work made the project possible; the complete professional credit and source record is in [Acknowledgements and sources](docs/ACKNOWLEDGEMENTS.md).
 
 ## Licence
 

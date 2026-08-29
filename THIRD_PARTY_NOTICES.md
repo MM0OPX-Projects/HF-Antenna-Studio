@@ -2,6 +2,8 @@
 
 This notice accompanies HF Antenna Studio v1.0.0. It is an attribution and inventory, not a replacement for the applicable licence texts. The exact dependency graph is pinned by `frontend/package-lock.json`, `src-tauri/Cargo.lock`, and the `wasm/nec2c` Git submodule. `SBOM.frontend.cdx.json` provides a machine-readable JavaScript inventory.
 
+Project-creator credits, acknowledgements, and attributed engineering-reference sources are recorded separately in [`docs/ACKNOWLEDGEMENTS.md`](docs/ACKNOWLEDGEMENTS.md). That acknowledgement supplements, but does not replace, the legal notices below.
+
 ## AntennaSim-derived source
 
 HF Antenna Studio began from EA1FUO/AntennaSim at commit `96e153ceefffd25819e42142d591ca811b4790d3`, distributed under GNU GPL version 3 or later. Git history retains original authorship and the repository retains the GPL text in `LICENSE`. HF Antenna Studio contributors have extensively modified the application and preserve that provenance rather than presenting the work as a clean-room implementation.
