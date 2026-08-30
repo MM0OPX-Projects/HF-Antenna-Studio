@@ -24,6 +24,8 @@ interface HeightPolarPlotProps {
 const CX = 230;
 const CY = 205;
 const RADIUS = 158;
+const ELEVATION_VIEW_HEIGHT = 285;
+const AZIMUTH_VIEW_HEIGHT = 390;
 
 function radiusFor(value: number, mode: PatternDisplayMode): number {
   const minimum = mode === "absolute" ? -30 : -40;
@@ -52,6 +54,7 @@ export function HeightPolarPlot({ plane, mode, series, svgRef }: HeightPolarPlot
   const [selectedElevationDeg, setSelectedElevationDeg] = useState(5);
   const rings = mode === "absolute" ? [-20, -10, 0, 10] : [-30, -20, -10, 0];
   const minimum = mode === "absolute" ? -30 : -40;
+  const viewHeight = plane === "azimuth" ? AZIMUTH_VIEW_HEIGHT : ELEVATION_VIEW_HEIGHT;
   const inspectorReadings = plane === "elevation" ? series.map((item) => ({
     id: item.id,
     label: item.label,
@@ -63,7 +66,7 @@ export function HeightPolarPlot({ plane, mode, series, svgRef }: HeightPolarPlot
     if (plane !== "elevation") return;
     const bounds = event.currentTarget.getBoundingClientRect();
     const x = ((event.clientX - bounds.left) / bounds.width) * 460;
-    const y = ((event.clientY - bounds.top) / bounds.height) * 285;
+    const y = ((event.clientY - bounds.top) / bounds.height) * ELEVATION_VIEW_HEIGHT;
     if (y > CY + 4) return;
     let polarAngle = Math.atan2(CY - y, x - CX) * 180 / Math.PI;
     if (polarAngle < 0) polarAngle += 360;
@@ -90,7 +93,7 @@ export function HeightPolarPlot({ plane, mode, series, svgRef }: HeightPolarPlot
     <div>
     <svg
       ref={svgRef}
-      viewBox="0 0 460 285"
+      viewBox={`0 0 460 ${viewHeight}`}
       role="img"
       aria-label={`${plane} polar radiation pattern in ${mode === "absolute" ? "absolute dBi" : "decibels relative to each trace peak"}${plane === "elevation" ? "; interactive angle cursor" : ""}`}
       className={`w-full ${plane === "elevation" ? "cursor-crosshair select-none focus:outline-none focus:ring-2 focus:ring-accent" : ""}`}
@@ -100,7 +103,7 @@ export function HeightPolarPlot({ plane, mode, series, svgRef }: HeightPolarPlot
       {...(plane === "elevation" ? pointerDrag : {})}
       onKeyDown={moveFromKeyboard}
     >
-      <rect width="460" height="285" rx="8" fill="var(--color-surface)" />
+      <rect width="460" height={viewHeight} rx="8" fill="var(--color-surface)" />
       <g fill="none" stroke="var(--color-border)" strokeWidth="1">
         {rings.map((value) => <circle key={value} cx={CX} cy={CY} r={radiusFor(value, mode)} />)}
         <line x1={CX - RADIUS} y1={CY} x2={CX + RADIUS} y2={CY} />
@@ -115,7 +118,7 @@ export function HeightPolarPlot({ plane, mode, series, svgRef }: HeightPolarPlot
         <text x={CX} y={CY - RADIUS - 6} textAnchor="middle">{plane === "azimuth" ? "0°" : "90°"}</text>
         {plane === "azimuth" && <text x={CX} y={CY + RADIUS + 15} textAnchor="middle">180°</text>}
         {rings.map((value) => <text key={value} x={CX + 4} y={CY - radiusFor(value, mode) - 3}>{value}</text>)}
-        <text x="8" y="274">floor {minimum} {mode === "absolute" ? "dBi" : "dB"}</text>
+        <text x="8" y={viewHeight - 11}>floor {minimum} {mode === "absolute" ? "dBi" : "dB"}</text>
       </g>
       {series.map((item) => <path
         key={item.id}

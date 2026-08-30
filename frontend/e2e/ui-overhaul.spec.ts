@@ -55,6 +55,8 @@ test.describe("professional application workbench", () => {
     await expect(page.getByText("Results current", { exact: true }).first()).toBeVisible({ timeout: 60_000 });
     await expect(page.getByTestId("results-radiation-cuts-azimuth")).toBeVisible();
     await expect(page.getByTestId("results-radiation-cuts-elevation")).toBeVisible();
+    await expect(page.getByTestId("results-radiation-cuts-azimuth").getByTestId("azimuth-polar-plot"))
+      .toHaveAttribute("viewBox", "0 0 460 390");
     const groundedElevationPath = await page.getByTestId("results-radiation-cuts-elevation")
       .locator('[data-testid^="polar-series-elevation-"]')
       .first()

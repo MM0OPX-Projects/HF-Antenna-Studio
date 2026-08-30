@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- Expanded every shared azimuth polar view to its complete 360° circle so the 180° half and bottom label are no longer clipped by the elevation plot's shorter viewport
 - Completed elevation-cut traces to the 0° and 180° axes when NEC reports an exact horizon null (`-999.99 dB`), drawing those nulls only at the visual floor while continuing to withhold a fabricated numerical gain or interpolation
 
 ## [1.0.0] - 2026-08-23
