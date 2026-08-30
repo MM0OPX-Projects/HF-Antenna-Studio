@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- Extended the shared elevation gain inspector from a mirrored 0–90° control to a true 0–180° bearing-plane cut on every antenna workflow: 0° primary horizon, 90° zenith, and 180° opposite horizon, using the solver's real opposite-bearing samples for front/rear comparisons
 - Replaced both the inherited generic two-W-wire Hex Beam and the earlier rotated/derived-rear-path laboratory approximation with the canonical single-band G3TXQ broadband wire layout; old Hexbeam numerical fixtures were invalidated and recomputed from the changed NEC deck
 - Corrected loop/quad/Hexbeam 3D framing so elevated horizontal arrays are centred in the camera while the ground grid remains at its scaled physical offset, instead of appearing nearly edge-on at absolute model height
 - Split phased elevated, near-surface, and perfect-image radial representations at the typed-model level and blocked ambiguous independent-field crossings

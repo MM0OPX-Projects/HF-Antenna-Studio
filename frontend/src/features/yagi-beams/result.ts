@@ -3,6 +3,7 @@ import { computeSwr } from "../../engine/parsers/nec-output";
 import type { AdaptedYagiNec } from "./nec-adapter";
 import { yagiModelKey } from "./model";
 import type { YagiAntennaModel, YagiCurrentPoint, YagiPatternPoint, YagiSolverResult } from "./schema";
+import { extractFullElevationCut } from "../../components/results/full-elevation-cut";
 
 function angularDistance(a: number, b: number): number {
   const difference = Math.abs(((a - b + 540) % 360) - 180);
@@ -83,10 +84,7 @@ export function calculateYagiDirectionalMetrics(pattern: PatternData): YagiDirec
     angleDeg: pattern.phi_start + pi * pattern.phi_step,
     gainDbi: pattern.gain_dbi[bestTheta]?.[pi] ?? -999.99,
   })));
-  const elevationPattern = normalize(Array.from({ length: pattern.theta_count }, (_, ti) => ({
-    angleDeg: 90 - (pattern.theta_start + ti * pattern.theta_step),
-    gainDbi: pattern.gain_dbi[ti]?.[bestPhi] ?? -999.99,
-  })).sort((a, b) => a.angleDeg - b.angleDeg));
+  const elevationPattern = normalize(extractFullElevationCut(pattern, forwardBearing));
   const azimuthPeakIndex = azimuthPattern.findIndex((point) => Math.abs(point.angleDeg - forwardBearing) < pattern.phi_step * 0.6);
   return {
     forwardGainDbi: forwardGain,

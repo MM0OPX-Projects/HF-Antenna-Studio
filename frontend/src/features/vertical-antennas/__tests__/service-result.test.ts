@@ -43,7 +43,9 @@ describe("vertical solver pipeline", () => {
     expect(result).toMatchObject({ resistanceOhm: 36.5, reactanceOhm: 2.5, maximumGainDbi: 5.1, takeOffAngleDeg: 0, engine: "test-engine" });
     expect(result.swr).toBeCloseTo(1.3772, 4);
     expect(result.azimuthVariationDb).toBeCloseTo(0.001, 6);
-    expect(result.elevationPattern).toHaveLength(19);
+    expect(result.elevationPattern).toHaveLength(37);
+    expect(result.elevationPattern[0]!.angleDeg).toBe(0);
+    expect(result.elevationPattern[result.elevationPattern.length - 1]!.angleDeg).toBe(180);
     expect(result.azimuthPattern).toHaveLength(72);
     expect(result.currentDistribution[0]).toMatchObject({ wireId: "radiator", family: "radiator", tag: 1 });
     expect(result.currentDistribution[1]).toMatchObject({ wireId: "radial-1", family: "radial", tag: 2, phaseDeg: -10 });

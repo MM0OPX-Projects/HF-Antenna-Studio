@@ -32,7 +32,7 @@ describe("gainAtAngle", () => {
 
   it("does not extrapolate or use invalid NEC sentinel values", () => {
     expect(gainAtAngle(points, -1)).toBeNull();
-    expect(gainAtAngle(points, 91)).toBeNull();
+    expect(gainAtAngle(points, 181)).toBeNull();
     expect(gainAtAngle([{ angleDeg: 5, gainDbi: -999.99, normalizedDb: -999.99 }], 5)).toBeNull();
     expect(gainAtAngle([
       points[0]!,
@@ -47,9 +47,10 @@ describe("gainAtAngle", () => {
 });
 
 describe("clampElevationAngle", () => {
-  it("keeps cursor angles within the upper hemisphere", () => {
+  it("keeps cursor angles within the complete elevation plane", () => {
     expect(clampElevationAngle(-2)).toBe(0);
     expect(clampElevationAngle(5)).toBe(5);
-    expect(clampElevationAngle(95)).toBe(90);
+    expect(clampElevationAngle(95)).toBe(95);
+    expect(clampElevationAngle(181)).toBe(180);
   });
 });

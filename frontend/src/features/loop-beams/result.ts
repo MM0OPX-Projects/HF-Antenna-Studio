@@ -4,6 +4,7 @@ import { calculateYagiDirectionalMetrics } from "../yagi-beams/result";
 import type { AdaptedLoopBeamNec } from "./nec-adapter";
 import { loopBeamModelKey } from "./model";
 import type { LoopBeamCurrentPoint, LoopBeamModel, LoopBeamPatternPoint, LoopBeamSolverResult } from "./schema";
+import { extractFullElevationCut } from "../../components/results/full-elevation-cut";
 
 function normalize(points: Array<{ angleDeg: number; gainDbi: number }>): LoopBeamPatternPoint[] {
   const finite = points.filter((point) => Number.isFinite(point.gainDbi) && point.gainDbi > -999);
@@ -23,7 +24,7 @@ function globalMetrics(pattern: PatternData) {
     maximumGainDbi,
     takeOffAngleDeg: Math.max(0, Math.min(90, 90 - (pattern.theta_start + bestTheta * pattern.theta_step))),
     azimuthPattern: normalize(Array.from({ length: pattern.phi_count }, (_, pi) => ({ angleDeg: pattern.phi_start + pi * pattern.phi_step, gainDbi: pattern.gain_dbi[bestTheta]?.[pi] ?? -999.99 }))),
-    elevationPattern: normalize(Array.from({ length: pattern.theta_count }, (_, ti) => ({ angleDeg: 90 - (pattern.theta_start + ti * pattern.theta_step), gainDbi: pattern.gain_dbi[ti]?.[bestPhi] ?? -999.99 })).sort((a, b) => a.angleDeg - b.angleDeg)),
+    elevationPattern: normalize(extractFullElevationCut(pattern, pattern.phi_start + bestPhi * pattern.phi_step)),
   };
 }
 

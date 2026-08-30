@@ -2,6 +2,7 @@ import type { FrequencyResult, PatternData, SegmentCurrent, SimulationResult } f
 import { computeSwr } from "../../engine/parsers/nec-output";
 import type { HorizontalDipoleModel } from "./model";
 import type { AdaptedDipoleNec } from "./nec-adapter";
+import { extractFullElevationCut } from "../../components/results/full-elevation-cut";
 
 export interface NormalizedPatternPoint {
   angleDeg: number;
@@ -76,14 +77,8 @@ function extractPatterns(data: FrequencyResult): {
       gainDbi: pattern.gain_dbi[bestThetaIndex]?.[pi] ?? -999.99,
     })),
   );
-  const elevation = normalize(
-    Array.from({ length: pattern.theta_count }, (_, ti) => ({
-      // NEC theta is measured down from zenith. Display elevation is measured
-      // up from the horizon, hence 90-theta (and -90..+90 in free space).
-      angleDeg: 90 - (pattern.theta_start + ti * pattern.theta_step),
-      gainDbi: pattern.gain_dbi[ti]?.[bestPhiIndex] ?? -999.99,
-    })).sort((a, b) => a.angleDeg - b.angleDeg),
-  );
+  const bestPhiDeg = pattern.phi_start + bestPhiIndex * pattern.phi_step;
+  const elevation = normalize(extractFullElevationCut(pattern, bestPhiDeg));
   return { azimuth, elevation };
 }
 

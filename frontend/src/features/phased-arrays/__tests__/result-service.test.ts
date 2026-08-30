@@ -42,6 +42,11 @@ describe("phased-array result and service", () => {
     expect(metrics.frontToBackDb).toBeCloseTo(12, 6);
     expect(metrics.frontToRearDb).toBeLessThanOrEqual(metrics.frontToBackDb);
     expect(metrics.azimuthPattern[0]!.angleDeg).toBe(0);
+    expect(metrics.elevationPattern).toHaveLength(91);
+    expect(metrics.elevationPattern[0]!.angleDeg).toBe(0);
+    expect(metrics.elevationPattern[metrics.elevationPattern.length - 1]!.angleDeg).toBe(180);
+    expect(metrics.elevationPattern.find((point) => point.angleDeg === 4)!.gainDbi)
+      .toBeGreaterThan(metrics.elevationPattern.find((point) => point.angleDeg === 176)!.gainDbi);
     expect(metrics.beamHeadingAmbiguous).toBe(false);
     expect(calculatePhasedDirectionalMetrics(pattern(90, true)).beamHeadingAmbiguous).toBe(true);
   });

@@ -41,7 +41,11 @@ describe("Yagi result contract", () => {
     expect(metrics.beamwidthDeg).toBeGreaterThan(130);
     expect(metrics.beamwidthDeg).toBeLessThan(145);
     expect(metrics.azimuthPattern).toHaveLength(180);
-    expect(metrics.elevationPattern).toHaveLength(46);
+    expect(metrics.elevationPattern).toHaveLength(91);
+    expect(metrics.elevationPattern[0]).toMatchObject({ angleDeg: 0 });
+    expect(metrics.elevationPattern[metrics.elevationPattern.length - 1]).toMatchObject({ angleDeg: 180 });
+    expect(metrics.elevationPattern.find((point) => point.angleDeg === 4)!.gainDbi)
+      .toBeGreaterThan(metrics.elevationPattern.find((point) => point.angleDeg === 176)!.gainDbi);
   });
 
   it("does not silently redefine a stronger rear lobe as forward", () => {

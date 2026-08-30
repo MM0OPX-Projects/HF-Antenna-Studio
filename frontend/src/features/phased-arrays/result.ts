@@ -10,6 +10,7 @@ import type {
   PhasedCurrentPoint,
   PhasedPatternPoint,
 } from "./schema";
+import { extractFullElevationCut } from "../../components/results/full-elevation-cut";
 
 function angularDistanceDeg(a: number, b: number): number {
   return Math.abs(((a - b + 540) % 360) - 180);
@@ -108,11 +109,7 @@ export function calculatePhasedDirectionalMetrics(pattern: PatternData): PhasedD
     angleDeg: necPhiToCompass(pattern.phi_start + pi * pattern.phi_step),
     gainDbi: pattern.gain_dbi[peakThetaIndex]?.[pi] ?? -999.99,
   })).sort((a, b) => a.angleDeg - b.angleDeg));
-  const headingPhiIndex = nearestCircularIndex(pattern.phi_start, pattern.phi_step, pattern.phi_count, compassToNecPhi(heading));
-  const elevationPattern = normalize(Array.from({ length: pattern.theta_count }, (_, ti) => ({
-    angleDeg: 90 - (pattern.theta_start + ti * pattern.theta_step),
-    gainDbi: pattern.gain_dbi[ti]?.[headingPhiIndex] ?? -999.99,
-  })).sort((a, b) => a.angleDeg - b.angleDeg));
+  const elevationPattern = normalize(extractFullElevationCut(pattern, compassToNecPhi(heading)));
   return {
     forwardGainDbi: peak,
     reverseGainDbi: reverseGain,

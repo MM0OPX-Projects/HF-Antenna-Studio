@@ -40,13 +40,9 @@ function azimuthPath(points: NormalizedPatternPoint[], mode: PatternDisplayMode)
 }
 
 function elevationPath(points: NormalizedPatternPoint[], mode: PatternDisplayMode): string {
-  const upper = points.filter((point) => point.angleDeg >= 0 && point.angleDeg <= 90).sort((a, b) => a.angleDeg - b.angleDeg);
-  const samples = [
-    ...upper.map((point) => ({ angle: point.angleDeg, point })),
-    ...[...upper].reverse().slice(1).map((point) => ({ angle: 180 - point.angleDeg, point })),
-  ];
-  return samples.map(({ angle, point }, index) => {
-    const radians = angle * Math.PI / 180;
+  const samples = points.filter((point) => point.angleDeg >= 0 && point.angleDeg <= 180).sort((a, b) => a.angleDeg - b.angleDeg);
+  return samples.map((point, index) => {
+    const radians = point.angleDeg * Math.PI / 180;
     const radius = radiusFor(displayedGain(point, mode), mode);
     return `${index === 0 ? "M" : "L"} ${(CX + Math.cos(radians) * radius).toFixed(2)} ${(CY - Math.sin(radians) * radius).toFixed(2)}`;
   }).join(" ");
@@ -72,8 +68,7 @@ export function HeightPolarPlot({ plane, mode, series, svgRef }: HeightPolarPlot
     let polarAngle = Math.atan2(CY - y, x - CX) * 180 / Math.PI;
     if (polarAngle < 0) polarAngle += 360;
     if (polarAngle > 180) return;
-    const elevation = polarAngle <= 90 ? polarAngle : 180 - polarAngle;
-    setSelectedElevationDeg(Number(clampElevationAngle(elevation).toFixed(1)));
+    setSelectedElevationDeg(Number(clampElevationAngle(polarAngle).toFixed(1)));
   };
   const pointerDrag = usePointerDrag(updateFromPointer);
 
@@ -84,7 +79,7 @@ export function HeightPolarPlot({ plane, mode, series, svgRef }: HeightPolarPlot
     if (event.key === "ArrowRight" || event.key === "ArrowUp") next = selectedElevationDeg + increment;
     if (event.key === "ArrowLeft" || event.key === "ArrowDown") next = selectedElevationDeg - increment;
     if (event.key === "Home") next = 0;
-    if (event.key === "End") next = 90;
+    if (event.key === "End") next = 180;
     if (next === null) return;
     event.preventDefault();
     setSelectedElevationDeg(clampElevationAngle(next));
@@ -115,7 +110,7 @@ export function HeightPolarPlot({ plane, mode, series, svgRef }: HeightPolarPlot
       </g>
       <g fill="var(--color-text-secondary)" fontSize="10">
         <text x={CX} y="18" textAnchor="middle" fontWeight="600" fill="var(--color-text-primary)">{plane === "elevation" ? "Elevation cut" : "Azimuth cut"} · {mode === "absolute" ? "dBi" : "normalised dB"}</text>
-        <text x={CX - RADIUS - 4} y={CY + 16} textAnchor="middle">{plane === "azimuth" ? "270°" : "0°"}</text>
+        <text x={CX - RADIUS - 4} y={CY + 16} textAnchor="middle">{plane === "azimuth" ? "270°" : "180°"}</text>
         <text x={CX + RADIUS + 4} y={CY + 16} textAnchor="middle">{plane === "azimuth" ? "90°" : "0°"}</text>
         <text x={CX} y={CY - RADIUS - 6} textAnchor="middle">{plane === "azimuth" ? "0°" : "90°"}</text>
         {plane === "azimuth" && <text x={CX} y={CY + RADIUS + 15} textAnchor="middle">180°</text>}

@@ -68,6 +68,10 @@ test("pattern modes, automatic sweep, reset, and exports remain interactive", as
   await page.getByTestId("elevation-angle-inspector-input").fill("7.5");
   await expect(page.getByTestId("elevation-angle-inspector-source-current")).toContainText("Interpolated between 5.0° and 10.0° NEC samples");
   await expect(page.getByTestId("elevation-angle-inspector-gain-current")).toContainText("dBi");
+  await page.getByTestId("elevation-angle-inspector-input").fill("175");
+  await expect(page.getByTestId("elevation-angle-inspector-source-current")).toHaveText("Exact NEC sample");
+  await expect(page.getByTestId("elevation-angle-inspector-input")).toHaveValue("175");
+  await page.getByTestId("elevation-angle-inspector-input").fill("7.5");
   await page.getByTestId("elevation-polar-plot").focus();
   await page.getByTestId("elevation-polar-plot").press("ArrowUp");
   await expect(page.getByTestId("elevation-angle-inspector-input")).toHaveValue("8.5");

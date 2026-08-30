@@ -22,6 +22,9 @@ test("four different antenna models solve under common conditions and export an 
   await expect(page.locator('[data-testid^="polar-series-elevation-model-"]')).toHaveCount(4);
   await expect(page.locator('[data-testid^="elevation-angle-inspector-gain-model-"]')).toHaveCount(4);
   await expect(page.locator('[data-testid^="elevation-angle-inspector-source-model-"]')).toHaveCount(4);
+  await page.getByTestId("elevation-angle-inspector-input").fill("175");
+  await expect(page.getByTestId("elevation-angle-inspector-input")).toHaveValue("175");
+  await expect(page.locator('[data-testid^="elevation-angle-inspector-gain-model-"]')).toHaveCount(4);
   await expect(page.getByTestId("comparison-sweep-series-count")).toHaveText("3");
   await page.getByTestId("comparison-sweep-resistance").click();
   await expect(page.getByTestId("comparison-sweep-resistance")).toHaveAttribute("aria-pressed", "true");

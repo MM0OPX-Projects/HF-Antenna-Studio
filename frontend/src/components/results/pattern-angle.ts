@@ -20,7 +20,7 @@ function isValidSample(point: GainPatternPoint): boolean {
 }
 
 /**
- * Read a far-field cut at an elevation above the horizon.
+ * Read a far-field cut at a 0–180° elevation-plane angle.
  *
  * NEC samples are returned unchanged. Values between samples use linear
  * interpolation in decibels and are explicitly identified as interpolated;
@@ -69,5 +69,5 @@ export function gainAtAngle(
 }
 
 export function clampElevationAngle(angleDeg: number): number {
-  return Math.min(90, Math.max(0, angleDeg));
+  return Math.min(180, Math.max(0, angleDeg));
 }

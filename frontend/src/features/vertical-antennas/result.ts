@@ -2,6 +2,7 @@ import type { FrequencyResult, SegmentCurrent, SimulationResult } from "../../ap
 import { computeSwr } from "../../engine/parsers/nec-output";
 import type { AdaptedVerticalNec } from "./nec-adapter";
 import type { VerticalAntennaModel, VerticalCurrentPoint, VerticalPatternPoint, VerticalSolverResult } from "./schema";
+import { extractFullElevationCut } from "../../components/results/full-elevation-cut";
 
 function normalize(points: Array<{ angleDeg: number; gainDbi: number }>): VerticalPatternPoint[] {
   const finite = points.filter((point) => Number.isFinite(point.gainDbi) && point.gainDbi > -999);
@@ -27,10 +28,7 @@ function extractPatterns(data: FrequencyResult): { azimuth: VerticalPatternPoint
     angleDeg: pattern.phi_start + index * pattern.phi_step,
     gainDbi: pattern.gain_dbi[bestTheta]?.[index] ?? -999.99,
   }));
-  const elevationRaw = Array.from({ length: pattern.theta_count }, (_, index) => ({
-    angleDeg: 90 - (pattern.theta_start + index * pattern.theta_step),
-    gainDbi: pattern.gain_dbi[index]?.[bestPhi] ?? -999.99,
-  })).sort((a, b) => a.angleDeg - b.angleDeg);
+  const elevationRaw = extractFullElevationCut(pattern, pattern.phi_start + bestPhi * pattern.phi_step);
   const finiteAzimuth = azimuthRaw.filter((point) => point.gainDbi > -999);
   const variationDb = Math.max(...finiteAzimuth.map((point) => point.gainDbi)) - Math.min(...finiteAzimuth.map((point) => point.gainDbi));
   return { azimuth: normalize(azimuthRaw), elevation: normalize(elevationRaw), variationDb };

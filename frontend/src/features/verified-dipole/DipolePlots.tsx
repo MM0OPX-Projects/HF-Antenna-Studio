@@ -45,7 +45,7 @@ export function DipolePatternPlot({ title, points, xLabel }: PatternPlotProps) {
     if (event.key === "ArrowRight" || event.key === "ArrowUp") next = selectedElevationDeg + increment;
     if (event.key === "ArrowLeft" || event.key === "ArrowDown") next = selectedElevationDeg - increment;
     if (event.key === "Home") next = 0;
-    if (event.key === "End") next = 90;
+    if (event.key === "End") next = 180;
     if (next === null) return;
     event.preventDefault();
     setSelectedElevationDeg(clampElevationAngle(next));

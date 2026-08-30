@@ -16,6 +16,7 @@ import { useChartTheme } from "../../hooks/useChartTheme";
 import { PatternAngleInspector } from "./PatternAngleInspector";
 import { clampElevationAngle, gainAtAngle, type GainPatternPoint } from "./pattern-angle";
 import { usePointerDrag } from "./usePointerDrag";
+import { extractFullElevationCut } from "./full-elevation-cut";
 
 interface PatternPolarProps {
   pattern: PatternData;
@@ -51,7 +52,7 @@ function extractCut(
   pattern: PatternData,
   mode: "azimuth" | "elevation"
 ): { angle: number; gain: number }[] {
-  const { gain_dbi, theta_start, theta_step, theta_count, phi_start, phi_step, phi_count } = pattern;
+  const { gain_dbi, theta_count, phi_start, phi_step, phi_count } = pattern;
 
   if (mode === "azimuth") {
     // Find theta index with max gain for azimuth cut
@@ -79,19 +80,16 @@ function extractCut(
     points.sort((a, b) => a.angle - b.angle);
     return points;
   } else {
-    // Elevation cut — find the phi of max gain and extract theta cut
+    // Elevation cut — join the best-bearing upper hemisphere to the real
+    // opposite-bearing samples. Do not mirror the primary side.
     const bestPhi = bestPhiIndex(pattern);
-
-    const points: { angle: number; gain: number }[] = [];
-    for (let ti = 0; ti < theta_count; ti++) {
-      const theta = theta_start + ti * theta_step;
-      const gain = gain_dbi[ti]?.[bestPhi] ?? -999;
-      // NEC2 theta: 0=zenith, 90=horizon, 180=nadir
-      // polarToXY already places 0° at the top, so no shift needed
-      points.push({ angle: theta, gain });
-    }
-    return points;
+    const bestPhiDeg = phi_start + bestPhi * phi_step;
+    return extractFullElevationCut(pattern, bestPhiDeg).map((point) => ({ angle: point.angleDeg, gain: point.gainDbi }));
   }
+}
+
+function plotAngle(mode: "azimuth" | "elevation", angleDeg: number): number {
+  return mode === "elevation" ? 90 - angleDeg : angleDeg;
 }
 
 /** Convert gain in dBi to a normalized radius (0-1) */
@@ -149,7 +147,7 @@ export function PatternPolar({ pattern, mode, size = 200, responsive = false }: 
   const pathData = useMemo(() => {
     const points = cut.map((p) => {
       const r = gainToRadius(p.gain, minGain, maxGain);
-      return polarToXY(p.angle, r, cx, cy, plotRadius);
+      return polarToXY(plotAngle(mode, p.angle), r, cx, cy, plotRadius);
     });
     if (points.length === 0) return "";
     const first = points[0]!;
@@ -159,7 +157,7 @@ export function PatternPolar({ pattern, mode, size = 200, responsive = false }: 
     }
     d += " Z";
     return d;
-  }, [cut, minGain, maxGain, cx, cy, plotRadius]);
+  }, [cut, minGain, maxGain, cx, cy, plotRadius, mode]);
 
   // Find max gain point for marker
   const maxGainPoint = useMemo(() => {
@@ -167,12 +165,12 @@ export function PatternPolar({ pattern, mode, size = 200, responsive = false }: 
     for (const p of cut) {
       if (p.gain > best.gain && p.gain > -999) {
         const r = gainToRadius(p.gain, minGain, maxGain);
-        const pos = polarToXY(p.angle, r, cx, cy, plotRadius);
+        const pos = polarToXY(plotAngle(mode, p.angle), r, cx, cy, plotRadius);
         best = { angle: p.angle, gain: p.gain, x: pos.x, y: pos.y };
       }
     }
     return best;
-  }, [cut, minGain, maxGain, cx, cy, plotRadius]);
+  }, [cut, minGain, maxGain, cx, cy, plotRadius, mode]);
 
   // Find -3dB beamwidth arcs for all lobes above threshold.
   // Splits above-threshold angles into contiguous lobe groups so multi-lobe
@@ -209,7 +207,7 @@ export function PatternPolar({ pattern, mode, size = 200, responsive = false }: 
     }
 
     // Handle wrap-around: if the first and last lobes are connected across 360°
-    if (lobes.length > 1) {
+    if (mode === "azimuth" && lobes.length > 1) {
       const firstLobe = lobes[0]!;
       const lastLobe = lobes[lobes.length - 1]!;
       const wrapGap = (360 - lastLobe[lastLobe.length - 1]!) + firstLobe[0]!;
@@ -247,7 +245,7 @@ export function PatternPolar({ pattern, mode, size = 200, responsive = false }: 
 
       const pts: string[] = [];
       for (let a = start; a <= end; a += 1) {
-        const pos = polarToXY(a, r3db, cx, cy, plotRadius);
+        const pos = polarToXY(plotAngle(mode, a), r3db, cx, cy, plotRadius);
         pts.push(`${pos.x.toFixed(1)} ${pos.y.toFixed(1)}`);
       }
       if (pts.length < 2) continue;
@@ -262,7 +260,7 @@ export function PatternPolar({ pattern, mode, size = 200, responsive = false }: 
 
     if (arcs.length === 0) return null;
     return { arcs, mainLobeBeamwidth };
-  }, [cut, maxGain, maxGainPoint.angle, minGain, cx, cy, plotRadius]);
+  }, [cut, maxGain, maxGainPoint.angle, minGain, cx, cy, plotRadius, mode]);
 
   // Grid circles — 4 even divisions
   const gridCircles = [0.25, 0.5, 0.75, 1.0];
@@ -275,33 +273,19 @@ export function PatternPolar({ pattern, mode, size = 200, responsive = false }: 
     const bestPhi = bestPhiIndex(pattern);
     const phi = pattern.phi_start + bestPhi * pattern.phi_step;
     const primaryBearing = compassBearing(phi);
-    const makePoints = (side: "primary" | "opposite"): GainPatternPoint[] => cut
-      .filter((point) => side === "primary"
-        ? point.angle >= -1e-6 && point.angle <= 90 + 1e-6
-        : point.angle <= 1e-6 && point.angle >= -90 - 1e-6)
+    const points: GainPatternPoint[] = cut
       .map((point) => ({
-        angleDeg: 90 - Math.abs(point.angle),
+        angleDeg: point.angle,
         gainDbi: point.gain,
         normalizedDb: point.gain - maxGain,
       }))
       .sort((left, right) => left.angleDeg - right.angleDeg);
-    const primary = makePoints("primary");
-    const opposite = makePoints("opposite");
-    const result = [{
+    return [{
       id: "primary",
-      label: `${primaryBearing.toFixed(0)}° bearing side`,
+      label: `${primaryBearing.toFixed(0)}° → ${((primaryBearing + 180) % 360).toFixed(0)}° bearing plane`,
       color: "#3B82F6",
-      points: primary,
-      thetaSign: 1,
+      points,
     }];
-    if (pattern.theta_start < 0 && opposite.length > 1) result.push({
-      id: "opposite",
-      label: `${((primaryBearing + 180) % 360).toFixed(0)}° bearing side`,
-      color: "#8B5CF6",
-      points: opposite,
-      thetaSign: -1,
-    });
-    return result;
   }, [cut, maxGain, mode, pattern]);
 
   const inspectorReadings = elevationSeries.map((series) => ({
@@ -323,7 +307,7 @@ export function PatternPolar({ pattern, mode, size = 200, responsive = false }: 
     while (theta > 180) theta -= 360;
     while (theta <= -180) theta += 360;
     if (Math.abs(theta) > 90) return;
-    setSelectedElevationDeg(Number(clampElevationAngle(90 - Math.abs(theta)).toFixed(1)));
+    setSelectedElevationDeg(Number(clampElevationAngle(90 - theta).toFixed(1)));
   };
   const pointerDrag = usePointerDrag(updateFromPointer);
 
@@ -334,7 +318,7 @@ export function PatternPolar({ pattern, mode, size = 200, responsive = false }: 
     if (event.key === "ArrowRight" || event.key === "ArrowUp") next = selectedElevationDeg + increment;
     if (event.key === "ArrowLeft" || event.key === "ArrowDown") next = selectedElevationDeg - increment;
     if (event.key === "Home") next = 0;
-    if (event.key === "End") next = 90;
+    if (event.key === "End") next = 180;
     if (next === null) return;
     event.preventDefault();
     setSelectedElevationDeg(clampElevationAngle(next));
@@ -351,10 +335,9 @@ export function PatternPolar({ pattern, mode, size = 200, responsive = false }: 
       ];
     }
     return [
-      { angle: 0, label: "Zen" },
-      { angle: 90, label: "Hor" },
-      { angle: 180, label: "Nad" },
-      { angle: 270, label: "Hor" },
+      { angle: 0, label: "90° Zen" },
+      { angle: 90, label: "0° Hor" },
+      { angle: 270, label: "180° Hor" },
     ];
   }, [mode]);
 
@@ -430,10 +413,11 @@ export function PatternPolar({ pattern, mode, size = 200, responsive = false }: 
         );
       })}
 
-      {/* Intermediate angle labels (every 30 deg, skip cardinals) */}
-      {radialLines
-        .filter((a) => a % 90 !== 0)
-        .map((angle) => {
+      {/* Intermediate angular labels */}
+      {(mode === "azimuth"
+        ? radialLines.filter((angle) => angle % 90 !== 0).map((angle) => ({ angle, label: `${angle}°` }))
+        : [{ angle: 60, label: "30°" }, { angle: 30, label: "60°" }, { angle: 330, label: "120°" }, { angle: 300, label: "150°" }])
+        .map(({ angle, label }) => {
           const { x, y } = polarToXY(angle, 1.25, cx, cy, plotRadius);
           return (
             <text
@@ -447,7 +431,7 @@ export function PatternPolar({ pattern, mode, size = 200, responsive = false }: 
               fontFamily="JetBrains Mono, monospace"
               opacity={0.6}
             >
-              {angle}{"\u00B0"}
+              {label}
             </text>
           );
         })}
@@ -504,7 +488,7 @@ export function PatternPolar({ pattern, mode, size = 200, responsive = false }: 
       {mode === "elevation" && elevationSeries.map((series) => {
         const reading = gainAtAngle(series.points, selectedElevationDeg);
         if (!reading) return null;
-        const theta = series.thetaSign * (90 - selectedElevationDeg);
+        const theta = 90 - selectedElevationDeg;
         const radius = gainToRadius(reading.gainDbi, minGain, maxGain);
         const position = polarToXY(theta, radius, cx, cy, plotRadius);
         const outer = polarToXY(theta, 1, cx, cy, plotRadius);

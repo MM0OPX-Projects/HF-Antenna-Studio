@@ -10,7 +10,8 @@ describe("compatible pattern cuts", () => {
     expect(cuts.actualElevationBearingDeg).toBe(0);
     expect(cuts.azimuth).toHaveLength(8);
     expect(cuts.azimuth.map((point) => point.angleDeg)).toEqual([0, 45, 90, 135, 180, 225, 270, 315]);
-    expect(cuts.elevation.map((point) => point.gainDbi)).toEqual([92, 82, 72, 62, 52, 42, 32, 22, 12, 2]);
+    expect(cuts.elevation.map((point) => point.angleDeg)).toEqual(Array.from({ length: 19 }, (_, index) => index * 10));
+    expect(cuts.elevation.map((point) => point.gainDbi)).toEqual([92, 82, 72, 62, 52, 42, 32, 22, 12, 2, 16, 26, 36, 46, 56, 66, 76, 86, 96]);
   });
 
   it("derives axial front-to-back and interpolated half-power beamwidth", () => {

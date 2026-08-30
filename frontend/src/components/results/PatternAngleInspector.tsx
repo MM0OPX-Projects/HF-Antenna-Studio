@@ -26,29 +26,29 @@ export function PatternAngleInspector({
   testId = "elevation-angle-inspector",
 }: PatternAngleInspectorProps) {
   return (
-    <section className="mt-2 rounded-md border border-border bg-background/60 p-2" data-testid={testId} aria-label="Gain at selected elevation angle">
+    <section className="mt-2 rounded-md border border-border bg-background/60 p-2" data-testid={testId} aria-label="Gain at selected elevation-cut angle">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <label className="flex items-center gap-2 text-xs font-semibold text-text-primary">
-          Angle above horizon
+          Elevation cut angle
           <span className="inline-flex items-center rounded border border-border bg-surface px-2 py-1">
             <input
               type="number"
               min={0}
-              max={90}
+              max={180}
               step={0.1}
               value={Number(angleDeg.toFixed(1))}
               onChange={(event) => {
                 const next = event.currentTarget.valueAsNumber;
-                if (Number.isFinite(next)) onAngleChange(Math.min(90, Math.max(0, next)));
+                if (Number.isFinite(next)) onAngleChange(Math.min(180, Math.max(0, next)));
               }}
               className="w-14 bg-transparent text-right font-mono text-xs outline-none"
-              aria-label="Elevation angle above horizon"
+              aria-label="Elevation cut angle from primary to opposite horizon"
               data-testid={`${testId}-input`}
             />
             <span className="text-xs text-text-secondary">°</span>
           </span>
         </label>
-        <span className="text-[10px] text-text-secondary">Click or drag across the elevation plot, type an angle, or focus the plot and use the arrow keys.</span>
+        <span className="text-[10px] text-text-secondary">0° primary horizon · 90° zenith · 180° opposite horizon. Click or drag across the plot, type an angle, or use the arrow keys.</span>
       </div>
       <div className="mt-2 grid gap-1" aria-live="polite">
         {readings.map(({ id, label, color, reading }) => (

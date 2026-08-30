@@ -26,7 +26,10 @@ test("classic broadside/end-fire cases reproduce the independent exact-deck refe
     expect(numeric(await page.getByTestId("phased-result-heading").innerText())).toBe(reference.expected.headingDeg);
     expect(numeric(await page.getByTestId("phased-result-takeoff").innerText())).toBe(reference.expected.takeOffAngleDeg);
     expect((await page.getByTestId("phased-result-heading").innerText()).includes("axis")).toBe(reference.expected.ambiguous);
+    await page.getByTestId("elevation-angle-inspector-input").fill("5");
     await expect(page.getByTestId("elevation-angle-inspector-source-current")).toContainText("Interpolated between 4.0° and 6.0° NEC samples");
+    await page.getByTestId("elevation-angle-inspector-input").fill("175");
+    await expect(page.getByTestId("elevation-angle-inspector-source-current")).toContainText("Interpolated between 174.0° and 176.0° NEC samples");
   }
   await page.getByTestId("phased-bearing").fill("0");
   await waitForNewResult(page);

@@ -70,6 +70,8 @@ describe("verified dipole end-to-end service", () => {
     expect(run.result.takeOffAngleDeg).toBe(40);
     expect(Math.max(...run.result.azimuthPattern.map((point) => point.normalizedDb))).toBe(0);
     expect(Math.max(...run.result.elevationPattern.map((point) => point.normalizedDb))).toBe(0);
+    expect(run.result.elevationPattern[0]!.angleDeg).toBe(0);
+    expect(run.result.elevationPattern[run.result.elevationPattern.length - 1]!.angleDeg).toBe(180);
     expect(run.result.currentDistribution).toHaveLength(21);
     expect(run.result.radiationPattern.theta_count).toBe(19);
     expect(Math.max(...run.result.currentDistribution.map((point) => point.normalizedMagnitude))).toBe(1);

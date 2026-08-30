@@ -1,5 +1,6 @@
 import type { PatternData } from "../../api/nec";
 import type { ComparisonPatternPoint } from "./types";
+import { extractFullElevationCut } from "../../components/results/full-elevation-cut";
 
 export function normalizeBearing(value: number): number {
   return ((value % 360) + 360) % 360;
@@ -36,10 +37,8 @@ export function extractComparisonCuts(pattern: PatternData, azimuthElevationDeg:
     angleDeg: normalizeBearing(90 - (pattern.phi_start + index * pattern.phi_step)),
     gainDbi: pattern.gain_dbi[thetaIndex]?.[index] ?? -999.99,
   })).sort((a, b) => a.angleDeg - b.angleDeg));
-  const elevation = normalize(Array.from({ length: pattern.theta_count }, (_, index) => ({
-    angleDeg: 90 - (pattern.theta_start + index * pattern.theta_step),
-    gainDbi: pattern.gain_dbi[index]?.[phiIndex] ?? -999.99,
-  })).sort((a, b) => a.angleDeg - b.angleDeg));
+  const actualPhiDeg = pattern.phi_start + phiIndex * pattern.phi_step;
+  const elevation = normalize(extractFullElevationCut(pattern, actualPhiDeg));
   return {
     azimuth,
     elevation,
