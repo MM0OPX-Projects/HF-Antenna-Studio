@@ -50,7 +50,7 @@ export function RadiationCutPair({
         onClick={() => setMode((current) => current === "absolute" ? "normalised" : "absolute")}
         className="rounded border border-border bg-surface px-2 py-1 text-[10px] text-text-secondary hover:border-accent hover:text-text-primary"
       >
-        {mode === "absolute" ? "Absolute dBi" : "Relative to peak"}
+        {mode === "absolute" ? "Absolute gain (dBi)" : "Relative pattern (dB)"}
       </button>
     </div>
     {stale && <p role="status" className="rounded border border-amber-500/40 bg-amber-500/5 px-3 py-2 text-xs text-amber-600">The displayed controls no longer match this pattern. Recalculate before using it for comparison.</p>}

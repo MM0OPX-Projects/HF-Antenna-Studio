@@ -75,9 +75,9 @@ test("comparison mode overlays four immutable traces and enforces its limit", as
   await expect(page.getByTestId("yagi-save-comparison")).toBeDisabled();
   await expect(page.locator('[data-testid^="polar-series-azimuth-"]')).toHaveCount(5);
   await page.getByTestId("yagi-pattern-mode").click();
-  await expect(page.getByTestId("yagi-pattern-mode")).toHaveText("Relative to peak");
-  await expect(page.getByTestId("elevation-angle-inspector-gain-current")).toContainText("dB below cut peak");
-  await expect(page.getByTestId("elevation-angle-inspector-context-current")).toContainText("dBi absolute");
+  await expect(page.getByTestId("yagi-pattern-mode")).toHaveText("Relative pattern (dB)");
+  await expect(page.getByTestId("elevation-angle-inspector-gain-current")).toContainText("dB relative to cut peak");
+  await expect(page.getByTestId("elevation-angle-inspector-context-current")).toHaveText("Cut peak is 0.00 dB in this view");
 });
 
 test("ground, reference impedance, configurable directors, and validity checks remain explicit", async ({ page }) => {

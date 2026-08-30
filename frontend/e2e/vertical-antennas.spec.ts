@@ -56,9 +56,9 @@ test("40/20/10m ideal monopoles match the recorded local NEC regression and anal
     await expect(page.getByTestId("elevation-angle-inspector-gain-vertical-current")).toContainText("dBi");
   }
   await page.getByTestId("vertical-pattern-mode").click();
-  await expect(page.getByTestId("vertical-pattern-mode")).toHaveText("Relative to peak");
-  await expect(page.getByTestId("elevation-angle-inspector-gain-vertical-current")).toContainText("dB below cut peak");
-  await expect(page.getByTestId("elevation-angle-inspector-context-vertical-current")).toContainText("dBi absolute");
+  await expect(page.getByTestId("vertical-pattern-mode")).toHaveText("Relative pattern (dB)");
+  await expect(page.getByTestId("elevation-angle-inspector-gain-vertical-current")).toContainText("dB relative to cut peak");
+  await expect(page.getByTestId("elevation-angle-inspector-context-vertical-current")).toHaveText("Cut peak is 0.00 dB in this view");
 });
 
 test("explicit radial count, length, angle, and height regenerate geometry and solve", async ({ page }) => {

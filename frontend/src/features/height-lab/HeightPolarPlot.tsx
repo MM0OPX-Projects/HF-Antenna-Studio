@@ -127,7 +127,7 @@ export function HeightPolarPlot({ plane, mode, series, svgRef }: HeightPolarPlot
       ref={svgRef}
       viewBox={`0 0 460 ${viewHeight}`}
       role="img"
-      aria-label={`${plane} polar radiation pattern in ${mode === "absolute" ? "absolute dBi" : "decibels relative to each trace peak"}; interactive angle cursor`}
+      aria-label={`${plane} polar radiation pattern in ${mode === "absolute" ? "absolute gain in dBi" : "dB relative to each trace peak"}; interactive angle cursor`}
       className="w-full cursor-crosshair select-none focus:outline-none focus:ring-2 focus:ring-accent"
       data-testid={`${plane}-polar-plot`}
       tabIndex={0}
@@ -144,7 +144,7 @@ export function HeightPolarPlot({ plane, mode, series, svgRef }: HeightPolarPlot
         {plane === "azimuth" && <line x1={CX + 112} y1={CY - 112} x2={CX - 112} y2={CY + 112} />}
       </g>
       <g fill="var(--color-text-secondary)" fontSize="10">
-        <text x={CX} y="18" textAnchor="middle" fontWeight="600" fill="var(--color-text-primary)">{plane === "elevation" ? "Elevation cut" : "Azimuth cut"} · {mode === "absolute" ? "absolute dBi" : "relative to peak (0 dB)"}</text>
+        <text x={CX} y="18" textAnchor="middle" fontWeight="600" fill="var(--color-text-primary)">{plane === "elevation" ? "Elevation cut" : "Azimuth cut"} · {mode === "absolute" ? "absolute gain (dBi)" : "relative pattern (dB; peak = 0)"}</text>
         <text x={CX - RADIUS - 4} y={CY + 16} textAnchor="middle">{plane === "azimuth" ? "270°" : "180°"}</text>
         <text x={CX + RADIUS + 4} y={CY + 16} textAnchor="middle">{plane === "azimuth" ? "90°" : "0°"}</text>
         <text x={CX} y={CY - RADIUS - 6} textAnchor="middle">{plane === "azimuth" ? "0°" : "90°"}</text>

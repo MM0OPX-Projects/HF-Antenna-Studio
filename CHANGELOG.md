@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Added a professional acknowledgements and source record crediting Colin Summers MM0OPX's product vision and direction, ChatGPT Codex's coding/documentation role, the inherited open-source foundations, and attributed antenna and validation references
 - Added one shared, source-attributed G3TXQ broadband Hexbeam geometry generator with exact M-driver half lengths, five-side perimeter reflector length, two tip gaps, derived regular-frame radius, explicit feed bridge, and non-conductive spreader/perimeter rendering
 - Added topology, symmetry, length, gap, source, NEC-deck identity, real-solver and external 4NEC2 regression coverage for the corrected Hexbeam geometry
-- Added a keyboard-, click-and-drag-, and exact-number gain-at-angle inspector to every antenna elevation-cut workflow, reporting absolute dBi and below-cut-peak context while distinguishing direct NEC angular samples from labelled linear interpolation
+- Added a keyboard-, click-and-drag-, and exact-number gain-at-angle inspector to every antenna elevation-cut workflow, following the selected absolute-dBi or relative-dB reference while distinguishing direct NEC angular samples from labelled linear interpolation
 - Added one shared explicit radial-system contract to Model Comparison, Parameter Sweeps, and Antenna Optimiser, including compatible elevated, raised near-surface, perfect-image, independent, and shared-bonded choices
 - Added schema-v5 `.hfas` project, autosave, recovery, migration, and reopen support for comparison, parameter-sweep, and optimiser inputs with exact radial identity
 - Added unit and real-Wasm browser regressions for radial model keys, incompatible ground changes, near-surface validity limits, workflow controls, and project round trips
@@ -25,8 +25,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- Renamed the radiation scales to **Absolute gain (dBi)** and **Relative pattern (dB)** and made their inspector readouts exclusive: absolute mode now contains only dBi values, while relative mode contains only negative dB values with the cut peak defined as 0 dB; dBd is not used
 - Changed the default conductor diameter for new general wire-antenna models from 2 mm to 1 mm across specialist laboratories, reusable and legacy templates, downstream comparison/sweep/optimiser models, radial workflows, and newly drawn wire-editor geometry; explicit tube-family defaults and saved/imported dimensions remain unchanged
-- Renamed the radiation-pattern display choice from **Normalised dB** to **Relative to peak**, and made every elevation inspector's prominent reading follow that choice while retaining clearly labelled absolute gain, below-cut-peak difference, and cut-peak context
+- Replaced the ambiguous **Normalised dB** wording with explicit absolute-gain and relative-pattern modes, and made every elevation inspector follow the selected reference consistently
 - Extended the shared elevation gain inspector from a mirrored 0–90° control to a true 0–180° bearing-plane cut on every antenna workflow: 0° primary horizon, 90° zenith, and 180° opposite horizon, using the solver's real opposite-bearing samples for front/rear comparisons
 - Replaced both the inherited generic two-W-wire Hex Beam and the earlier rotated/derived-rear-path laboratory approximation with the canonical single-band G3TXQ broadband wire layout; old Hexbeam numerical fixtures were invalidated and recomputed from the changed NEC deck
 - Corrected loop/quad/Hexbeam 3D framing so elevated horizontal arrays are centred in the camera while the ground grid remains at its scaled physical offset, instead of appearing nearly edge-on at absolute model height

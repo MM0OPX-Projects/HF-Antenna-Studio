@@ -28,9 +28,9 @@ test("four-element quad and every hex construction-band preset regenerate connec
   for (const band of ["20m", "17m", "15m", "12m", "10m"]) { await page.getByTestId("hex-band").selectOption(band); await expect(page.getByTestId("loop-wire-count"), band).toHaveText("10"); await expect(page.getByTestId("loop-errors"), band).toHaveCount(0); expect((await page.getByTestId("loop-generated-nec").textContent())?.match(/^GW /gm), band).toHaveLength(10); await expect(page.getByTestId("hex-frame-radius"), band).toContainText("m"); }
   await waitForSolved(page);
   await page.getByTestId("loop-pattern-mode").click();
-  await expect(page.getByTestId("loop-pattern-mode")).toHaveText("Relative to peak");
-  await expect(page.getByTestId("elevation-angle-inspector-gain-current")).toContainText("dB below cut peak");
-  await expect(page.getByTestId("elevation-angle-inspector-context-current")).toContainText("dBi absolute");
+  await expect(page.getByTestId("loop-pattern-mode")).toHaveText("Relative pattern (dB)");
+  await expect(page.getByTestId("elevation-angle-inspector-gain-current")).toContainText("dB relative to cut peak");
+  await expect(page.getByTestId("elevation-angle-inspector-context-current")).toHaveText("Cut peak is 0.00 dB in this view");
 });
 
 test("rapid edits withhold stale patterns until the latest exact model solves", async ({ page }) => {

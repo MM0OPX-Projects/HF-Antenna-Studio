@@ -21,6 +21,11 @@ function sourceLabel(reading: GainAtAngleReading): string {
   return `Interpolated between ${reading.lowerAngleDeg.toFixed(1)}° and ${reading.upperAngleDeg.toFixed(1)}° NEC samples`;
 }
 
+function relativeToPeakDb(reading: GainAtAngleReading): number {
+  const difference = reading.gainDbi - reading.peakGainDbi;
+  return Math.abs(difference) < 0.005 ? 0 : difference;
+}
+
 export function PatternAngleInspector({
   angleDeg,
   onAngleChange,
@@ -68,10 +73,10 @@ export function PatternAngleInspector({
             {reading ? <>
               <span className="font-mono font-semibold" data-testid={`${testId}-gain-${id}`}>{displayMode === "absolute"
                 ? `${reading.gainDbi.toFixed(2)} dBi`
-                : `${Math.max(0, reading.peakGainDbi - reading.gainDbi).toFixed(2)} dB below cut peak`}</span>
+                : `${relativeToPeakDb(reading).toFixed(2)} dB relative to cut peak`}</span>
               <span className="font-mono text-text-secondary" data-testid={`${testId}-context-${id}`}>{displayMode === "absolute"
-                ? `${Math.max(0, reading.peakGainDbi - reading.gainDbi).toFixed(2)} dB below cut peak · cut peak ${reading.peakGainDbi.toFixed(2)} dBi`
-                : `${reading.gainDbi.toFixed(2)} dBi absolute · cut peak ${reading.peakGainDbi.toFixed(2)} dBi`}</span>
+                ? `Cut peak ${reading.peakGainDbi.toFixed(2)} dBi`
+                : "Cut peak is 0.00 dB in this view"}</span>
               <span className={reading.method === "exact" ? "text-emerald-600 dark:text-emerald-400" : "text-amber-700 dark:text-amber-300"} data-testid={`${testId}-source-${id}`}>{sourceLabel(reading)}</span>
             </> : <span className="text-text-secondary sm:col-span-3">No valid pattern samples bracket this angle.</span>}
           </div>
