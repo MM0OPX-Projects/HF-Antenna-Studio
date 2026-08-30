@@ -32,7 +32,7 @@ export function createDefaultRadialWorkflowSettings(): RadialWorkflowSettings {
     verticalMode: "elevated-independent",
     phasedMode: "perfect-ground-image",
     radialLengthWavelengths: 0.25,
-    radialDiameterM: 0.002,
+    radialDiameterM: 0.001,
     nearSurfaceClearanceM: 0.01,
     elevatedHeightWavelengths: 0.12,
     elevatedDroopAngleDeg: 20,

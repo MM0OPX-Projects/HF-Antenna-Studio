@@ -24,6 +24,8 @@ describe("typed phased-array model and NEC adapter", () => {
     expect(first.x).toBeCloseTo(-5, 10);
     expect(second.x).toBeCloseTo(5, 10);
     expect(model.elementLengthM / phasedWavelengthM(model.frequencyHz)).toBeCloseTo(0.2375, 10);
+    expect(model.elementDiameterM).toBe(0.001);
+    expect(model.radials.diameterM).toBe(0.001);
     expect(model.provenance.dimensionsAreStartingPoints).toBe(true);
   });
 
@@ -93,7 +95,10 @@ describe("typed phased-array model and NEC adapter", () => {
       { name: "endfire-reverse-20m-perfect", voltage: [{ real: 47.986378, imag: 2.6076825 }, { real: 34.014192, imag: 19.30767 }] },
     ] as const;
     for (const reference of cases) {
-      const deck = adaptIdealFinalToNec(generatePhasedArray(startingPhasedArrayModel()), [...reference.voltage]).deck.replace(/\r\n/g, "\n");
+      const model = startingPhasedArrayModel();
+      model.elementDiameterM = 0.002;
+      model.radials.diameterM = 0.002;
+      const deck = adaptIdealFinalToNec(generatePhasedArray(model), [...reference.voltage]).deck.replace(/\r\n/g, "\n");
       const fixture = readFileSync(new URL(`../../../../../validation/phased-arrays/${reference.name}.nec`, import.meta.url), "utf8").replace(/\r\n/g, "\n");
       expect(deck, reference.name).toBe(fixture);
     }
@@ -127,6 +132,8 @@ describe("typed phased-array model and NEC adapter", () => {
 
   it("emits the shared radial network above Sommerfeld/Norton ground", () => {
     const model = switchPhasedRadialRepresentation(startingPhasedArrayModel(), "near-surface-explicit-wires");
+    model.elementDiameterM = 0.002;
+    model.radials.diameterM = 0.002;
     const adapted = adaptIdealCalibrationToNec(generatePhasedArray(model), 1);
     expect(adapted.deck.match(/^GW /gm)).toHaveLength(20);
     expect(adapted.deck).toContain("CM Radials: near-surface-explicit-wires; topology: shared-bonded-network");

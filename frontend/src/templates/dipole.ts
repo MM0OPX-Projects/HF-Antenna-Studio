@@ -66,7 +66,7 @@ export const dipoleTemplate: AntennaTemplate = {
       min: 0.5,
       max: 10,
       step: 0.1,
-      defaultValue: 2.0,
+      defaultValue: 1.0,
       decimals: 1,
     },
   ],
@@ -74,7 +74,7 @@ export const dipoleTemplate: AntennaTemplate = {
   generateGeometry(params: Record<string, number>): WireGeometry[] {
     const freq = params.frequency ?? 14.1;
     const height = params.height ?? 10;
-    const wireDiamMm = params.wire_diameter ?? 2.0;
+    const wireDiamMm = params.wire_diameter ?? 1.0;
 
     const wavelength = 300.0 / freq;
     // Half-wave length with 5% shortening for end effects

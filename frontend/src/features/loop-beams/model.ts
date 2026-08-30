@@ -17,7 +17,7 @@ const HEX_REFERENCE_INCHES: Record<HexBand, { driverHalf: number; reflector: num
 };
 const inches = (value: number) => value * 0.0254;
 export function loopBeamWavelengthM(frequencyHz: number): number { return SPEED_OF_LIGHT_M_PER_S / frequencyHz; }
-const common = (frequencyHz: number) => ({ schemaVersion: 1 as const, frequencyHz, elementDiameterM: 0.002, ground: { kind: "sommerfeld-norton" as const, conductivitySPerM: 0.005, relativePermittivity: 13 }, referenceImpedanceOhm: 50 as const, provenance: { dimensionsAreStartingPoints: true as const, manualDimensions: false } });
+const common = (frequencyHz: number) => ({ schemaVersion: 1 as const, frequencyHz, elementDiameterM: 0.001, ground: { kind: "sommerfeld-norton" as const, conductivitySPerM: 0.005, relativePermittivity: 13 }, referenceImpedanceOhm: 50 as const, provenance: { dimensionsAreStartingPoints: true as const, manualDimensions: false } });
 
 export function startingSquareLoopModel(frequencyHz = 14_175_000): SquareLoopModel {
   const lambda = loopBeamWavelengthM(frequencyHz); return { ...common(frequencyHz), kind: "square-loop", sideLengthM: lambda * 1.02 / 4, bottomHeightM: lambda * 0.25 };

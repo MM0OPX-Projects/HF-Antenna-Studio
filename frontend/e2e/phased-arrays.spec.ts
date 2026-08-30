@@ -18,6 +18,9 @@ function numeric(text: string): number { return Number(text.match(/[+−-]?\d+(?
 test("classic broadside/end-fire cases reproduce the independent exact-deck references", async ({ page }) => {
   await openLab(page);
   await expect(page.getByTestId("phased-results")).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByTestId("phased-element-diameter")).toHaveValue("1");
+  await page.getByTestId("phased-element-diameter").fill("2");
+  await waitForNewResult(page);
   for (const [index, reference] of PHASED_ARRAY_PERFECT_GROUND_CASES.entries()) {
     if (index > 0) { await page.getByTestId(`phased-preset-${reference.id}`).click(); await waitForNewResult(page); }
     expect(numeric(await page.getByTestId("phased-result-forward").innerText())).toBeCloseTo(reference.expected.forwardGainDbi, 2);

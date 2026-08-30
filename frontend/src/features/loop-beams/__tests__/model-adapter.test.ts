@@ -8,6 +8,12 @@ function length(wire: LoopBeamWire): number { return Math.hypot(wire.endM.x - wi
 function total(wires: LoopBeamWire[], family: LoopBeamWire["family"]): number { return wires.filter((wire) => wire.family === family).reduce((sum, wire) => sum + length(wire), 0); }
 
 describe("typed loop, quad, and hexbeam models", () => {
+  it("starts every wire-family model with a 1 mm conductor", () => {
+    for (const model of [startingSquareLoopModel(), startingDeltaLoopModel(), startingDiamondLoopModel(), startingCubicalQuadModel(), startingHexbeamModel()]) {
+      expect(model.elementDiameterM, model.kind).toBe(0.001);
+    }
+  });
+
   it("builds electrically closed square, delta, and diamond reference loops", () => {
     for (const model of [startingSquareLoopModel(), startingDeltaLoopModel(), startingDiamondLoopModel()]) {
       const generated = generateLoopBeamModel(model);
@@ -81,7 +87,7 @@ describe("typed loop, quad, and hexbeam models", () => {
       ["hexbeam-20m-perfect", startingHexbeamModel()],
     ] as const;
     for (const [name, model] of cases) {
-      model.ground = { kind: "perfect" }; const deck = adaptLoopBeamToNec(generateLoopBeamModel(model)).deck;
+      model.ground = { kind: "perfect" }; model.elementDiameterM = 0.002; const deck = adaptLoopBeamToNec(generateLoopBeamModel(model)).deck;
       const fixture = readFileSync(new URL(`../../../../../validation/loop-beams/${name}.nec`, import.meta.url), "utf8").replace(/\r\n/g, "\n");
       expect(fixture, name).toBe(deck);
     }

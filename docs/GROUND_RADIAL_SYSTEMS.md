@@ -23,7 +23,7 @@ The Vertical Antennas laboratory offers all four representations. Its ground-mou
 - 14.1 MHz;
 - a 0.2375 wavelength radiator;
 - sixteen 0.25 wavelength horizontal radial wires;
-- 2 mm wire diameter;
+- 1 mm wire diameter;
 - 10 mm wire-axis clearance;
 - Sommerfeld/Norton ground, relative permittivity 13 and conductivity 0.005 S/m; and
 - odd segmentation no longer than 0.02 wavelength.

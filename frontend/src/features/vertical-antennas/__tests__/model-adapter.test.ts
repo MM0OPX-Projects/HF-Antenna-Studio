@@ -18,6 +18,10 @@ describe("vertical antenna model", () => {
     expect(surface).toMatchObject({ baseHeightM: 0.01, radials: { representation: "explicit-wires", count: 16, droopAngleRad: 0 }, ground: { kind: "sommerfeld-norton" } });
     expect(explicit).toMatchObject({ radials: { representation: "explicit-wires", count: 4 }, ground: { kind: "perfect" } });
     expect(screen).toMatchObject({ baseHeightM: 0, radials: { representation: "nec-ground-screen", count: 16 }, ground: { kind: "reflection-coefficient" } });
+    for (const model of [ideal, surface, explicit, screen]) {
+      expect(model.radiatorDiameterM).toBe(0.001);
+      expect(model.radials.diameterM).toBe(0.001);
+    }
   });
 
   it("generates a horizontal, connected near-surface radial plane and labels the NEC-2 approximation", () => {
@@ -132,7 +136,10 @@ describe("vertical NEC adapter", () => {
   });
 
   it("emits near-surface radials as raised explicit wires over Sommerfeld/Norton ground", () => {
-    const generated = generateVerticalModel(startingVerticalModel(14_100_000, "ground-mounted-explicit-radials"));
+    const model = startingVerticalModel(14_100_000, "ground-mounted-explicit-radials");
+    model.radiatorDiameterM = 0.002;
+    model.radials.diameterM = 0.002;
+    const generated = generateVerticalModel(model);
     const adapted = adaptVerticalToNec(generated);
     expect(adapted.deck.match(/^GW /gm)).toHaveLength(17);
     expect(adapted.deck).toContain("GE -1\nGN 2 0 0 0 13 0.005");
@@ -146,7 +153,7 @@ describe("vertical NEC adapter", () => {
     const adapted = adaptVerticalToNec(generated);
     expect(generated.wires).toHaveLength(1);
     expect(adapted.deck.match(/^GW /gm)).toHaveLength(1);
-    expect(adapted.deck).toMatch(/^GN 0 16 0 0 13 0\.005 [\d.]+ 0\.001$/m);
+    expect(adapted.deck).toMatch(/^GN 0 16 0 0 13 0\.005 [\d.]+ 0\.0005$/m);
     expect(adapted.deck).toContain("RP 4 19 72 1000");
     expect(adapted.issues).toContainEqual(expect.objectContaining({ code: "screen-simplification", severity: "warning" }));
   });

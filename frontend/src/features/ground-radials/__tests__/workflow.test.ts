@@ -6,6 +6,10 @@ import { createDefaultRadialWorkflowSettings, createWorkflowPhasedModel, createW
 const realGround = { kind: "sommerfeld-norton", conductivitySPerM: 0.005, relativePermittivity: 13 } as const;
 
 describe("downstream radial workflow contract", () => {
+  it("uses 1 mm radial wire for new downstream workflows", () => {
+    expect(createDefaultRadialWorkflowSettings().radialDiameterM).toBe(0.001);
+  });
+
   it("creates the verified near-surface single-vertical representation", () => {
     const settings = { ...createDefaultRadialWorkflowSettings(), verticalMode: "near-surface" as const };
     const model = createWorkflowVerticalModel(14_100_000, realGround, settings, 16, 50);

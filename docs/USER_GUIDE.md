@@ -30,6 +30,8 @@ Project schema and migration behaviour are documented in [PROJECT_FILE_FORMAT.md
 
 Templates generate the shared internal antenna model and then the dedicated NEC adapter. Frequency-derived dimensions are starting points, not promised resonance.
 
+New general wire-antenna models start with a **1 mm wire diameter**. This is an editable modelling default, not a recommendation for mechanical construction. Yagi/LPDA element-tube and magnetic-loop conductor defaults remain family-specific. Saved projects and imported NEC files retain their recorded conductor dimensions.
+
 - **Verified dipole / height lab:** centre-fed horizontal wire, ground/height controls, patterns, currents, and saved height overlays.
 - **Verticals:** ground-contact, near-surface, elevated and ground-plane arrangements. The frozen v1.0.0 release supports explicit current-carrying radial wires only in the elevated arrangement. The unreleased ground-radial branch adds horizontal explicit wires at visible positive clearance over real ground for the specialist vertical and reusable template; NEC-2 does not make that a buried-wire or exact soil-contact model. The separate ground-contact radial-screen option remains NEC's simplified reflection-coefficient approximation: its radial entries are density/radius parameters, not rendered wires, and it produces no radial segment currents. The ideal perfect-ground contact model has no radials.
 - The primary Simulator's **Ground Plane Vertical** is still the elevated-radial template. Its scope notice links to **Verticals** for ground-mounted radials and **Phased Arrays** for two-element radial systems; selecting a different laboratory never silently changes the current Simulator geometry.

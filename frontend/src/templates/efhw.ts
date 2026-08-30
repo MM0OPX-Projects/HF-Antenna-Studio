@@ -85,7 +85,7 @@ export const efhwTemplate: AntennaTemplate = {
       min: 0.5,
       max: 10,
       step: 0.1,
-      defaultValue: 2.0,
+      defaultValue: 1.0,
       decimals: 1,
     },
   ],
@@ -94,7 +94,7 @@ export const efhwTemplate: AntennaTemplate = {
     const freq = params.frequency ?? 7.1;
     const feedHeight = params.feed_height ?? 10;
     const farEndHeight = params.far_end_height ?? 3;
-    const wireDiamMm = params.wire_diameter ?? 2.0;
+    const wireDiamMm = params.wire_diameter ?? 1.0;
 
     const wavelength = 300.0 / freq;
     const wireLength = (wavelength / 2) * 0.97; // slightly less shortening for EFHW

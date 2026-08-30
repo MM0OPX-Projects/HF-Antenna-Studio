@@ -116,7 +116,7 @@ export const quadTemplate: AntennaTemplate = {
       min: 0.5,
       max: 10,
       step: 0.1,
-      defaultValue: 2.0,
+      defaultValue: 1.0,
       decimals: 1,
     },
   ],
@@ -125,7 +125,7 @@ export const quadTemplate: AntennaTemplate = {
     const freq = params.frequency ?? 14.15;
     const numElements = Math.round(params.num_elements ?? 2);
     const centerHeight = params.height ?? 12;
-    const wireDiamMm = params.wire_diameter ?? 2.0;
+    const wireDiamMm = params.wire_diameter ?? 1.0;
 
     const wavelength = 300.0 / freq;
     const radius = (wireDiamMm / 1000) / 2;

@@ -36,6 +36,7 @@ describe("parametric antenna template registry", () => {
           expect(parameters[parameter.key], parameter.key).toBeGreaterThanOrEqual(parameter.minSI);
           expect(parameters[parameter.key], parameter.key).toBeLessThanOrEqual(parameter.maxSI);
         }
+        expect(parameters.wireDiameterM).toBe(0.001);
       });
 
       it("generates finite positive wire geometry and an on-wire feed location", () => {
@@ -79,8 +80,10 @@ describe("parametric antenna template registry", () => {
         expect(adapted.runRequest.deck).toBe(adapted.deck);
         expect(adapted.runRequest.parse.totalSegments).toBe(adapted.segmentation.totalSegments);
         if (definition.id === "quarter-wave-vertical") {
+          const comparatorModel = generateTemplateModel(definition, { ...parameters, wireDiameterM: 0.002 }, definition.defaultGround ?? perfectGround, false).model;
+          const comparatorDeck = adaptTemplateToNec(comparatorModel, definition).deck.replace(/\r\n/g, "\n");
           const fixture = readFileSync(new URL("../../../../../validation/vertical/template-surface-16radial-20m-real.nec", import.meta.url), "utf8").replace(/\r\n/g, "\n");
-          expect(adapted.deck.replace(/\r\n/g, "\n")).toBe(fixture);
+          expect(comparatorDeck).toBe(fixture);
         }
       });
     });

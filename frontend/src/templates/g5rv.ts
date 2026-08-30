@@ -112,7 +112,7 @@ export const g5rvTemplate: AntennaTemplate = {
       min: 0.5,
       max: 5,
       step: 0.1,
-      defaultValue: 2.0,
+      defaultValue: 1.0,
       decimals: 1,
     },
   ],
@@ -121,7 +121,7 @@ export const g5rvTemplate: AntennaTemplate = {
     const height = params.height ?? 12;
     const feederLen = params.feeder_length ?? 10.36;
     const dipoleLen = params.dipole_length ?? 31.1;
-    const wireDiamMm = params.wire_diameter ?? 2.0;
+    const wireDiamMm = params.wire_diameter ?? 1.0;
 
     const radius = wireDiamMm / 1000 / 2;
     const halfDipole = dipoleLen / 2;

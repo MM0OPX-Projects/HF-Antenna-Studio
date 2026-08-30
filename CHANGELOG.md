@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- Changed the default conductor diameter for new general wire-antenna models from 2 mm to 1 mm across specialist laboratories, reusable and legacy templates, downstream comparison/sweep/optimiser models, radial workflows, and newly drawn wire-editor geometry; explicit tube-family defaults and saved/imported dimensions remain unchanged
 - Renamed the radiation-pattern display choice from **Normalised dB** to **Relative to peak**, and made every elevation inspector's prominent reading follow that choice while retaining clearly labelled absolute gain, below-cut-peak difference, and cut-peak context
 - Extended the shared elevation gain inspector from a mirrored 0–90° control to a true 0–180° bearing-plane cut on every antenna workflow: 0° primary horizon, 90° zenith, and 180° opposite horizon, using the solver's real opposite-bearing samples for front/rear comparisons
 - Replaced both the inherited generic two-W-wire Hex Beam and the earlier rotated/derived-rear-path laboratory approximation with the canonical single-band G3TXQ broadband wire layout; old Hexbeam numerical fixtures were invalidated and recomputed from the changed NEC deck

@@ -20,6 +20,10 @@ test("all eight templates generate geometry, feed/segments, NEC, and solve local
   for (const reference of TEMPLATE_REGRESSION_CASES) {
     const definition = antennaTemplateDefinitions.find((item) => item.id === reference.id)!;
     await page.getByTestId(`template-${definition.id}`).click();
+    await expect(page.getByTestId("template-param-wireDiameterM"), `${definition.id} default wire diameter`).toHaveValue("1");
+    const comparatorDiameterMm = definition.id === "ground-plane-vertical" ? "4" : "2";
+    await page.getByTestId("template-param-wireDiameterM").fill(comparatorDiameterMm);
+    await expect(page.getByTestId("template-param-wireDiameterM")).toHaveValue(comparatorDiameterMm);
     await expect(page.getByTestId("template-geometry-3d"), definition.id).toHaveAttribute("data-template-id", definition.id);
     await expect(page.getByTestId("template-wire-count"), definition.id).not.toHaveText("0");
     await expect(page.getByTestId("template-segment-count"), definition.id).not.toHaveText("—");

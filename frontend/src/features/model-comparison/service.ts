@@ -102,7 +102,7 @@ export async function runComparisonSlot(
     const lambda = SPEED_OF_LIGHT_M_PER_S / frequencyHz;
     const model: HorizontalDipoleModel = {
       schemaVersion: 1, kind: "center-fed-horizontal-dipole", frequencyHz, totalLengthM: lambda * 0.477,
-      wireDiameterM: 0.002, heightM: definition.parameterValue,
+      wireDiameterM: 0.001, heightM: definition.parameterValue,
       ground: conditions.ground.kind === "perfect" ? { kind: "perfect" } : { kind: "real", ...realGround(conditions)! },
       referenceImpedanceOhm: conditions.referenceImpedanceOhm, orientation: "x", conductor: { kind: "perfect" },
     };
@@ -147,6 +147,6 @@ export async function runComparisonSlot(
 
 export function createDipoleSweepPlanForTest(definition: ComparisonSlotDefinition, conditions: ComparisonConditions) {
   const lambda = SPEED_OF_LIGHT_M_PER_S / (conditions.frequencyMhz * 1_000_000);
-  const model: HorizontalDipoleModel = { schemaVersion: 1, kind: "center-fed-horizontal-dipole", frequencyHz: conditions.frequencyMhz * 1_000_000, totalLengthM: lambda * 0.477, wireDiameterM: 0.002, heightM: definition.parameterValue, ground: { kind: "perfect" }, referenceImpedanceOhm: conditions.referenceImpedanceOhm, orientation: "x", conductor: { kind: "perfect" } };
+  const model: HorizontalDipoleModel = { schemaVersion: 1, kind: "center-fed-horizontal-dipole", frequencyHz: conditions.frequencyMhz * 1_000_000, totalLengthM: lambda * 0.477, wireDiameterM: 0.001, heightM: definition.parameterValue, ground: { kind: "perfect" }, referenceImpedanceOhm: conditions.referenceImpedanceOhm, orientation: "x", conductor: { kind: "perfect" } };
   return adaptDipoleToNec(model);
 }

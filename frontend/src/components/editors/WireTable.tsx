@@ -115,7 +115,7 @@ export function WireTable() {
       x2: defaultLength,
       y2: 0,
       z2: defaultHeight,
-      radius: 0.001,
+      radius: 0.0005,
     });
   }, [addWire, designFrequencyMhz]);
 

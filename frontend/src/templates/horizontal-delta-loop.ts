@@ -83,7 +83,7 @@ export const horizontalDeltaLoopTemplate: AntennaTemplate = {
       min: 0.5,
       max: 10,
       step: 0.1,
-      defaultValue: 2.0,
+      defaultValue: 1.0,
       decimals: 1,
     },
   ],
@@ -91,7 +91,7 @@ export const horizontalDeltaLoopTemplate: AntennaTemplate = {
   generateGeometry(params: Record<string, number>): WireGeometry[] {
     const freq = params.frequency ?? 7.15;
     const height = params.height ?? 10;
-    const wireDiamMm = params.wire_diameter ?? 2.0;
+    const wireDiamMm = params.wire_diameter ?? 1.0;
 
     const wavelength = 300.0 / freq;
     const radius = wireDiamMm / 1000 / 2;

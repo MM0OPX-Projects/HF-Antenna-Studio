@@ -88,7 +88,7 @@ export const verticalTemplate: AntennaTemplate = {
       min: 0.5,
       max: 25,
       step: 0.5,
-      defaultValue: 2.0,
+      defaultValue: 1.0,
       decimals: 1,
     },
   ],
@@ -98,7 +98,7 @@ export const verticalTemplate: AntennaTemplate = {
     const radialCount = Math.round(params.radial_count ?? 4);
     const radialDroopDeg = params.radial_droop ?? 0;
     const baseHeight = params.base_height ?? 0.5;
-    const wireDiamMm = params.wire_diameter ?? 2.0;
+    const wireDiamMm = params.wire_diameter ?? 1.0;
 
     const wavelength = 300.0 / freq;
     const quarterWave = (wavelength / 4) * 0.95; // 5% shortening

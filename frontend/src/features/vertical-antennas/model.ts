@@ -30,14 +30,14 @@ export function startingVerticalModel(
     configuration,
     frequencyHz,
     radiatorLengthM: lambda * 0.2375,
-    radiatorDiameterM: 0.002,
-    baseHeightM: elevated ? lambda * 0.12 : nearSurface ? defaultNearSurfaceClearanceM(0.002) : 0,
+    radiatorDiameterM: 0.001,
+    baseHeightM: elevated ? lambda * 0.12 : nearSurface ? defaultNearSurfaceClearanceM(0.001) : 0,
     radials: {
       representation: elevated || nearSurface ? "explicit-wires" : approximation ? "nec-ground-screen" : "none",
       count: elevated ? 4 : nearSurface ? 16 : approximation ? 16 : 0,
       lengthM: lambda * 0.25,
       droopAngleRad: elevated ? 25 * Math.PI / 180 : 0,
-      diameterM: 0.002,
+      diameterM: 0.001,
     },
     ground: approximation
       ? { kind: "reflection-coefficient", conductivitySPerM: 0.005, relativePermittivity: 13 }

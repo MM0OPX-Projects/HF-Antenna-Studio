@@ -88,7 +88,7 @@ export const hexBeamTemplate: AntennaTemplate = {
       min: 0.5,
       max: 10,
       step: 0.1,
-      defaultValue: 2.0,
+      defaultValue: 1.0,
       decimals: 1,
     },
   ],
@@ -96,7 +96,7 @@ export const hexBeamTemplate: AntennaTemplate = {
   generateGeometry(params: Record<string, number>): WireGeometry[] {
     const freq = params.frequency ?? 14.15;
     const height = params.height ?? 12;
-    const wireDiamMm = params.wire_diameter ?? 2.0;
+    const wireDiamMm = params.wire_diameter ?? 1.0;
 
     const wavelength = 299.792458 / freq;
     const radius = wireDiamMm / 1000 / 2;

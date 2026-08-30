@@ -26,6 +26,16 @@ async function openImport(page: Page) {
   await page.getByRole("button", { name: "Import / Export" }).click();
 }
 
+test("newly drawn editor wires default to 1 mm diameter", async ({ page }) => {
+  await page.goto("/editor");
+  await dismissChangelog(page);
+  await page.locator("aside select").first().selectOption("wires");
+  await page.locator("aside").getByTitle("Add new wire").first().click();
+  await page.locator("aside").getByRole("row", { name: "Wire 1" }).first().click();
+  await expect(page.locator('aside [data-testid="wire-properties-diameter"]:visible')).toContainText("1.000");
+  await expect(page.locator('aside [data-testid="wire-properties-diameter"]:visible')).toContainText("mm");
+});
+
 test("supported NEC import reaches the real solver, results, and 3D editor without console errors", async ({ page }) => {
   const consoleErrors: string[] = [];
   const pageErrors: string[] = [];

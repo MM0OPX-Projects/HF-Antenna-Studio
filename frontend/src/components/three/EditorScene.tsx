@@ -317,7 +317,7 @@ function EditorSceneContent({
         x2: end[0],
         y2: end[1],
         z2: end[2],
-        radius: 0.001,
+        radius: 0.0005,
       };
       const hasConnection = Boolean(addStartConnection || endConnection);
       const tag = hasConnection

@@ -109,7 +109,7 @@ export const fanDipoleTemplate: AntennaTemplate = {
       min: 0.5,
       max: 5,
       step: 0.1,
-      defaultValue: 2.0,
+      defaultValue: 1.0,
       decimals: 1,
     },
   ],
@@ -118,7 +118,7 @@ export const fanDipoleTemplate: AntennaTemplate = {
     const numBands = Math.round(params.num_bands ?? 3);
     const height = params.height ?? 10;
     const fanSpread = params.fan_spread ?? 1.0;
-    const wireDiamMm = params.wire_diameter ?? 2.0;
+    const wireDiamMm = params.wire_diameter ?? 1.0;
 
     const radius = wireDiamMm / 1000 / 2;
     // Half-width of the central feed gap. All left arms join the left

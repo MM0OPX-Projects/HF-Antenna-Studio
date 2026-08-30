@@ -19,10 +19,11 @@ test("verified dipole executes the displayed NEC deck through local WASM", async
   await page.goto("/verified-dipole");
   await dismissChangelog(page);
   await expect(page.getByRole("heading", { name: "Centre-fed horizontal dipole" })).toBeVisible();
+  await expect(page.getByTestId("wire-diameter")).toHaveValue("1");
   await expect(page.getByTestId("segment-count")).toHaveText("21");
 
   const deckBeforeRun = await page.getByTestId("generated-nec").innerText();
-  expect(deckBeforeRun).toContain("GW 1 21 -5.075 0 10 5.075 0 10 0.001");
+  expect(deckBeforeRun).toContain("GW 1 21 -5.075 0 10 5.075 0 10 0.0005");
   expect(deckBeforeRun).toContain("EX 0 1 11 0 1 0");
   expect(deckBeforeRun.trimEnd().endsWith("EN")).toBe(true);
 

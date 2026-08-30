@@ -369,7 +369,7 @@ export function WirePropertiesPanel() {
       </div>
 
       {/* Diameter (stored as NEC radius internally) */}
-      <div className="space-y-1">
+      <div className="space-y-1" data-testid="wire-properties-diameter">
         <div className="text-[11px] text-text-secondary font-medium">
           Wire diameter
         </div>

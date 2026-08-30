@@ -38,6 +38,19 @@ describe("Template registry", () => {
   it("default template is dipole", () => {
     expect(getDefaultTemplate().id).toBe("dipole");
   });
+
+  it("uses a 1 mm conductor default for every general wire template", () => {
+    const wireTemplateIds = [
+      "dipole", "inverted-v", "off-center-fed", "vertical", "j-pole", "slim-jim",
+      "efhw", "g5rv", "fan-dipole", "delta-loop", "horizontal-delta-loop", "quad",
+      "moxon", "hex-beam",
+    ];
+    for (const id of wireTemplateIds) {
+      const template = getTemplate(id);
+      expect(template.parameters.find((parameter) => parameter.key === "wire_diameter")?.defaultValue, id).toBe(1);
+      expect(template.generateGeometry(getDefaultParams(template)).every((wire) => wire.radius === 0.0005), id).toBe(true);
+    }
+  });
 });
 
 // ---------------------------------------------------------------------------

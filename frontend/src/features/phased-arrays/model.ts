@@ -29,7 +29,7 @@ export function startingPhasedArrayModel(frequencyHz = 14_100_000): PhasedArrayM
     frequencyHz,
     elementLengthM: lambda * 0.2375,
     elementBaseHeightM: 0,
-    elementDiameterM: 0.002,
+    elementDiameterM: 0.001,
     spacingM: lambda * 0.25,
     bearingDeg: 90,
     ideal: { amplitude1: 1, amplitude2: 1, phase1Deg: 0, phase2Deg: 0 },
@@ -51,7 +51,7 @@ export function startingPhasedArrayModel(frequencyHz = 14_100_000): PhasedArrayM
       count: 0,
       lengthM: lambda * 0.25,
       droopAngleRad: 20 * Math.PI / 180,
-      diameterM: 0.002,
+      diameterM: 0.001,
     },
     provenance: { dimensionsAreStartingPoints: true, manualDimensions: false },
   };

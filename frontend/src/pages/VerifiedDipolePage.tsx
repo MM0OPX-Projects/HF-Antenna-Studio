@@ -44,7 +44,7 @@ function formatSigned(value: number): string {
 export function VerifiedDipolePage() {
   const [frequencyMhz, setFrequencyMhz] = useState(14.1);
   const [length, setLength] = useState<DimensionValue>({ value: 10.15, unit: "m" });
-  const [diameter, setDiameter] = useState<DimensionValue>({ value: 2, unit: "mm" });
+  const [diameter, setDiameter] = useState<DimensionValue>({ value: 1, unit: "mm" });
   const [height, setHeight] = useState<DimensionValue>({ value: 10, unit: "m" });
   const [groundKind, setGroundKind] = useState<DipoleGround["kind"]>("perfect");
   const [conductivity, setConductivity] = useState(0.005);

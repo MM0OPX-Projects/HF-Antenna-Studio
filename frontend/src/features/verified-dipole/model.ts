@@ -32,7 +32,7 @@ export function createDefaultDipoleModel(): HorizontalDipoleModel {
     kind: "center-fed-horizontal-dipole",
     frequencyHz: 14_100_000,
     totalLengthM: 10.15,
-    wireDiameterM: 0.002,
+    wireDiameterM: 0.001,
     heightM: 10,
     ground: { kind: "perfect" },
     referenceImpedanceOhm: 50,

@@ -78,7 +78,7 @@ export const invertedVTemplate: AntennaTemplate = {
       min: 0.5,
       max: 10,
       step: 0.1,
-      defaultValue: 2.0,
+      defaultValue: 1.0,
       decimals: 1,
     },
   ],
@@ -87,7 +87,7 @@ export const invertedVTemplate: AntennaTemplate = {
     const freq = params.frequency ?? 7.1;
     const apexHeight = params.apex_height ?? 12;
     const includedAngle = params.included_angle ?? 120;
-    const wireDiamMm = params.wire_diameter ?? 2.0;
+    const wireDiamMm = params.wire_diameter ?? 1.0;
 
     const wavelength = 300.0 / freq;
     const armLength = (wavelength / 2) * 0.95 / 2;

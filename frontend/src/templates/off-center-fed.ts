@@ -97,7 +97,7 @@ export const offCenterFedTemplate: AntennaTemplate = {
       min: 0.5,
       max: 5,
       step: 0.1,
-      defaultValue: 2.0,
+      defaultValue: 1.0,
       decimals: 1,
     },
   ],
@@ -106,7 +106,7 @@ export const offCenterFedTemplate: AntennaTemplate = {
     const freq = params.frequency ?? 7.1;
     const feedOffset = params.feed_offset ?? 0.36;
     const height = params.height ?? 12;
-    const wireDiamMm = params.wire_diameter ?? 2.0;
+    const wireDiamMm = params.wire_diameter ?? 1.0;
 
     const wavelength = 300.0 / freq;
     const totalLen = (wavelength / 2) * 0.95; // with end effect shortening

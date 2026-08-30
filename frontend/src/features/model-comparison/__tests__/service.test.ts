@@ -9,7 +9,7 @@ describe("comparison solver plans", () => {
   it("reuses the validated dipole adapter with the requested exact height and frequency", () => {
     const plan = createDipoleSweepPlanForTest({ id: "dipole", family: "dipole", parameterValue: 5 }, conditions);
     expect(plan.deck).toContain("GW 1 21");
-    expect(plan.deck).toMatch(/^GW 1 21 .* 0 5 .* 0 5 0\.001$/m);
+    expect(plan.deck).toMatch(/^GW 1 21 .* 0 5 .* 0 5 0\.0005$/m);
     expect(plan.deck).toContain("FR 0 1 0 0 14.1 0");
   });
 

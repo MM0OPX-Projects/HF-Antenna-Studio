@@ -26,6 +26,10 @@ function numericResult(text: string): number {
 
 test("40/20/10m ideal monopoles match the recorded local NEC regression and analytic sanity bounds", async ({ page }) => {
   await openVerticals(page);
+  await expect(page.getByTestId("vertical-radiator-diameter")).toHaveValue("1");
+  await expect(page.getByTestId("vertical-radial-diameter")).toHaveValue("1");
+  await page.getByTestId("vertical-radiator-diameter").fill("2");
+  await page.getByTestId("vertical-radial-diameter").fill("2");
   await page.getByTestId("vertical-mode-ground-mounted-ideal").click();
   for (const reference of IDEAL_VERTICAL_REGRESSION_CASES) {
     await page.getByTestId(`vertical-band-${reference.band}`).click();
@@ -97,6 +101,10 @@ test("Sommerfeld/Norton explicit wires and simplified RCA screen remain distinct
 test("ground-mounted real-soil radials solve the externally compared exact deck", async ({ page }) => {
   await openVerticals(page);
   await page.getByTestId("vertical-mode-ground-mounted-explicit-radials").click();
+  await expect(page.getByTestId("vertical-radiator-diameter")).toHaveValue("1");
+  await expect(page.getByTestId("vertical-radial-diameter")).toHaveValue("1");
+  await page.getByTestId("vertical-radiator-diameter").fill("2");
+  await page.getByTestId("vertical-radial-diameter").fill("2");
   await expect(page.getByTestId("vertical-wire-count")).toHaveText("17");
   await expect(page.getByTestId("vertical-ground-kind")).toHaveValue("sommerfeld-norton");
   await expect(page.getByTestId("vertical-surface-clearance")).toHaveValue("10");
@@ -104,6 +112,7 @@ test("ground-mounted real-soil radials solve the externally compared exact deck"
   const deck = await page.getByTestId("vertical-generated-nec").textContent() ?? "";
   expect(deck).toContain("CM HF Antenna Studio vertical system: ground-mounted-explicit-radials");
   expect(deck).toContain("GE -1\nGN 2 0 0 0 13 0.005");
+  expect(deck).toContain("0.001");
   await runAndWait(page);
   const z = await impedance(page.getByTestId("vertical-result-impedance"));
   expect(z.resistance).toBeCloseTo(32.3154, 1);

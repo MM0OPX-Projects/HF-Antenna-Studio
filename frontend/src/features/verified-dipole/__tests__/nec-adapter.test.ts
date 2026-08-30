@@ -17,6 +17,10 @@ function halfWaveModel(overrides: Partial<HorizontalDipoleModel> = {}): Horizont
 }
 
 describe("verified dipole NEC adapter", () => {
+  it("starts a new dipole with 1 mm wire", () => {
+    expect(createDefaultDipoleModel().wireDiameterM).toBe(0.001);
+  });
+
   it("uses an odd, conservative count with a centre source", () => {
     const adapted = adaptDipoleToNec(halfWaveModel());
     expect(adapted.segmentation.segments).toBe(21);

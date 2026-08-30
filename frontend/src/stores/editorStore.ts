@@ -69,7 +69,7 @@ interface EditorSnapshot {
 
 const DEFAULT_GROUND: GroundConfig = { type: "average" };
 const DEFAULT_FREQ: FrequencyRange = { start_mhz: 13.5, stop_mhz: 15.0, steps: computeSteps(13.5, 15.0) };
-const DEFAULT_WIRE_RADIUS = 0.001; // 1mm
+const DEFAULT_WIRE_RADIUS = 0.0005; // 1 mm diameter
 const DEFAULT_FREQUENCY_MHZ = 14.1;
 
 const MAX_UNDO_STACK = 100;
