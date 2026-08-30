@@ -89,12 +89,14 @@ export function DipoleHeightLabPage() {
       label: trace.label,
       color: trace.color,
       points: trace.result.elevationPattern,
+      pattern: trace.result.radiationPattern,
     })),
     ...(currentTrace ? [{
       id: currentTrace.id,
       label: currentTrace.label,
       color: currentTrace.color,
       points: currentTrace.result.elevationPattern,
+      pattern: currentTrace.result.radiationPattern,
       current: true,
     }] : []),
   ], [comparisons, currentTrace]);

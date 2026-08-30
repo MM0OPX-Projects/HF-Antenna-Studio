@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clampElevationAngle, gainAtAngle, withElevationHorizonFloorPoints, type GainPatternPoint } from "../pattern-angle";
+import { clampElevationAngle, gainAtAngle, gainAtCircularAngle, withElevationHorizonFloorPoints, type GainPatternPoint } from "../pattern-angle";
 
 const points: GainPatternPoint[] = [
   { angleDeg: 0, gainDbi: -8, normalizedDb: -10 },
@@ -63,6 +63,32 @@ describe("clampElevationAngle", () => {
     expect(clampElevationAngle(5)).toBe(5);
     expect(clampElevationAngle(95)).toBe(95);
     expect(clampElevationAngle(181)).toBe(180);
+  });
+});
+
+describe("gainAtCircularAngle", () => {
+  it("interpolates continuously across the 360/0-degree seam", () => {
+    const circular = [
+      { angleDeg: 0, gainDbi: 10, normalizedDb: 0 },
+      { angleDeg: 90, gainDbi: 6, normalizedDb: -4 },
+      { angleDeg: 180, gainDbi: 4, normalizedDb: -6 },
+      { angleDeg: 270, gainDbi: 2, normalizedDb: -8 },
+    ];
+    expect(gainAtCircularAngle(circular, 315)).toMatchObject({
+      gainDbi: 6,
+      normalizedDb: -4,
+      method: "interpolated",
+      lowerAngleDeg: 270,
+      upperAngleDeg: 360,
+    });
+    expect(gainAtCircularAngle(circular, 360)?.gainDbi).toBe(10);
+  });
+
+  it("does not interpolate through an invalid NEC null", () => {
+    expect(gainAtCircularAngle([
+      { angleDeg: 0, gainDbi: 10, normalizedDb: 0 },
+      { angleDeg: 270, gainDbi: -999.99, normalizedDb: -40 },
+    ], 315)).toBeNull();
   });
 });
 

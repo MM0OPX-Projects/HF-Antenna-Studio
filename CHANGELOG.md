@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Added a shared **Azimuth cut elevation** selector from 0° to 90° above the horizon and a keyboard-, number-, click-and-drag 360° bearing inspector to antenna radiation views; cut selection uses the nearest retained NEC theta row and bearing interpolation is explicitly labelled
 - Added one shared, always-visible azimuth/elevation radiation-cut presentation across Design, Wire Editor, Frequency Analyser, Model Comparison, Parameter Sweeps, Antenna Optimiser, Measurement Comparison, and antenna laboratories; analyser-style tools keep efficient impedance batches and run a separate cancellable pattern solve only for the selected model frequency
 - Added a professional acknowledgements and source record crediting Colin Summers MM0OPX's product vision and direction, ChatGPT Codex's coding/documentation role, the inherited open-source foundations, and attributed antenna and validation references
 - Added one shared, source-attributed G3TXQ broadband Hexbeam geometry generator with exact M-driver half lengths, five-side perimeter reflector length, two tip gaps, derived regular-frame radius, explicit feed bridge, and non-conductive spreader/perimeter rendering

@@ -13,6 +13,7 @@ interface PatternAngleInspectorProps {
   readings: PatternAngleInspectorReading[];
   displayMode?: "absolute" | "normalised";
   testId?: string;
+  kind?: "elevation" | "azimuth";
 }
 
 function sourceLabel(reading: GainAtAngleReading): string {
@@ -25,32 +26,37 @@ export function PatternAngleInspector({
   onAngleChange,
   readings,
   displayMode = "absolute",
-  testId = "elevation-angle-inspector",
+  kind = "elevation",
+  testId = kind === "elevation" ? "elevation-angle-inspector" : "azimuth-bearing-inspector",
 }: PatternAngleInspectorProps) {
+  const isElevation = kind === "elevation";
+  const maximum = isElevation ? 180 : 360;
   return (
-    <section className="mt-2 rounded-md border border-border bg-background/60 p-2" data-testid={testId} aria-label="Gain at selected elevation-cut angle">
+    <section className="mt-2 rounded-md border border-border bg-background/60 p-2" data-testid={testId} aria-label={isElevation ? "Gain at selected elevation-cut angle" : "Gain at selected azimuth bearing"}>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <label className="flex items-center gap-2 text-xs font-semibold text-text-primary">
-          Elevation cut angle
+          {isElevation ? "Elevation cut angle" : "Azimuth bearing"}
           <span className="inline-flex items-center rounded border border-border bg-surface px-2 py-1">
             <input
               type="number"
               min={0}
-              max={180}
+              max={maximum}
               step={0.1}
               value={Number(angleDeg.toFixed(1))}
               onChange={(event) => {
                 const next = event.currentTarget.valueAsNumber;
-                if (Number.isFinite(next)) onAngleChange(Math.min(180, Math.max(0, next)));
+                if (Number.isFinite(next)) onAngleChange(Math.min(maximum, Math.max(0, next)));
               }}
               className="w-14 bg-transparent text-right font-mono text-xs outline-none"
-              aria-label="Elevation cut angle from primary to opposite horizon"
+              aria-label={isElevation ? "Elevation cut angle from primary to opposite horizon" : "Azimuth bearing clockwise from zero degrees"}
               data-testid={`${testId}-input`}
             />
             <span className="text-xs text-text-secondary">°</span>
           </span>
         </label>
-        <span className="text-[10px] text-text-secondary">0° primary horizon · 90° zenith · 180° opposite horizon. Click or drag across the plot, type an angle, or use the arrow keys.</span>
+        <span className="text-[10px] text-text-secondary">{isElevation
+          ? "0° primary horizon · 90° zenith · 180° opposite horizon. Click or drag across the plot, type an angle, or use the arrow keys."
+          : "0°/360° top · 90° right · 180° bottom · 270° left. Click and hold, then drag around the plot; typing and arrow keys also work."}</span>
       </div>
       <div className="mt-2 grid gap-1" aria-live="polite">
         {readings.map(({ id, label, color, reading }) => (

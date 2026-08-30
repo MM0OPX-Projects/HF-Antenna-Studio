@@ -34,7 +34,7 @@ export function RadiationCutPair({
   const elevation = elevationSeries ?? derived?.elevation ?? [];
   const available = azimuth.length > 0 && elevation.length > 0;
   const cutContext = context ?? (derived
-    ? `Azimuth at ${derived.azimuthElevationDeg.toFixed(1)}° elevation · elevation plane ${derived.elevationBearingDeg.toFixed(1)}° → ${((derived.elevationBearingDeg + 180) % 360).toFixed(1)}° bearing`
+    ? `Azimuth starts at the strongest ${derived.azimuthElevationDeg.toFixed(1)}° NEC row and can be changed below · elevation plane ${derived.elevationBearingDeg.toFixed(1)}° → ${((derived.elevationBearingDeg + 180) % 360).toFixed(1)}° bearing`
     : undefined);
 
   return <section className="space-y-2" data-testid={testId} aria-label={title}>
@@ -58,7 +58,7 @@ export function RadiationCutPair({
       {pending ? "Calculating azimuth and elevation cuts with NEC…" : emptyMessage}
     </Card>}
     {available && <div className="grid gap-3 2xl:grid-cols-2">
-      <Card className="overflow-hidden p-2" data-testid={`${testId}-azimuth`}><HeightPolarPlot plane="azimuth" mode={mode} series={azimuth} /></Card>
+      <Card className="overflow-hidden p-2" data-testid={`${testId}-azimuth`}><HeightPolarPlot plane="azimuth" mode={mode} series={pattern && !azimuthSeries ? azimuth.map((item) => ({ ...item, pattern, azimuthConvention: "legacy-compass" as const })) : azimuth} /></Card>
       <Card className="overflow-hidden p-2" data-testid={`${testId}-elevation`}><HeightPolarPlot plane="elevation" mode={mode} series={elevation} /></Card>
     </div>}
   </section>;

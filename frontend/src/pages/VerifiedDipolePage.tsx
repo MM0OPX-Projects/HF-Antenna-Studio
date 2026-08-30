@@ -2,7 +2,8 @@ import { useMemo, useState } from "react";
 import { Navbar } from "../components/layout/Navbar";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
-import { DipoleCurrentPlot, DipolePatternPlot } from "../features/verified-dipole/DipolePlots";
+import { DipoleCurrentPlot } from "../features/verified-dipole/DipolePlots";
+import { RadiationCutPair } from "../components/results/RadiationCutPair";
 import type { DipoleGround, HorizontalDipoleModel } from "../features/verified-dipole/model";
 import { adaptDipoleToNec } from "../features/verified-dipole/nec-adapter";
 import type { VerifiedDipoleResult } from "../features/verified-dipole/result";
@@ -156,7 +157,8 @@ export function VerifiedDipolePage() {
                   ].map(({ label, value, testId }) => <Card key={label} className="p-3"><p className="text-[11px] text-text-secondary">{label}</p><p data-testid={testId} className="mt-1 whitespace-nowrap font-mono text-lg font-semibold text-text-primary">{value}</p></Card>)}
                 </section>
                 <Card className="flex flex-wrap items-center justify-between gap-3 p-4 text-sm"><div><span className="text-text-secondary">Take-off angle </span><b data-testid="result-takeoff" className="font-mono">{result.takeOffAngleDeg === null ? 'N/A in free space' : `${result.takeOffAngleDeg.toFixed(1)}°`}</b></div><div className="text-xs text-text-secondary">{result.engine} · {result.computedInMs} ms · local/offline</div></Card>
-                <section className="grid gap-4 xl:grid-cols-2"><DipolePatternPlot title="Azimuth" points={result.azimuthPattern} xLabel="Azimuth φ" /><DipolePatternPlot title="Elevation" points={result.elevationPattern} xLabel="Elevation above horizon" /><DipoleCurrentPlot points={result.currentDistribution} /></section>
+                <RadiationCutPair pattern={result.radiationPattern} title="Dipole radiation cuts" context="Select the azimuth slice elevation, then drag either plot cursor to inspect the solved NEC grid." testId="dipole-pattern-cuts" />
+                <section><DipoleCurrentPlot points={result.currentDistribution} /></section>
               </>}
 
               <Card className="overflow-hidden">

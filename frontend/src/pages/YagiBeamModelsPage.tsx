@@ -53,8 +53,8 @@ export function YagiBeamModelsPage() {
     const id = `${Date.now()}-${traces.length}`;
     setTraces((current) => [...current, { id, label: `${model.directors.length + 2}-element · ${(model.boomHeightM / lambda).toFixed(2)}λ`, color: TRACE_COLORS[current.length]!, model: structuredClone(model), result }]);
   };
-  const currentSeries: PolarSeries[] = result ? [{ id: "current", label: "Current model", color: "#f97316", points: result.azimuthPattern, current: true }] : [];
-  const azimuthSeries: PolarSeries[] = [...traces.map((trace) => ({ id: trace.id, label: trace.label, color: trace.color, points: trace.result.azimuthPattern })), ...currentSeries];
+  const currentSeries: PolarSeries[] = result ? [{ id: "current", label: "Current model", color: "#f97316", points: result.azimuthPattern, pattern: result.radiationPattern, current: true }] : [];
+  const azimuthSeries: PolarSeries[] = [...traces.map((trace) => ({ id: trace.id, label: trace.label, color: trace.color, points: trace.result.azimuthPattern, pattern: trace.result.radiationPattern })), ...currentSeries];
   const elevationSeries: PolarSeries[] = [...traces.map((trace) => ({ id: trace.id, label: trace.label, color: trace.color, points: trace.result.elevationPattern })), ...(result ? [{ id: "current", label: "Current model", color: "#f97316", points: result.elevationPattern, current: true }] : [])];
 
   return <div className="flex h-screen flex-col bg-background text-text-primary"><Navbar /><main className="min-h-0 flex-1 overflow-auto"><div className="mx-auto max-w-[1700px] p-4 lg:p-6">

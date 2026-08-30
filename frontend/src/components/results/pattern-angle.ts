@@ -114,6 +114,65 @@ export function gainAtAngle(
   };
 }
 
+/**
+ * Read a circular 0–360° azimuth cut. The seam between the final NEC sample
+ * and 0° is treated like every other sample interval, so cursor readings do
+ * not disappear around north. A requested 360° bearing is equivalent to 0°.
+ */
+export function gainAtCircularAngle(
+  points: GainPatternPoint[],
+  requestedAngleDeg: number,
+): GainAtAngleReading | null {
+  if (!Number.isFinite(requestedAngleDeg)) return null;
+  const normalizedRequest = ((requestedAngleDeg % 360) + 360) % 360;
+  const sorted = points
+    .filter((point) => Number.isFinite(point.angleDeg))
+    .map((point) => ({ ...point, angleDeg: ((point.angleDeg % 360) + 360) % 360 }))
+    .sort((left, right) => left.angleDeg - right.angleDeg)
+    .filter((point, index, all) => index === 0 || Math.abs(point.angleDeg - all[index - 1]!.angleDeg) > EXACT_TOLERANCE_DEG);
+  if (sorted.length === 0) return null;
+  const peakGainDbi = Math.max(...sorted.filter(isValidSample).map((point) => point.gainDbi));
+  if (!Number.isFinite(peakGainDbi)) return null;
+
+  const exact = sorted.find((point) => Math.abs(point.angleDeg - normalizedRequest) <= EXACT_TOLERANCE_DEG);
+  if (exact && isValidSample(exact)) {
+    return {
+      requestedAngleDeg,
+      gainDbi: exact.gainDbi,
+      normalizedDb: exact.normalizedDb,
+      peakGainDbi,
+      method: "exact",
+      lowerAngleDeg: exact.angleDeg,
+      upperAngleDeg: exact.angleDeg,
+    };
+  }
+
+  const upperIndex = sorted.findIndex((point) => point.angleDeg > normalizedRequest);
+  const lower = upperIndex < 0 ? sorted[sorted.length - 1]! : upperIndex === 0 ? sorted[sorted.length - 1]! : sorted[upperIndex - 1]!;
+  const upper = upperIndex <= 0 ? sorted[0]! : sorted[upperIndex]!;
+  if (!isValidSample(lower) || !isValidSample(upper)) return null;
+  const lowerAngle = lower.angleDeg;
+  const upperAngle = upper.angleDeg <= lowerAngle ? upper.angleDeg + 360 : upper.angleDeg;
+  const requestAngle = normalizedRequest < lowerAngle ? normalizedRequest + 360 : normalizedRequest;
+  const span = upperAngle - lowerAngle;
+  if (span <= EXACT_TOLERANCE_DEG) return null;
+  const fraction = (requestAngle - lowerAngle) / span;
+
+  return {
+    requestedAngleDeg,
+    gainDbi: lower.gainDbi + (upper.gainDbi - lower.gainDbi) * fraction,
+    normalizedDb: lower.normalizedDb + (upper.normalizedDb - lower.normalizedDb) * fraction,
+    peakGainDbi,
+    method: "interpolated",
+    lowerAngleDeg: lower.angleDeg,
+    upperAngleDeg: upper.angleDeg === 0 ? 360 : upper.angleDeg,
+  };
+}
+
 export function clampElevationAngle(angleDeg: number): number {
   return Math.min(180, Math.max(0, angleDeg));
+}
+
+export function clampAzimuthBearing(angleDeg: number): number {
+  return Math.min(360, Math.max(0, angleDeg));
 }

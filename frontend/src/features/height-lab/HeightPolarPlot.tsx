@@ -1,6 +1,8 @@
-import { useState, type KeyboardEvent, type PointerEvent, type RefObject } from "react";
+import { useMemo, useState, type KeyboardEvent, type PointerEvent, type RefObject } from "react";
+import type { PatternData } from "../../api/nec";
 import { PatternAngleInspector } from "../../components/results/PatternAngleInspector";
-import { clampElevationAngle, gainAtAngle, withElevationHorizonFloorPoints } from "../../components/results/pattern-angle";
+import { clampAzimuthBearing, clampElevationAngle, gainAtAngle, gainAtCircularAngle, withElevationHorizonFloorPoints } from "../../components/results/pattern-angle";
+import { azimuthCutFromPattern, type AzimuthBearingConvention } from "../../components/results/radiation-cuts";
 import { usePointerDrag } from "../../components/results/usePointerDrag";
 import type { NormalizedPatternPoint } from "../verified-dipole/result";
 import { displayedGain } from "./metrics";
@@ -12,6 +14,9 @@ export interface PolarSeries {
   color: string;
   points: NormalizedPatternPoint[];
   current?: boolean;
+  /** Retained far-field grid enables selecting another solved azimuth row. */
+  pattern?: PatternData;
+  azimuthConvention?: AzimuthBearingConvention;
 }
 
 interface HeightPolarPlotProps {
@@ -52,21 +57,47 @@ function elevationPath(points: NormalizedPatternPoint[], mode: PatternDisplayMod
 
 export function HeightPolarPlot({ plane, mode, series, svgRef }: HeightPolarPlotProps) {
   const [selectedElevationDeg, setSelectedElevationDeg] = useState(5);
+  const [selectedAzimuthBearingDeg, setSelectedAzimuthBearingDeg] = useState(0);
+  const [selectedAzimuthCutElevationDeg, setSelectedAzimuthCutElevationDeg] = useState<number | null>(null);
   const rings = mode === "absolute" ? [-20, -10, 0, 10] : [-30, -20, -10, 0];
   const minimum = mode === "absolute" ? -30 : -40;
   const viewHeight = plane === "azimuth" ? AZIMUTH_VIEW_HEIGHT : ELEVATION_VIEW_HEIGHT;
-  const inspectorReadings = plane === "elevation" ? series.map((item) => ({
+  const primaryPatternSeries = series.find((item) => item.current && item.pattern) ?? series.find((item) => item.pattern);
+  const automaticAzimuthCut = useMemo(() => primaryPatternSeries?.pattern
+    ? azimuthCutFromPattern(primaryPatternSeries.pattern, undefined, primaryPatternSeries.azimuthConvention)
+    : null, [primaryPatternSeries]);
+  const azimuthCutElevationDeg = selectedAzimuthCutElevationDeg ?? automaticAzimuthCut?.actualElevationDeg ?? 0;
+  const displayedSeries = useMemo(() => plane === "azimuth" ? series.map((item) => {
+    if (!item.pattern) return item;
+    const cut = azimuthCutFromPattern(item.pattern, selectedAzimuthCutElevationDeg ?? undefined, item.azimuthConvention);
+    return cut ? { ...item, points: cut.points } : item;
+  }) : series, [plane, selectedAzimuthCutElevationDeg, series]);
+  const actualAzimuthElevations = plane === "azimuth" ? series.flatMap((item) => {
+    if (!item.pattern) return [];
+    const cut = azimuthCutFromPattern(item.pattern, selectedAzimuthCutElevationDeg ?? undefined, item.azimuthConvention);
+    return cut ? [cut.actualElevationDeg] : [];
+  }) : [];
+  const uniqueActualAzimuthElevations = [...new Set(actualAzimuthElevations.map((value) => value.toFixed(1)))];
+  const selectedInspectorAngle = plane === "elevation" ? selectedElevationDeg : selectedAzimuthBearingDeg;
+  const inspectorReadings = displayedSeries.map((item) => ({
     id: item.id,
     label: item.label,
     color: item.color,
-    reading: gainAtAngle(item.points, selectedElevationDeg),
-  })) : [];
+    reading: plane === "elevation"
+      ? gainAtAngle(item.points, selectedElevationDeg)
+      : gainAtCircularAngle(item.points, selectedAzimuthBearingDeg),
+  }));
 
   const updateFromPointer = (event: PointerEvent<SVGSVGElement>) => {
-    if (plane !== "elevation") return;
     const bounds = event.currentTarget.getBoundingClientRect();
     const x = ((event.clientX - bounds.left) / bounds.width) * 460;
-    const y = ((event.clientY - bounds.top) / bounds.height) * ELEVATION_VIEW_HEIGHT;
+    const y = ((event.clientY - bounds.top) / bounds.height) * viewHeight;
+    if (plane === "azimuth") {
+      let bearing = Math.atan2(x - CX, CY - y) * 180 / Math.PI;
+      if (bearing < 0) bearing += 360;
+      setSelectedAzimuthBearingDeg(Number(clampAzimuthBearing(bearing).toFixed(1)));
+      return;
+    }
     if (y > CY + 4) return;
     let polarAngle = Math.atan2(CY - y, x - CX) * 180 / Math.PI;
     if (polarAngle < 0) polarAngle += 360;
@@ -76,31 +107,32 @@ export function HeightPolarPlot({ plane, mode, series, svgRef }: HeightPolarPlot
   const pointerDrag = usePointerDrag(updateFromPointer);
 
   const moveFromKeyboard = (event: KeyboardEvent<SVGSVGElement>) => {
-    if (plane !== "elevation") return;
     const increment = event.shiftKey ? 5 : 1;
     let next: number | null = null;
-    if (event.key === "ArrowRight" || event.key === "ArrowUp") next = selectedElevationDeg + increment;
-    if (event.key === "ArrowLeft" || event.key === "ArrowDown") next = selectedElevationDeg - increment;
+    if (event.key === "ArrowRight" || event.key === "ArrowUp") next = selectedInspectorAngle + increment;
+    if (event.key === "ArrowLeft" || event.key === "ArrowDown") next = selectedInspectorAngle - increment;
     if (event.key === "Home") next = 0;
-    if (event.key === "End") next = 180;
+    if (event.key === "End") next = plane === "elevation" ? 180 : 360;
     if (next === null) return;
     event.preventDefault();
-    setSelectedElevationDeg(clampElevationAngle(next));
+    if (plane === "elevation") setSelectedElevationDeg(clampElevationAngle(next));
+    else setSelectedAzimuthBearingDeg(clampAzimuthBearing(next));
   };
 
   const selectedRadians = selectedElevationDeg * Math.PI / 180;
+  const selectedAzimuthRadians = selectedAzimuthBearingDeg * Math.PI / 180;
   return (
     <div>
     <svg
       ref={svgRef}
       viewBox={`0 0 460 ${viewHeight}`}
       role="img"
-      aria-label={`${plane} polar radiation pattern in ${mode === "absolute" ? "absolute dBi" : "decibels relative to each trace peak"}${plane === "elevation" ? "; interactive angle cursor" : ""}`}
-      className={`w-full ${plane === "elevation" ? "cursor-crosshair select-none focus:outline-none focus:ring-2 focus:ring-accent" : ""}`}
+      aria-label={`${plane} polar radiation pattern in ${mode === "absolute" ? "absolute dBi" : "decibels relative to each trace peak"}; interactive angle cursor`}
+      className="w-full cursor-crosshair select-none focus:outline-none focus:ring-2 focus:ring-accent"
       data-testid={`${plane}-polar-plot`}
-      tabIndex={plane === "elevation" ? 0 : undefined}
-      style={plane === "elevation" ? { touchAction: "none" } : undefined}
-      {...(plane === "elevation" ? pointerDrag : {})}
+      tabIndex={0}
+      style={{ touchAction: "none" }}
+      {...pointerDrag}
       onKeyDown={moveFromKeyboard}
     >
       <rect width="460" height={viewHeight} rx="8" fill="var(--color-surface)" />
@@ -120,7 +152,7 @@ export function HeightPolarPlot({ plane, mode, series, svgRef }: HeightPolarPlot
         {rings.map((value) => <text key={value} x={CX + 4} y={CY - radiusFor(value, mode) - 3}>{value}</text>)}
         <text x="8" y={viewHeight - 11}>floor {minimum} {mode === "absolute" ? "dBi" : "dB"}</text>
       </g>
-      {series.map((item) => <path
+      {displayedSeries.map((item) => <path
         key={item.id}
         d={plane === "azimuth" ? azimuthPath(item.points, mode) : elevationPath(item.points, mode)}
         fill="none"
@@ -158,14 +190,60 @@ export function HeightPolarPlot({ plane, mode, series, svgRef }: HeightPolarPlot
         })}
         <text x={CX + Math.cos(selectedRadians) * (RADIUS + 12)} y={CY - Math.sin(selectedRadians) * (RADIUS + 12)} textAnchor="middle" dominantBaseline="middle" fill="var(--color-text-primary)" fontSize="10" fontWeight="600">{selectedElevationDeg.toFixed(1)}°</text>
       </g>}
+      {plane === "azimuth" && displayedSeries.length > 0 && <g data-testid="azimuth-bearing-cursor" pointerEvents="none">
+        <line
+          x1={CX}
+          y1={CY}
+          x2={CX + Math.sin(selectedAzimuthRadians) * RADIUS}
+          y2={CY - Math.cos(selectedAzimuthRadians) * RADIUS}
+          stroke="var(--color-text-primary)"
+          strokeWidth="1"
+          strokeDasharray="3 3"
+          opacity="0.65"
+        />
+        {inspectorReadings.map(({ id, color, reading }) => {
+          if (!reading) return null;
+          const value = mode === "absolute" ? reading.gainDbi : reading.normalizedDb;
+          const radius = radiusFor(value, mode);
+          return <circle
+            key={id}
+            cx={CX + Math.sin(selectedAzimuthRadians) * radius}
+            cy={CY - Math.cos(selectedAzimuthRadians) * radius}
+            r="4"
+            fill={color}
+            stroke="var(--color-surface)"
+            strokeWidth="2"
+            data-testid={`azimuth-bearing-marker-${id}`}
+          />;
+        })}
+        <text x={CX + Math.sin(selectedAzimuthRadians) * (RADIUS + 12)} y={CY - Math.cos(selectedAzimuthRadians) * (RADIUS + 12)} textAnchor="middle" dominantBaseline="middle" fill="var(--color-text-primary)" fontSize="10" fontWeight="600">{selectedAzimuthBearingDeg.toFixed(1)}°</text>
+      </g>}
       {series.length === 0 && <text x={CX} y={CY - 25} textAnchor="middle" fill="var(--color-text-secondary)" fontSize="12">Waiting for the current NEC result</text>}
     </svg>
-    {plane === "elevation" && <PatternAngleInspector
-      angleDeg={selectedElevationDeg}
-      onAngleChange={setSelectedElevationDeg}
+    {plane === "azimuth" && primaryPatternSeries?.pattern && <section className="mt-2 rounded-md border border-border bg-background/60 p-2" data-testid="azimuth-cut-elevation-control" aria-label="Azimuth cut elevation above horizon">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <label className="flex items-center gap-2 text-xs font-semibold text-text-primary">
+          Azimuth cut elevation
+          <span className="inline-flex items-center rounded border border-border bg-surface px-2 py-1">
+            <input type="number" min={0} max={90} step={0.1} value={Number(azimuthCutElevationDeg.toFixed(1))} onChange={(event) => {
+              const next = event.currentTarget.valueAsNumber;
+              if (Number.isFinite(next)) setSelectedAzimuthCutElevationDeg(Math.min(90, Math.max(0, next)));
+            }} className="w-14 bg-transparent text-right font-mono text-xs outline-none" aria-label="Azimuth cut elevation from zero to ninety degrees above the horizon" data-testid="azimuth-cut-elevation-input" />
+            <span className="text-xs text-text-secondary">°</span>
+          </span>
+        </label>
+        <span className="text-[10px] text-text-secondary">Height above the horizon used for this complete 360° horizontal slice. The nearest solved NEC row is used.</span>
+        <button type="button" onClick={() => setSelectedAzimuthCutElevationDeg(null)} className="rounded border border-border px-2 py-1 text-[10px] text-text-secondary hover:border-accent" data-testid="azimuth-cut-peak-row">Use strongest row</button>
+      </div>
+      <p className="mt-1 text-[10px] text-text-secondary" data-testid="azimuth-cut-actual-elevation">Requested {azimuthCutElevationDeg.toFixed(1)}° · NEC row {uniqueActualAzimuthElevations.join(" / ") || "unavailable"}°{uniqueActualAzimuthElevations.some((value) => Math.abs(Number(value) - azimuthCutElevationDeg) > 0.05) ? " (nearest grid sample)" : " (exact grid sample)"}</p>
+    </section>}
+    <PatternAngleInspector
+      angleDeg={selectedInspectorAngle}
+      onAngleChange={plane === "elevation" ? setSelectedElevationDeg : setSelectedAzimuthBearingDeg}
       readings={inspectorReadings}
       displayMode={mode}
-    />}
+      kind={plane}
+    />
     </div>
   );
 }

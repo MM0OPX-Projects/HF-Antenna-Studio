@@ -90,7 +90,7 @@ export function VerticalAntennasPage() {
   }
 
   const elevationSeries = result ? [{ id: "vertical-current", label: "Current model", color: "#8b5cf6", points: result.elevationPattern, current: true }] : [];
-  const azimuthSeries = result ? [{ id: "vertical-current", label: "Current model", color: "#22d3ee", points: result.azimuthPattern, current: true }] : [];
+  const azimuthSeries = result ? [{ id: "vertical-current", label: "Current model", color: "#22d3ee", points: result.azimuthPattern, pattern: result.radiationPattern, current: true }] : [];
   return <div className="flex h-dvh flex-col bg-background"><Navbar /><main className="flex-1 overflow-y-auto"><div className="mx-auto max-w-[1540px] space-y-5 px-3 py-5 sm:px-5">
     <header className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between"><div><div className="mb-2 inline-flex rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-emerald-500">Ground-aware NEC vertical laboratory</div><h1 className="text-2xl font-bold">Vertical antennas</h1><p className="mt-1 max-w-3xl text-sm text-text-secondary">Model the radiator, radial geometry, and ground assumption explicitly. These modes are intentionally not interchangeable.</p></div><div className="flex gap-2"><Button variant="secondary" size="sm" onClick={() => setImperial((value) => !value)} data-testid="vertical-units">{imperial ? "Imperial" : "Metric"}</Button><Button variant="secondary" size="sm" onClick={() => applyModel(startingVerticalModel(model.frequencyHz, model.configuration))}>Reset model</Button></div></header>
 

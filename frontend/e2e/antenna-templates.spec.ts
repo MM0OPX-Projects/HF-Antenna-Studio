@@ -49,10 +49,14 @@ test("all eight templates generate geometry, feed/segments, NEC, and solve local
     expect(gain, `${definition.id} gain`).toBeCloseTo(reference.expected.maximumGainDbi, 1);
     expect(takeOff, `${definition.id} take-off`).toBeCloseTo(reference.expected.takeOffAngleDeg, 1);
     await expect(page.getByTestId("template-pattern-cuts"), `${definition.id} pattern cuts`).toBeVisible();
-    await expect(page.getByTestId("simulator-elevation-angle-inspector-source-primary"), `${definition.id} 5-degree sample`).toHaveText("Exact NEC sample");
-    await page.getByTestId("simulator-elevation-angle-inspector-input").fill("175");
-    await expect(page.getByTestId("simulator-elevation-angle-inspector-source-primary"), `${definition.id} 175-degree sample`).toHaveText("Exact NEC sample");
-    await page.getByTestId("simulator-elevation-angle-inspector-input").fill("5");
+    await expect(page.getByTestId("elevation-angle-inspector-source-current"), `${definition.id} 5-degree sample`).toHaveText("Exact NEC sample");
+    await page.getByTestId("elevation-angle-inspector-input").fill("175");
+    await expect(page.getByTestId("elevation-angle-inspector-source-current"), `${definition.id} 175-degree sample`).toHaveText("Exact NEC sample");
+    await page.getByTestId("elevation-angle-inspector-input").fill("5");
+    await page.getByTestId("azimuth-cut-elevation-input").fill("5");
+    await expect(page.getByTestId("azimuth-cut-actual-elevation"), `${definition.id} azimuth row`).toContainText("NEC row 5.0°");
+    await page.getByTestId("azimuth-bearing-inspector-input").fill("45");
+    await expect(page.getByTestId("azimuth-bearing-inspector-source-current"), `${definition.id} azimuth bearing`).toHaveText("Exact NEC sample");
   }
 });
 

@@ -90,8 +90,8 @@ export function PhasedArraysPage() {
     setTraces((current) => [...current, { id: `${Date.now()}-${current.length}`, label: `${model.mode === "ideal-current-phase" ? "ideal" : "physical"} · ${(model.spacingM / lambda).toFixed(2)}λ · ${result.beamHeadingDeg.toFixed(0)}°`, color: TRACE_COLORS[current.length]!, model: structuredClone(model), result }]);
   };
   const series = (plane: "azimuthPattern" | "elevationPattern"): PolarSeries[] => [
-    ...traces.map((trace) => ({ id: trace.id, label: trace.label, color: trace.color, points: trace.result[plane] })),
-    ...(result ? [{ id: "current", label: "Current model", color: "#f97316", points: result[plane], current: true }] : []),
+    ...traces.map((trace) => ({ id: trace.id, label: trace.label, color: trace.color, points: trace.result[plane], ...(plane === "azimuthPattern" ? { pattern: trace.result.radiationPattern, azimuthConvention: "compass" as const } : {}) })),
+    ...(result ? [{ id: "current", label: "Current model", color: "#f97316", points: result[plane], current: true, ...(plane === "azimuthPattern" ? { pattern: result.radiationPattern, azimuthConvention: "compass" as const } : {}) }] : []),
   ];
   const lineUnit = model.physical.lengthInput === "physical" ? "m" : model.physical.lengthInput === "electrical" ? "°" : "ns";
   const lineMax = model.physical.lengthInput === "physical" ? 100 : model.physical.lengthInput === "electrical" ? 720 : 5000;
