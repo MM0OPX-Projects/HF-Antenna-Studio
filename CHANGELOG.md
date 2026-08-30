@@ -32,6 +32,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Split phased elevated, near-surface, and perfect-image radial representations at the typed-model level and blocked ambiguous independent-field crossings
 - Replaced the reusable quarter-wave template's perfect-ground-only start with a real-soil, sixteen-radial starting model; the ideal perfect-ground monopole remains in the Vertical Antennas laboratory
 
+### Fixed
+
+- Completed elevation-cut traces to the 0° and 180° axes when NEC reports an exact horizon null (`-999.99 dB`), drawing those nulls only at the visual floor while continuing to withhold a fabricated numerical gain or interpolation
+
 ## [1.0.0] - 2026-08-23
 
 ### Release audit

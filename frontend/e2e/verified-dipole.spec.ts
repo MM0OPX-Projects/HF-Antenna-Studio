@@ -36,6 +36,9 @@ test("verified dipole executes the displayed NEC deck through local WASM", async
   await expect(page.getByTestId("elevation-angle-inspector-gain-dipole")).toContainText("dB below cut peak");
   await expect(page.getByTestId("elevation-angle-inspector-context-dipole")).toContainText("dBi absolute");
   await expect(page.getByTestId("elevation-angle-inspector-context-dipole")).toContainText("cut peak");
+  const completeElevationPath = await page.getByTestId("elevation-pattern").locator("path.stroke-accent").getAttribute("d");
+  expect(completeElevationPath).toMatch(/^M44\.00,214\.00/);
+  expect(completeElevationPath).toMatch(/L442\.00,214\.00$/);
   await page.getByTestId("elevation-angle-inspector-input").fill("175");
   await expect(page.getByTestId("elevation-angle-inspector-source-dipole")).toHaveText("Exact NEC sample");
   await expect(page.getByTestId("elevation-angle-inspector-input")).toHaveValue("175");

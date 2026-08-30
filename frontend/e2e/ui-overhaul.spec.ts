@@ -55,6 +55,12 @@ test.describe("professional application workbench", () => {
     await expect(page.getByText("Results current", { exact: true }).first()).toBeVisible({ timeout: 60_000 });
     await expect(page.getByTestId("results-radiation-cuts-azimuth")).toBeVisible();
     await expect(page.getByTestId("results-radiation-cuts-elevation")).toBeVisible();
+    const groundedElevationPath = await page.getByTestId("results-radiation-cuts-elevation")
+      .locator('[data-testid^="polar-series-elevation-"]')
+      .first()
+      .getAttribute("d");
+    expect(groundedElevationPath).toMatch(/^M 230\.00 205\.00/);
+    expect(groundedElevationPath).toMatch(/230\.00 205\.00$/);
     await expect(page.getByText("Resistance R", { exact: true })).toBeVisible();
     await expect(page.getByText("Reactance X", { exact: true })).toBeVisible();
     expect(consoleErrors).toEqual([]);

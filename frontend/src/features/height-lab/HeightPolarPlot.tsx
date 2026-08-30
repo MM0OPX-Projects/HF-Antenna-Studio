@@ -1,6 +1,6 @@
 import { useState, type KeyboardEvent, type PointerEvent, type RefObject } from "react";
 import { PatternAngleInspector } from "../../components/results/PatternAngleInspector";
-import { clampElevationAngle, gainAtAngle } from "../../components/results/pattern-angle";
+import { clampElevationAngle, gainAtAngle, withElevationHorizonFloorPoints } from "../../components/results/pattern-angle";
 import { usePointerDrag } from "../../components/results/usePointerDrag";
 import type { NormalizedPatternPoint } from "../verified-dipole/result";
 import { displayedGain } from "./metrics";
@@ -40,7 +40,7 @@ function azimuthPath(points: NormalizedPatternPoint[], mode: PatternDisplayMode)
 }
 
 function elevationPath(points: NormalizedPatternPoint[], mode: PatternDisplayMode): string {
-  const samples = points.filter((point) => point.angleDeg >= 0 && point.angleDeg <= 180).sort((a, b) => a.angleDeg - b.angleDeg);
+  const samples = withElevationHorizonFloorPoints(points);
   return samples.map((point, index) => {
     const radians = point.angleDeg * Math.PI / 180;
     const radius = radiusFor(displayedGain(point, mode), mode);

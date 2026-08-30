@@ -15,9 +15,50 @@ export interface GainAtAngleReading {
 }
 
 const EXACT_TOLERANCE_DEG = 1e-6;
+const NEC_NULL_GAIN_DBI = -999.99;
 
 function isValidSample(point: GainPatternPoint): boolean {
   return Number.isFinite(point.gainDbi) && Number.isFinite(point.normalizedDb) && point.gainDbi > -900;
+}
+
+/**
+ * Complete a plotted 0–180° elevation plane when NEC returned an exact
+ * horizon null which an upstream normaliser omitted.
+ *
+ * The inserted points are display-only NEC-null sentinels at the plot floor.
+ * Their gain remains invalid, so `gainAtAngle` will never report or
+ * interpolate a made-up horizon value. Only one missing grid interval at
+ * either boundary is completed; larger data gaps are left visibly open.
+ */
+export function withElevationHorizonFloorPoints(
+  points: GainPatternPoint[],
+): GainPatternPoint[] {
+  const sorted = points
+    .filter((point) => Number.isFinite(point.angleDeg) && point.angleDeg >= 0 && point.angleDeg <= 180)
+    .sort((left, right) => left.angleDeg - right.angleDeg);
+  if (sorted.length < 2) return sorted;
+
+  const positiveSteps = sorted.slice(1)
+    .map((point, index) => point.angleDeg - sorted[index]!.angleDeg)
+    .filter((step) => step > EXACT_TOLERANCE_DEG);
+  if (positiveSteps.length === 0) return sorted;
+  const gridStep = Math.min(...positiveSteps);
+  const boundaryTolerance = gridStep * 1.01 + EXACT_TOLERANCE_DEG;
+  const floorPoint = (angleDeg: 0 | 180): GainPatternPoint => ({
+    angleDeg,
+    gainDbi: NEC_NULL_GAIN_DBI,
+    normalizedDb: -40,
+  });
+
+  const completed = [...sorted];
+  if (completed[0]!.angleDeg > EXACT_TOLERANCE_DEG && completed[0]!.angleDeg <= boundaryTolerance) {
+    completed.unshift(floorPoint(0));
+  }
+  const finalAngle = completed[completed.length - 1]!.angleDeg;
+  if (finalAngle < 180 - EXACT_TOLERANCE_DEG && 180 - finalAngle <= boundaryTolerance) {
+    completed.push(floorPoint(180));
+  }
+  return completed;
 }
 
 /**

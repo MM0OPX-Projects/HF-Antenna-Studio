@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clampElevationAngle, gainAtAngle, type GainPatternPoint } from "../pattern-angle";
+import { clampElevationAngle, gainAtAngle, withElevationHorizonFloorPoints, type GainPatternPoint } from "../pattern-angle";
 
 const points: GainPatternPoint[] = [
   { angleDeg: 0, gainDbi: -8, normalizedDb: -10 },
@@ -63,5 +63,34 @@ describe("clampElevationAngle", () => {
     expect(clampElevationAngle(5)).toBe(5);
     expect(clampElevationAngle(95)).toBe(95);
     expect(clampElevationAngle(181)).toBe(180);
+  });
+});
+
+describe("withElevationHorizonFloorPoints", () => {
+  it("completes one omitted NEC-null grid interval at both horizons for plotting", () => {
+    const completed = withElevationHorizonFloorPoints([
+      { angleDeg: 5, gainDbi: -12, normalizedDb: -14 },
+      { angleDeg: 10, gainDbi: -5, normalizedDb: -7 },
+      { angleDeg: 175, gainDbi: -13, normalizedDb: -15 },
+    ]);
+    expect(completed.map((point) => point.angleDeg)).toEqual([0, 5, 10, 175, 180]);
+    expect(completed[0]).toEqual({ angleDeg: 0, gainDbi: -999.99, normalizedDb: -40 });
+    expect(completed[completed.length - 1]).toEqual({ angleDeg: 180, gainDbi: -999.99, normalizedDb: -40 });
+    expect(gainAtAngle(completed, 0)).toBeNull();
+    expect(gainAtAngle(completed, 2.5)).toBeNull();
+  });
+
+  it("preserves real horizon samples and does not bridge a larger missing boundary", () => {
+    const realHorizons = [
+      { angleDeg: 0, gainDbi: -8, normalizedDb: -10 },
+      { angleDeg: 10, gainDbi: 2, normalizedDb: 0 },
+      { angleDeg: 180, gainDbi: -9, normalizedDb: -11 },
+    ];
+    expect(withElevationHorizonFloorPoints(realHorizons)).toEqual(realHorizons);
+    expect(withElevationHorizonFloorPoints([
+      { angleDeg: 20, gainDbi: -8, normalizedDb: -10 },
+      { angleDeg: 25, gainDbi: -4, normalizedDb: -6 },
+      { angleDeg: 30, gainDbi: 2, normalizedDb: 0 },
+    ]).map((point) => point.angleDeg)).toEqual([20, 25, 30]);
   });
 });

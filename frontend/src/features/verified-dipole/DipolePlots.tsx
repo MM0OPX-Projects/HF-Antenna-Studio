@@ -3,7 +3,7 @@ import type { NormalizedPatternPoint, VerifiedCurrentPoint } from "./result";
 import { CurrentVisualisationPanel } from "../current-visualisation/CurrentVisualisationPanel";
 import { adaptPositionedCurrents } from "../current-visualisation/adapters";
 import { PatternAngleInspector } from "../../components/results/PatternAngleInspector";
-import { clampElevationAngle, gainAtAngle } from "../../components/results/pattern-angle";
+import { clampElevationAngle, gainAtAngle, withElevationHorizonFloorPoints } from "../../components/results/pattern-angle";
 import { usePointerDrag } from "../../components/results/usePointerDrag";
 
 interface PatternPlotProps {
@@ -18,15 +18,16 @@ function linePath(points: Array<{ x: number; y: number }>): string {
 export function DipolePatternPlot({ title, points, xLabel }: PatternPlotProps) {
   const [selectedElevationDeg, setSelectedElevationDeg] = useState(5);
   const isElevation = title.toLowerCase() === "elevation";
+  const plotPoints = isElevation ? withElevationHorizonFloorPoints(points) : points;
   const width = 460;
   const height = 250;
   const pad = { left: 44, right: 18, top: 24, bottom: 36 };
-  const xValues = points.map((point) => point.angleDeg);
+  const xValues = plotPoints.map((point) => point.angleDeg);
   const xMin = xValues.length > 0 ? Math.min(...xValues) : 0;
   const xMax = xValues.length > 0 ? Math.max(...xValues) : 1;
   const sx = (value: number) => pad.left + ((value - xMin) / Math.max(1, xMax - xMin)) * (width - pad.left - pad.right);
   const sy = (value: number) => pad.top + ((0 - value) / 40) * (height - pad.top - pad.bottom);
-  const path = linePath(points.map((point) => ({ x: sx(point.angleDeg), y: sy(point.normalizedDb) })));
+  const path = linePath(plotPoints.map((point) => ({ x: sx(point.angleDeg), y: sy(point.normalizedDb) })));
   const reading = isElevation ? gainAtAngle(points, selectedElevationDeg) : null;
 
   const updateFromPointer = (event: PointerEvent<SVGSVGElement>) => {
