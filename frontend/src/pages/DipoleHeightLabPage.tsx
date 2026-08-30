@@ -257,7 +257,7 @@ export function DipoleHeightLabPage() {
                   </div>
                   <div role="radiogroup" aria-label="Radiation pattern scale" className="flex rounded-md border border-border p-1">
                     <button type="button" role="radio" aria-checked={mode === "absolute"} onClick={() => setMode("absolute")} className={`rounded px-3 py-1.5 text-xs ${mode === "absolute" ? "bg-accent text-white" : "text-text-secondary"}`} data-testid="mode-absolute">Absolute dBi</button>
-                    <button type="button" role="radio" aria-checked={mode === "normalised"} onClick={() => setMode("normalised")} className={`rounded px-3 py-1.5 text-xs ${mode === "normalised" ? "bg-accent text-white" : "text-text-secondary"}`} data-testid="mode-normalised">Normalised dB</button>
+                    <button type="button" role="radio" aria-checked={mode === "normalised"} onClick={() => setMode("normalised")} className={`rounded px-3 py-1.5 text-xs ${mode === "normalised" ? "bg-accent text-white" : "text-text-secondary"}`} data-testid="mode-normalised">Relative to peak</button>
                   </div>
                 </div>
                 {calculation.error && <p role="alert" className="mt-3 rounded border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-600">{calculation.error}</p>}

@@ -74,7 +74,7 @@ export function DipolePatternPlot({ title, points, xLabel }: PatternPlotProps) {
         <text x={pad.left} y={height - 13} className="fill-text-secondary text-[10px]">{xMin.toFixed(0)}°</text>
         <text x={width - pad.right} y={height - 13} textAnchor="end" className="fill-text-secondary text-[10px]">{xMax.toFixed(0)}°</text>
         <text x={width / 2} y={height - 6} textAnchor="middle" className="fill-text-secondary text-[10px]">{xLabel}</text>
-        <text x="12" y={height / 2} textAnchor="middle" transform={`rotate(-90 12 ${height / 2})`} className="fill-text-secondary text-[10px]">Normalized gain (dB)</text>
+        <text x="12" y={height / 2} textAnchor="middle" transform={`rotate(-90 12 ${height / 2})`} className="fill-text-secondary text-[10px]">Relative to cut peak (dB)</text>
         <path d={`${path} L${sx(xMax)},${sy(-40)} L${sx(xMin)},${sy(-40)} Z`} className="fill-accent/10" />
         <path d={path} fill="none" className="stroke-accent" strokeWidth="2.5" strokeLinejoin="round" />
         {isElevation && reading && <g data-testid="elevation-angle-cursor" pointerEvents="none">
@@ -86,6 +86,7 @@ export function DipolePatternPlot({ title, points, xLabel }: PatternPlotProps) {
         angleDeg={selectedElevationDeg}
         onAngleChange={setSelectedElevationDeg}
         readings={[{ id: "dipole", label: "Current model", color: "#3b82f6", reading }]}
+        displayMode="normalised"
       />}
     </figure>
   );

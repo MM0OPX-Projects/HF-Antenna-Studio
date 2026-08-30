@@ -75,7 +75,7 @@ export function HeightRadiation3D({ pattern, mode, pending }: HeightRadiation3DP
         <OrbitControls makeDefault enablePan={false} minDistance={2.7} maxDistance={8} />
       </SafeCanvas> : <div className="grid h-full place-items-center px-5 text-center text-sm text-slate-300">{pending ? "Pattern withheld while NEC calculates this height…" : "Radiation pattern appears after the first NEC calculation."}</div>}
       <span className="sr-only">Interactive three-dimensional radiation pattern. Drag to orbit and scroll to zoom.</span>
-      <div className="pointer-events-none absolute bottom-2 left-2 rounded bg-black/55 px-2 py-1 text-[10px] text-slate-200">3D {mode === "absolute" ? "absolute dBi" : "normalised dB"} · drag to orbit</div>
+      <div className="pointer-events-none absolute bottom-2 left-2 rounded bg-black/55 px-2 py-1 text-[10px] text-slate-200">3D {mode === "absolute" ? "absolute dBi" : "relative to peak (0 dB)"} · drag to orbit</div>
     </div>
   );
 }

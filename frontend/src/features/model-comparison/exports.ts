@@ -27,7 +27,7 @@ function polarPath(points: Array<{ angleDeg: number; normalizedDb: number }>, pl
 
 function polarSvg(results: ComparisonResult[], plane: "azimuth" | "elevation"): string {
   const paths = results.map((result) => `<path d="${polarPath(plane === "azimuth" ? result.azimuthPattern : result.elevationPattern, plane)}" fill="none" stroke="${escapeHtml(result.color)}" stroke-width="2"/>`).join("");
-  return `<svg viewBox="0 0 300 285" role="img" aria-label="${plane} normalised radiation comparison"><rect width="300" height="285" fill="#fff"/><g fill="none" stroke="#ccd2da">${[30,60,90,120].map((radius) => `<circle cx="150" cy="145" r="${radius}"/>`).join("")}<line x1="30" y1="145" x2="270" y2="145"/><line x1="150" y1="25" x2="150" y2="265"/></g>${paths}<text x="150" y="18" text-anchor="middle" font-size="12">${plane === "azimuth" ? "Azimuth" : "Elevation"} · normalised dB</text></svg>`;
+  return `<svg viewBox="0 0 300 285" role="img" aria-label="${plane} radiation comparison relative to each trace peak"><rect width="300" height="285" fill="#fff"/><g fill="none" stroke="#ccd2da">${[30,60,90,120].map((radius) => `<circle cx="150" cy="145" r="${radius}"/>`).join("")}<line x1="30" y1="145" x2="270" y2="145"/><line x1="150" y1="25" x2="150" y2="265"/></g>${paths}<text x="150" y="18" text-anchor="middle" font-size="12">${plane === "azimuth" ? "Azimuth" : "Elevation"} · relative to each trace peak</text></svg>`;
 }
 
 function sweepSvg(results: ComparisonResult[]): string {

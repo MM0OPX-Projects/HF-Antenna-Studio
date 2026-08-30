@@ -32,7 +32,9 @@ test("verified dipole executes the displayed NEC deck through local WASM", async
   await expect(page.getByTestId("azimuth-pattern")).toBeVisible();
   await expect(page.getByTestId("elevation-pattern")).toBeVisible();
   await expect(page.getByTestId("elevation-angle-inspector-source-dipole")).toHaveText("Exact NEC sample");
-  await expect(page.getByTestId("elevation-angle-inspector-gain-dipole")).toContainText("dBi");
+  await expect(page.getByTestId("elevation-angle-inspector-gain-dipole")).toContainText("dB below cut peak");
+  await expect(page.getByTestId("elevation-angle-inspector-context-dipole")).toContainText("dBi absolute");
+  await expect(page.getByTestId("elevation-angle-inspector-context-dipole")).toContainText("cut peak");
   await page.getByTestId("elevation-angle-inspector-input").fill("175");
   await expect(page.getByTestId("elevation-angle-inspector-source-dipole")).toHaveText("Exact NEC sample");
   await expect(page.getByTestId("elevation-angle-inspector-input")).toHaveValue("175");

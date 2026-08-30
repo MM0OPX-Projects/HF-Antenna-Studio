@@ -68,6 +68,8 @@ test("pattern modes, automatic sweep, reset, and exports remain interactive", as
   await page.getByTestId("elevation-angle-inspector-input").fill("7.5");
   await expect(page.getByTestId("elevation-angle-inspector-source-current")).toContainText("Interpolated between 5.0° and 10.0° NEC samples");
   await expect(page.getByTestId("elevation-angle-inspector-gain-current")).toContainText("dBi");
+  await expect(page.getByTestId("elevation-angle-inspector-context-current")).toContainText("dB below cut peak");
+  await expect(page.getByTestId("elevation-angle-inspector-context-current")).toContainText("cut peak");
   await page.getByTestId("elevation-angle-inspector-input").fill("175");
   await expect(page.getByTestId("elevation-angle-inspector-source-current")).toHaveText("Exact NEC sample");
   await expect(page.getByTestId("elevation-angle-inspector-input")).toHaveValue("175");
@@ -85,6 +87,9 @@ test("pattern modes, automatic sweep, reset, and exports remain interactive", as
   const absolutePath = await page.getByTestId("polar-series-elevation-current").getAttribute("d");
   await page.getByTestId("mode-normalised").click();
   await expect(page.getByTestId("mode-normalised")).toHaveAttribute("aria-checked", "true");
+  await expect(page.getByTestId("elevation-angle-inspector-gain-current")).toContainText("dB below cut peak");
+  await expect(page.getByTestId("elevation-angle-inspector-context-current")).toContainText("dBi absolute");
+  await expect(page.getByTestId("elevation-angle-inspector-context-current")).toContainText("cut peak");
   const normalisedPath = await page.getByTestId("polar-series-elevation-current").getAttribute("d");
   expect(normalisedPath).not.toBe(absolutePath);
   expect(normalisedPath).not.toContain("NaN");

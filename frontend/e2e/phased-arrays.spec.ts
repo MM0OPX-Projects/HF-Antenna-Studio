@@ -37,6 +37,10 @@ test("classic broadside/end-fire cases reproduce the independent exact-deck refe
   await expect(page.getByTestId("phased-generated-nec")).toContainText("EX 0 1 1");
   await expect(page.getByTestId("phased-current-distribution")).toBeVisible();
   await expect(page.getByTestId("radiation-pattern-3d").locator("canvas")).toBeVisible();
+  await page.getByTestId("phased-pattern-mode").click();
+  await expect(page.getByTestId("phased-pattern-mode")).toHaveText("Relative to peak");
+  await expect(page.getByTestId("elevation-angle-inspector-gain-current")).toContainText("dB below cut peak");
+  await expect(page.getByTestId("elevation-angle-inspector-context-current")).toContainText("dBi absolute");
 });
 
 test("rapid spacing/phase changes hide stale results and debounce the exact model", async ({ page }) => {

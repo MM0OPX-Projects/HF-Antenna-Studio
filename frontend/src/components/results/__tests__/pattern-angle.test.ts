@@ -13,6 +13,7 @@ describe("gainAtAngle", () => {
       requestedAngleDeg: 5,
       gainDbi: -1,
       normalizedDb: -3,
+      peakGainDbi: 2,
       method: "exact",
       lowerAngleDeg: 5,
       upperAngleDeg: 5,
@@ -24,6 +25,7 @@ describe("gainAtAngle", () => {
       requestedAngleDeg: 7.5,
       gainDbi: 0.5,
       normalizedDb: -1.5,
+      peakGainDbi: 2,
       method: "interpolated",
       lowerAngleDeg: 5,
       upperAngleDeg: 10,
@@ -43,6 +45,15 @@ describe("gainAtAngle", () => {
 
   it("sorts samples and ignores duplicate angles", () => {
     expect(gainAtAngle([points[2]!, points[0]!, points[1]!, { ...points[1]!, gainDbi: 99 }], 5)?.gainDbi).toBe(-1);
+  });
+
+  it("derives the cut peak from absolute gain rather than a floor-clamped relative value", () => {
+    const reading = gainAtAngle([
+      { angleDeg: 0, gainDbi: 10, normalizedDb: 0 },
+      { angleDeg: 5, gainDbi: -45, normalizedDb: -40 },
+    ], 5);
+    expect(reading?.peakGainDbi).toBe(10);
+    expect(reading && reading.peakGainDbi - reading.gainDbi).toBe(55);
   });
 });
 

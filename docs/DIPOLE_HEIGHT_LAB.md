@@ -27,7 +27,7 @@ The automatic sweep visits 0.10λ, 0.25λ, 0.50λ, 1.00λ, and 2.00λ sequential
 - Take-off angle is `90° - NEC theta` at the solver's global sampled maximum.
 - Peak gain is the maximum absolute dBi on the requested grid.
 - Low-angle gain is the greatest absolute dBi sample from 0° through 10° elevation, inclusive.
-- Elevation and azimuth plots show absolute dBi on a fixed -30 to +12 dBi scale or per-trace normalised dB on a -40 to 0 dB scale.
+- Elevation and azimuth plots show absolute dBi on a fixed -30 to +12 dBi scale or **Relative to peak** on a -40 to 0 dB scale. In the relative view, each trace's strongest point is 0 dB and other points are labelled by how far they fall below that trace's cut peak.
 - Normalisation changes display values only; it does not change solver output or saved absolute data.
 - The 3D mesh uses NEC theta/phi samples and closes the phi seam. Radius and colour use the selected display scale.
 - PNG exports the elevation SVG rendering. CSV exports absolute and normalised numeric samples for the current and saved traces.

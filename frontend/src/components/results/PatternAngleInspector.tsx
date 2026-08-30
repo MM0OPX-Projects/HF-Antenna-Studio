@@ -11,6 +11,7 @@ interface PatternAngleInspectorProps {
   angleDeg: number;
   onAngleChange: (angleDeg: number) => void;
   readings: PatternAngleInspectorReading[];
+  displayMode?: "absolute" | "normalised";
   testId?: string;
 }
 
@@ -23,6 +24,7 @@ export function PatternAngleInspector({
   angleDeg,
   onAngleChange,
   readings,
+  displayMode = "absolute",
   testId = "elevation-angle-inspector",
 }: PatternAngleInspectorProps) {
   return (
@@ -58,8 +60,12 @@ export function PatternAngleInspector({
               <span className="truncate">{label}</span>
             </span>
             {reading ? <>
-              <span className="font-mono" data-testid={`${testId}-gain-${id}`}>{reading.gainDbi.toFixed(2)} dBi</span>
-              <span className="font-mono text-text-secondary">{reading.normalizedDb.toFixed(2)} dB normalised</span>
+              <span className="font-mono font-semibold" data-testid={`${testId}-gain-${id}`}>{displayMode === "absolute"
+                ? `${reading.gainDbi.toFixed(2)} dBi`
+                : `${Math.max(0, reading.peakGainDbi - reading.gainDbi).toFixed(2)} dB below cut peak`}</span>
+              <span className="font-mono text-text-secondary" data-testid={`${testId}-context-${id}`}>{displayMode === "absolute"
+                ? `${Math.max(0, reading.peakGainDbi - reading.gainDbi).toFixed(2)} dB below cut peak · cut peak ${reading.peakGainDbi.toFixed(2)} dBi`
+                : `${reading.gainDbi.toFixed(2)} dBi absolute · cut peak ${reading.peakGainDbi.toFixed(2)} dBi`}</span>
               <span className={reading.method === "exact" ? "text-emerald-600 dark:text-emerald-400" : "text-amber-700 dark:text-amber-300"} data-testid={`${testId}-source-${id}`}>{sourceLabel(reading)}</span>
             </> : <span className="text-text-secondary sm:col-span-3">No valid pattern samples bracket this angle.</span>}
           </div>

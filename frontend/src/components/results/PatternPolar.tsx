@@ -533,6 +533,7 @@ export function PatternPolar({ pattern, mode, size = 200, responsive = false }: 
       angleDeg={selectedElevationDeg}
       onAngleChange={setSelectedElevationDeg}
       readings={inspectorReadings}
+      displayMode="absolute"
       testId="simulator-elevation-angle-inspector"
     />}
     {/* Legend */}
