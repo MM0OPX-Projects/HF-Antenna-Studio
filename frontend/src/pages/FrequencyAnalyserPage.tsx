@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { SmithChart } from "../components/results/SmithChart";
+import { OnDemandRadiationCuts } from "../components/results/OnDemandRadiationCuts";
 import { Card } from "../components/ui/Card";
 import { useAntennaStore } from "../stores/antennaStore";
 import type { SimulateAdvancedRequest } from "../engine/types";
@@ -53,6 +54,7 @@ export function FrequencyAnalyserPage() {
     compute_currents: false,
     compute_pattern: false,
   }), [wires, excitations, ground, config.startMhz, config.stopMhz, config.points, loads, transmissionLines]);
+  const antennaModelKey = useMemo(() => JSON.stringify({ wires, excitations, ground, loads, transmissionLines }), [wires, excitations, ground, loads, transmissionLines]);
   const validationErrors = useMemo(() => validateSweepConfig(config), [config]);
   const longestSegmentWavelengths = useMemo(() => {
     if (!Number.isFinite(config.stopMhz) || config.stopMhz <= 0 || wires.length === 0) return 0;
@@ -157,6 +159,7 @@ export function FrequencyAnalyserPage() {
               ].map(([label, value]) => <div key={label} className="rounded bg-background p-2"><div className="text-[9px] uppercase text-text-secondary">{label}</div><div className="font-mono text-sm font-semibold text-text-primary">{value}</div></div>)}</div><p className="mt-2 text-[10px] text-text-secondary">Complex impedance: {numberText(selectedPoint.resistanceOhms)} {selectedPoint.reactanceOhms >= 0 ? "+" : "−"} j{numberText(Math.abs(selectedPoint.reactanceOhms))} Ω · Γ = {numberText(selectedPoint.reflectionReal, 5)} {selectedPoint.reflectionImag >= 0 ? "+" : "−"} j{numberText(Math.abs(selectedPoint.reflectionImag), 5)}</p></Card>}
 
               <Card className="p-4"><div className="flex flex-wrap items-center justify-between gap-2"><label className="flex items-center gap-2 text-xs text-text-secondary"><input type="checkbox" checked={showSmith} onChange={(event) => setShowSmith(event.target.checked)} /> Optional Smith chart</label><div className="flex flex-wrap gap-2"><button onClick={() => exportAnalyserCsv([activeSweep, ...overlaySweeps])} className="rounded border border-border px-2 py-1 text-xs text-text-secondary hover:border-accent">Export CSV</button><button onClick={() => chartRef.current && exportChartPng(chartRef.current).catch((caught) => setExportError(caught instanceof Error ? caught.message : "PNG export failed."))} className="rounded border border-border px-2 py-1 text-xs text-text-secondary hover:border-accent">Export PNG</button><button onClick={() => exportAnalyserProject(template.name, { ...antennaSnapshot, frequency: { start_mhz: activeSweep.config.startMhz, stop_mhz: activeSweep.config.stopMhz, steps: activeSweep.config.points } }, activeSweep, savedSweeps)} className="rounded border border-border px-2 py-1 text-xs text-text-secondary hover:border-accent">Export project data</button></div></div>{exportError && <p className="mt-2 text-xs text-red-500">{exportError}</p>}{showSmith && <div className="mt-4 h-[460px] min-h-[360px]"><SmithChart data={activeSweep.rawFrequencyData} z0={activeSweep.config.referenceOhms} selectedIndex={cursorIndex} onFrequencyClick={setCursorIndex} responsive size={620} /></div>}</Card>
+              <OnDemandRadiationCuts antenna={antennaSnapshot} frequencyMhz={selectedPoint?.frequencyMhz ?? null} modelKey={antennaModelKey} autoRunKey={activeSweep.id} title="Selected analyser frequency radiation cuts" testId="analyser-radiation-cuts" />
               {activeSweep.warnings.length > 0 && <Card className="border-amber-500/40 p-4"><h2 className="text-sm font-semibold text-amber-500">NEC warnings</h2><ul className="mt-2 space-y-1 font-mono text-[10px] text-text-secondary">{activeSweep.warnings.map((warning) => <li key={warning}>{warning}</li>)}</ul></Card>}
             </>}
           </section>

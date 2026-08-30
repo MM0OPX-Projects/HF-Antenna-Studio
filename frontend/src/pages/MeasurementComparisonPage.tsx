@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { OnDemandRadiationCuts } from "../components/results/OnDemandRadiationCuts";
 import { Card } from "../components/ui/Card";
 import { compareMeasurementToSimulation } from "../features/measurement-comparison/comparison";
 import { DifferenceChart } from "../features/measurement-comparison/DifferenceChart";
@@ -58,9 +59,11 @@ export function MeasurementComparisonPage() {
     compute_pattern: false,
   }), [wires, excitations, ground, config.startMhz, config.stopMhz, config.points, loads, transmissionLines]);
   const requestKey = useMemo(() => JSON.stringify({ antennaSnapshot, referenceOhms: config.referenceOhms }), [antennaSnapshot, config.referenceOhms]);
+  const antennaModelKey = useMemo(() => JSON.stringify({ wires, excitations, ground, loads, transmissionLines }), [wires, excitations, ground, loads, transmissionLines]);
   const validationErrors = useMemo(() => validateSweepConfig(config), [config]);
   const comparison = useMemo(() => measurement && simulation ? compareMeasurementToSimulation(measurement, simulation, alignmentMode) : null, [alignmentMode, measurement, simulation]);
   const simulationStale = simulation !== null && simulationRequestKey !== requestKey;
+  const patternFrequencyMhz = simulation?.points.reduce((best, point) => point.swr < best.swr ? point : best, simulation.points[0]!).frequencyMhz ?? null;
   const measurementInsideHfRange = measurement ? measurement.points[0]!.frequencyMhz >= 1.8 && measurement.points[measurement.points.length - 1]!.frequencyMhz <= 54 && measurement.points.length >= 2 : false;
 
   useEffect(() => () => controllerRef.current?.abort(), []);
@@ -138,5 +141,6 @@ export function MeasurementComparisonPage() {
     </>}</section></div>
 
     <Card className="p-4"><h2 className="font-semibold">Why measurement and simulation differ</h2><p className="mt-1 text-xs text-text-secondary">A mismatch is diagnostic evidence, not automatically a solver defect or a bad measurement.</p><div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{REASONS.map(([title, explanation]) => <div key={title} className="rounded border border-border p-3"><h3 className="text-sm font-semibold">{title}</h3><p className="mt-1 text-xs leading-relaxed text-text-secondary">{explanation}</p></div>)}</div></Card>
+    {simulation && <OnDemandRadiationCuts antenna={antennaSnapshot} frequencyMhz={patternFrequencyMhz} modelKey={antennaModelKey} autoRunKey={simulation.id} title="SIMULATION radiation cuts at minimum solved SWR" testId="measurement-radiation-cuts" />}
   </div></main>;
 }

@@ -21,6 +21,8 @@ test("a real impedance-only NEC batch drives all analyser measurements", async (
   page.on("pageerror", (error) => pageErrors.push(error.message));
   await openAnalyser(page);
   await runSweep(page);
+  await expect(page.getByTestId("analyser-radiation-cuts-plots-azimuth")).toBeVisible({ timeout: 120_000 });
+  await expect(page.getByTestId("analyser-radiation-cuts-plots-elevation")).toBeVisible();
   await expect(page.getByText(/Complex impedance:/)).toBeVisible();
   for (const metric of ["R", "X", "|Z|", "Return loss", "|Γ|", "SWR"]) {
     await page.getByRole("button", { name: metric, exact: true }).click();

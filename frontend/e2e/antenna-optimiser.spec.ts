@@ -15,6 +15,8 @@ test("a bounded dipole SWR task finds and exports exact NEC candidate evidence",
   await page.getByTestId("optimiser-max-evaluations").fill("7");
   await page.getByTestId("run-optimisation").click();
   await expect(page.getByTestId("optimiser-status")).toContainText("Best solution found", { timeout: 120_000 });
+  await expect(page.getByTestId("optimiser-radiation-cuts-azimuth")).toBeVisible();
+  await expect(page.getByTestId("optimiser-radiation-cuts-elevation")).toBeVisible();
   await expect(page.getByTestId("best-solution-found")).toContainText("No global optimum is established");
   await expect(page.getByTestId("optimisation-history-chart")).toBeVisible();
   await expect(page.locator('tr[data-testid^="optimiser-history-"]')).toHaveCount(7);

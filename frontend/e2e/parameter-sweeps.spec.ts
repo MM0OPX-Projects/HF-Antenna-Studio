@@ -18,6 +18,8 @@ test("a three-point dipole height sweep preserves exact model/NEC evidence and u
   await expect(page.getByTestId("parameter-job-count")).toHaveText("3/81");
   await page.getByTestId("run-parameter-sweep").click();
   await expect(page.getByTestId("parameter-status")).toContainText("3 points complete", { timeout: 120_000 });
+  await expect(page.getByTestId("parameter-radiation-cuts-azimuth")).toBeVisible();
+  await expect(page.getByTestId("parameter-radiation-cuts-elevation")).toBeVisible();
   await expect(page.locator('tr[data-testid^="parameter-result-"]')).toHaveCount(3);
   await expect(page.getByTestId("parameter-sweep-line-chart")).toBeVisible();
   await expect(page.locator('[data-testid="parameter-nec-fingerprint"]')).toContainText("fnv1a32-");

@@ -42,6 +42,7 @@ New general wire-antenna models start with a **1 mm wire diameter**. This is an 
 
 ## Results
 
+- **Azimuth cut** and **Elevation cut** are presented together wherever a solved antenna model is inspected. Design and Wire Editor pin both windows in their result area; Compare overlays condition-compatible models; Sweeps and Optimiser show the selected exact point or retained solution. Frequency Analyser and Measurement Comparison preserve their fast impedance-only batch and then run one separately labelled, cancellable full-pattern calculation at the selected or minimum-SWR frequency. Changing the antenna or frequency hides the old cuts until recalculation, so an earlier pattern is never presented as current.
 - `R + jX Ω` is the complex feed impedance at the selected source/reference point.
 - SWR is derived against the selected 50 Ω or 75 Ω reference; changing reference impedance changes SWR, not the solved antenna impedance.
 - **Absolute dBi** is gain relative to an isotropic radiator. **Relative to peak** sets the strongest point in each displayed cut to 0 dB and describes other directions as a positive number of decibels below that cut peak; it is not dBd and it is not absolute gain.
@@ -52,7 +53,7 @@ New general wire-antenna models start with a **1 mm wire diameter**. This is an 
 
 ## Frequency analyser
 
-Choose start/stop or centre/span, number of points, band preset, and reference impedance. The worker executes a batched NEC frequency card without a far-field grid at every point. Inspect exact cursor R, X, |Z|, SWR, reflection coefficient and return loss; optionally use the Smith chart. Saved overlays retain their conditions. Cancelled/partial sweeps are not published as complete results.
+Choose start/stop or centre/span, number of points, band preset, and reference impedance. The worker executes a batched NEC frequency card without a far-field grid at every point. Inspect exact cursor R, X, |Z|, SWR, reflection coefficient and return loss; optionally use the Smith chart. After the impedance sweep, the selected frequency receives a separate full-pattern solve for its azimuth/elevation windows. Moving the cursor hides that earlier pattern until the new frequency is calculated. Saved impedance overlays retain their conditions. Cancelled/partial sweeps are not published as complete results.
 
 ## Comparisons, sweeps, and optimiser
 

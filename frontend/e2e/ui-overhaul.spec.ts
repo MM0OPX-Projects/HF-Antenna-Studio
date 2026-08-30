@@ -53,6 +53,8 @@ test.describe("professional application workbench", () => {
 
     await page.getByRole("button", { name: "Run Simulation" }).click();
     await expect(page.getByText("Results current", { exact: true }).first()).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByTestId("results-radiation-cuts-azimuth")).toBeVisible();
+    await expect(page.getByTestId("results-radiation-cuts-elevation")).toBeVisible();
     await expect(page.getByText("Resistance R", { exact: true })).toBeVisible();
     await expect(page.getByText("Reactance X", { exact: true })).toBeVisible();
     expect(consoleErrors).toEqual([]);

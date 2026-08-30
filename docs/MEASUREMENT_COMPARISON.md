@@ -58,7 +58,7 @@ At `|Γ| = 1`, SWR is infinite. At `|Γ| > 1`, passive-load SWR is reported unav
 
 ## Simulation boundary
 
-Simulation calls the existing `runAnalyserSweep` service. That service generates one impedance-only NEC `FR` batch for the current typed Simulator request, executes it in the local worker, validates point count/frequencies, and derives match quantities from solved R+jX. Measurement values are not supplied to the solver and no fitting occurs.
+Simulation calls the existing `runAnalyserSweep` service. That service generates one impedance-only NEC `FR` batch for the current typed Simulator request, executes it in the local worker, validates point count/frequencies, and derives match quantities from solved R+jX. After that batch, a separate, clearly labelled full-pattern calculation supplies paired azimuth/elevation cuts at the minimum-SWR simulated frequency. A model change hides those cuts until recalculation, and measurement values are never supplied to either solver job; no fitting occurs.
 
 Simulation identity includes current geometry, source, ground, loads, transmission lines, frequency range, point count, and reference impedance. A later control/model change marks the completed simulation historical until rerun.
 

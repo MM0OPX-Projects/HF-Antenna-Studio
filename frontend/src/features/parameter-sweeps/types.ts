@@ -1,3 +1,4 @@
+import type { PatternData } from "../../api/nec";
 import type { RadialWorkflowSettings } from "../ground-radials/workflow";
 
 export type ParameterSweepFamily = "dipole" | "vertical" | "yagi" | "phased-array";
@@ -55,6 +56,8 @@ export interface SolvedSweepModel {
   engine: string;
   computedInMs: number;
   warnings: string[];
+  /** Exact far-field grid returned for this model. Optional only for legacy/test fixtures. */
+  radiationPattern?: PatternData;
 }
 
 export interface ParameterSweepPoint extends SolvedSweepModel {

@@ -219,7 +219,7 @@ export function SimulatorPage() {
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [leftWidth, setLeftWidth] = useState(310);
   const [rightWidth, setRightWidth] = useState(292);
-  const [analysisHeight, setAnalysisHeight] = useState(220);
+  const [analysisHeight, setAnalysisHeight] = useState(360);
   const [leftCollapsed, setLeftCollapsed] = useState(false);
   const [rightCollapsed, setRightCollapsed] = useState(false);
   const [analysisCollapsed, setAnalysisCollapsed] = useState(false);
@@ -366,7 +366,7 @@ export function SimulatorPage() {
             <button type="button" className="flex h-8 shrink-0 items-center justify-center gap-2 border-t border-border bg-surface text-[10px] font-semibold uppercase tracking-[0.14em] text-text-secondary hover:text-accent" onClick={() => setAnalysisCollapsed(false)} aria-label="Show analysis panel">Analysis and plots <span aria-hidden="true">⌃</span></button>
           ) : (
             <div className="flex shrink-0 flex-col" style={{ height: analysisHeight }} data-testid="workbench-analysis">
-              <PanelResizeHandle orientation="vertical" value={analysisHeight} min={180} max={420} direction={-1} label="Resize analysis panel" onChange={setAnalysisHeight} onReset={() => setAnalysisHeight(220)} />
+              <PanelResizeHandle orientation="vertical" value={analysisHeight} min={240} max={620} direction={-1} label="Resize analysis panel" onChange={setAnalysisHeight} onReset={() => setAnalysisHeight(360)} />
               <div className="flex min-h-0 flex-1 flex-col bg-surface"><div className="flex h-8 shrink-0 items-center justify-between border-b border-border px-3"><span className="text-[9px] font-semibold uppercase tracking-[0.16em] text-text-secondary">Analysis · solver outputs</span><button type="button" className="rounded px-2 py-1 text-[10px] text-text-secondary hover:bg-surface-hover hover:text-text-primary" onClick={() => setAnalysisCollapsed(true)} aria-label="Collapse analysis panel">Collapse</button></div><div className="min-h-0 flex-1"><ErrorBoundary label="Analysis results"><ResultsPanel showSummary={false} /></ErrorBoundary></div></div>
             </div>
           )}

@@ -19,20 +19,20 @@ export async function solveSweepModel(built: BuiltSweepModel, signal?: AbortSign
   if (built.family === "dipole") {
     const run = await runVerifiedDipole(built.model, { signal });
     const result = run.result;
-    return { modelKey: built.modelKey, generatedNec: result.generatedNec, necFingerprint: fingerprintText(result.generatedNec), metrics: pointMetrics({ swr: result.swr, gainDbi: result.maximumGainDbi, takeOffAngleDeg: result.takeOffAngleDeg ?? 0, resistanceOhm: result.resistanceOhm, reactanceOhm: result.reactanceOhm }), engine: result.engine, computedInMs: result.computedInMs, warnings: result.warnings };
+    return { modelKey: built.modelKey, generatedNec: result.generatedNec, necFingerprint: fingerprintText(result.generatedNec), metrics: pointMetrics({ swr: result.swr, gainDbi: result.maximumGainDbi, takeOffAngleDeg: result.takeOffAngleDeg ?? 0, resistanceOhm: result.resistanceOhm, reactanceOhm: result.reactanceOhm }), engine: result.engine, computedInMs: result.computedInMs, warnings: result.warnings, radiationPattern: result.radiationPattern };
   }
   if (built.family === "vertical") {
     const result = await runVerticalModel(generateVerticalModel(built.model), { signal });
-    return { modelKey: built.modelKey, generatedNec: result.generatedNec, necFingerprint: fingerprintText(result.generatedNec), metrics: pointMetrics({ swr: result.swr, gainDbi: result.maximumGainDbi, takeOffAngleDeg: result.takeOffAngleDeg, resistanceOhm: result.resistanceOhm, reactanceOhm: result.reactanceOhm }), engine: result.engine, computedInMs: result.computedInMs, warnings: result.warnings };
+    return { modelKey: built.modelKey, generatedNec: result.generatedNec, necFingerprint: fingerprintText(result.generatedNec), metrics: pointMetrics({ swr: result.swr, gainDbi: result.maximumGainDbi, takeOffAngleDeg: result.takeOffAngleDeg, resistanceOhm: result.resistanceOhm, reactanceOhm: result.reactanceOhm }), engine: result.engine, computedInMs: result.computedInMs, warnings: result.warnings, radiationPattern: result.radiationPattern };
   }
   if (built.family === "yagi") {
     const result = await runYagiModel(generateYagiModel(built.model), { signal });
     if (result.modelKey !== built.modelKey) throw new Error("Yagi result model identity does not match the requested sweep point.");
-    return { modelKey: result.modelKey, generatedNec: result.generatedNec, necFingerprint: fingerprintText(result.generatedNec), metrics: pointMetrics({ swr: result.swr, gainDbi: result.forwardGainDbi, takeOffAngleDeg: result.takeOffAngleDeg, frontToBackDb: result.frontToBackDb, resistanceOhm: result.resistanceOhm, reactanceOhm: result.reactanceOhm }), engine: result.engine, computedInMs: result.computedInMs, warnings: result.warnings };
+    return { modelKey: result.modelKey, generatedNec: result.generatedNec, necFingerprint: fingerprintText(result.generatedNec), metrics: pointMetrics({ swr: result.swr, gainDbi: result.forwardGainDbi, takeOffAngleDeg: result.takeOffAngleDeg, frontToBackDb: result.frontToBackDb, resistanceOhm: result.resistanceOhm, reactanceOhm: result.reactanceOhm }), engine: result.engine, computedInMs: result.computedInMs, warnings: result.warnings, radiationPattern: result.radiationPattern };
   }
   const result = await runPhasedArrayModel(generatePhasedArray(built.model), { signal });
   if (result.modelKey !== built.modelKey) throw new Error("Phased-array result model identity does not match the requested sweep point.");
-  return { modelKey: result.modelKey, generatedNec: result.generatedNec, necFingerprint: fingerprintText(result.generatedNec), metrics: pointMetrics({ gainDbi: result.forwardGainDbi, takeOffAngleDeg: result.takeOffAngleDeg, frontToBackDb: result.frontToBackDb }), engine: result.engine, computedInMs: result.computedInMs, warnings: [...result.warnings, "Ideal-current phased-array points have no single physical feed impedance; SWR, R and X are unavailable."] };
+  return { modelKey: result.modelKey, generatedNec: result.generatedNec, necFingerprint: fingerprintText(result.generatedNec), metrics: pointMetrics({ gainDbi: result.forwardGainDbi, takeOffAngleDeg: result.takeOffAngleDeg, frontToBackDb: result.frontToBackDb }), engine: result.engine, computedInMs: result.computedInMs, warnings: [...result.warnings, "Ideal-current phased-array points have no single physical feed impedance; SWR, R and X are unavailable."], radiationPattern: result.radiationPattern };
 }
 
 function abortError(): DOMException { return new DOMException("Parameter sweep cancelled.", "AbortError"); }

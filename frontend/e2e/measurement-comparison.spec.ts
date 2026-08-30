@@ -34,6 +34,8 @@ test("measured Touchstone S11 overlays a real local NEC sweep with explicit sour
   await expect(page.getByTestId("comparison-points")).toHaveValue("5");
   await page.getByTestId("run-comparison-simulation").click();
   await expect(page.getByTestId("comparison-status")).toContainText("SIMULATION complete", { timeout: 120_000 });
+  await expect(page.getByTestId("measurement-radiation-cuts-plots-azimuth")).toBeVisible({ timeout: 120_000 });
+  await expect(page.getByTestId("measurement-radiation-cuts-plots-elevation")).toBeVisible();
   await expect(page.getByTestId("measurement-overlay-chart")).toBeVisible();
   await expect(page.getByTestId("measurement-difference-chart")).toBeVisible();
   await expect(page.getByTestId("alignment-label")).toContainText("5/5 measured points aligned");

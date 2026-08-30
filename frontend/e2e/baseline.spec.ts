@@ -115,24 +115,24 @@ for (const [name, baseline] of Object.entries(BASELINES)) {
 
     await page.getByRole("tab", { name: "Pattern", exact: true }).click();
     await expect(page.getByText("Radiation Pattern")).toBeVisible();
-    await expect(page.getByText("Azimuth")).toBeVisible();
-    await expect(page.getByTestId("simulator-elevation-angle-inspector-input")).toHaveValue("5");
-    await expect(page.getByTestId("simulator-elevation-angle-inspector")).toContainText("No valid pattern samples bracket this angle");
-    await page.getByTestId("simulator-elevation-angle-inspector-input").fill("10");
-    await expect(page.locator('[data-testid^="simulator-elevation-angle-inspector-source-"]').filter({ hasText: "Exact NEC sample" }).first()).toBeVisible();
-    await page.getByTestId("simulator-elevation-angle-inspector-input").fill("175");
+    await expect(page.getByTestId("results-radiation-cuts-azimuth")).toBeVisible();
+    await expect(page.getByTestId("elevation-angle-inspector-input")).toHaveValue("5");
+    await expect(page.getByTestId("elevation-angle-inspector")).toContainText("No valid pattern samples bracket this angle");
+    await page.getByTestId("elevation-angle-inspector-input").fill("10");
+    await expect(page.locator('[data-testid^="elevation-angle-inspector-source-"]').filter({ hasText: "Exact NEC sample" }).first()).toBeVisible();
+    await page.getByTestId("elevation-angle-inspector-input").fill("175");
     // The exact-horizon NEC sample is invalid for these grounded 10° grids,
     // so the UI must not invent a 175° interpolation across that sentinel.
-    await expect(page.getByTestId("simulator-elevation-angle-inspector")).toContainText("No valid pattern samples bracket this angle");
-    await page.getByTestId("simulator-elevation-angle-inspector-input").fill("170");
-    await expect(page.locator('[data-testid^="simulator-elevation-angle-inspector-source-"]').filter({ hasText: "Exact NEC sample" }).first()).toBeVisible();
-    const elevationPlot = page.getByRole("img", { name: /elevation radiation pattern; interactive gain-at-angle cursor/i });
+    await expect(page.getByTestId("elevation-angle-inspector")).toContainText("No valid pattern samples bracket this angle");
+    await page.getByTestId("elevation-angle-inspector-input").fill("170");
+    await expect(page.locator('[data-testid^="elevation-angle-inspector-source-"]').filter({ hasText: "Exact NEC sample" }).first()).toBeVisible();
+    const elevationPlot = page.getByRole("img", { name: /elevation polar radiation pattern.*interactive angle cursor/i });
     const elevationBounds = await elevationPlot.boundingBox();
     expect(elevationBounds).not.toBeNull();
     await page.mouse.move(elevationBounds!.x + elevationBounds!.width * 0.82, elevationBounds!.y + elevationBounds!.height / 2);
     await page.mouse.down();
     await page.mouse.move(elevationBounds!.x + elevationBounds!.width / 2, elevationBounds!.y + elevationBounds!.height * 0.18, { steps: 6 });
-    await expect.poll(async () => Number(await page.getByTestId("simulator-elevation-angle-inspector-input").inputValue())).toBeGreaterThan(80);
+    await expect.poll(async () => Number(await page.getByTestId("elevation-angle-inspector-input").inputValue())).toBeGreaterThan(80);
     await page.mouse.up();
 
     await page.getByRole("tab", { name: "Z", exact: true }).click();

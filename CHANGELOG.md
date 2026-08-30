@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Added one shared, always-visible azimuth/elevation radiation-cut presentation across Design, Wire Editor, Frequency Analyser, Model Comparison, Parameter Sweeps, Antenna Optimiser, Measurement Comparison, and antenna laboratories; analyser-style tools keep efficient impedance batches and run a separate cancellable pattern solve only for the selected model frequency
 - Added a professional acknowledgements and source record crediting Colin Summers MM0OPX's product vision and direction, ChatGPT Codex's coding/documentation role, the inherited open-source foundations, and attributed antenna and validation references
 - Added one shared, source-attributed G3TXQ broadband Hexbeam geometry generator with exact M-driver half lengths, five-side perimeter reflector length, two tip gaps, derived regular-frame radius, explicit feed bridge, and non-conductive spreader/perimeter rendering
 - Added topology, symmetry, length, gap, source, NEC-deck identity, real-solver and external 4NEC2 regression coverage for the corrected Hexbeam geometry

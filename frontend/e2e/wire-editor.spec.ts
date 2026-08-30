@@ -75,6 +75,8 @@ test("supported NEC import reaches the real solver, results, and 3D editor witho
 
   await page.getByRole("button", { name: "Run Simulation" }).click();
   await expect(page.locator("aside").getByTestId("wire-editor-simulation-status")).toHaveText("3 frequency points calculated", { timeout: 120_000 });
+  await expect(page.locator("aside").getByTestId("results-radiation-cuts-azimuth")).toBeVisible();
+  await expect(page.locator("aside").getByTestId("results-radiation-cuts-elevation")).toBeVisible();
   await expect(page.locator("aside").getByText("Impedance", { exact: false }).first()).toBeVisible();
   await expect(page.locator("aside").getByText("SWR", { exact: false }).first()).toBeVisible();
 

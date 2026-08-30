@@ -8,7 +8,7 @@ import { Tabs } from "../ui/Tabs";
 import { SWRChart } from "./SWRChart";
 import { ImpedanceChart } from "./ImpedanceChart";
 import { GainTable } from "./GainTable";
-import { PatternPolar } from "./PatternPolar";
+import { RadiationCutPair } from "./RadiationCutPair";
 import { SmithChart } from "./SmithChart";
 import { BandAnalysis } from "./BandAnalysis";
 import { MatchingPanel } from "./MatchingPanel";
@@ -192,6 +192,16 @@ export function ResultsPanel({ showSummary = true }: ResultsPanelProps = {}) {
               );
             })()}
 
+            {resultsTab !== "pattern" && <RadiationCutPair
+              pattern={selectedFreqResult?.pattern}
+              title="Azimuth and elevation cuts"
+              context={selectedFreqResult
+                ? `Current solved antenna · ${selectedFreqResult.frequency_mhz.toFixed(6)} MHz · both plots use the same NEC result as the 3D pattern`
+                : undefined}
+              emptyMessage="This solved frequency does not contain a radiation-pattern grid. Re-run with pattern calculation enabled."
+              testId="results-radiation-cuts"
+            />}
+
             {/* Tab content */}
             <div className="border-t border-border pt-3">
               {resultsTab === "swr" && (
@@ -299,46 +309,12 @@ export function ResultsPanel({ showSummary = true }: ResultsPanelProps = {}) {
                     Radiation Pattern
                   </h4>
                   {selectedFreqResult.pattern ? (
-                    <div className="space-y-3">
-                      <ChartExpandable
-                        title="Azimuth Pattern (H-plane)"
-                        expandedChildren={
-                          <div className="w-full h-full flex items-center justify-center">
-                            <PatternPolar
-                              pattern={selectedFreqResult.pattern}
-                              mode="azimuth"
-                              size={500}
-                              responsive
-                            />
-                          </div>
-                        }
-                      >
-                        <PatternPolar
-                          pattern={selectedFreqResult.pattern}
-                          mode="azimuth"
-                          size={180}
-                        />
-                      </ChartExpandable>
-                      <ChartExpandable
-                        title="Elevation Pattern (E-plane)"
-                        expandedChildren={
-                          <div className="w-full h-full flex items-center justify-center">
-                            <PatternPolar
-                              pattern={selectedFreqResult.pattern}
-                              mode="elevation"
-                              size={500}
-                              responsive
-                            />
-                          </div>
-                        }
-                      >
-                        <PatternPolar
-                          pattern={selectedFreqResult.pattern}
-                          mode="elevation"
-                          size={180}
-                        />
-                      </ChartExpandable>
-                    </div>
+                    <RadiationCutPair
+                      pattern={selectedFreqResult.pattern}
+                      title="Azimuth and elevation cuts"
+                      context={`Current solved antenna · ${selectedFreqResult.frequency_mhz.toFixed(6)} MHz · both plots use the same NEC result as the 3D pattern`}
+                      testId="results-radiation-cuts"
+                    />
                   ) : (
                     <p className="text-xs text-text-secondary text-center py-4">
                       No pattern data available for this frequency.

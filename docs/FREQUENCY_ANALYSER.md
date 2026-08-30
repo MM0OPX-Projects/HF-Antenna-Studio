@@ -8,7 +8,7 @@ The `/frequency-analyser` laboratory sweeps the antenna currently selected and p
 
 The controls support start/stop and reversible centre/span entry, 3–401 linearly spaced points, Region 1 amateur-band presets from 160 m through 6 m, and a positive reference impedance up to 1000 ohms with 50/75-ohm shortcuts. A completed result remains visibly marked as the last result if its range controls are subsequently changed.
 
-Available views are SWR, resistance, reactance, impedance magnitude, return loss, reflection-coefficient magnitude, exact cursor values, and an optional Smith chart. Up to four immutable completed sweeps can be saved and overlaid. The active chart can be exported as PNG; active plus visible saved data can be exported as CSV. Project-data export is versioned JSON containing the antenna request snapshot, completed configuration, raw parsed frequency records, derived records, warnings, and saved overlays. Import of that analyser JSON is not implemented in this phase.
+Available views are SWR, resistance, reactance, impedance magnitude, return loss, reflection-coefficient magnitude, exact cursor values, an optional Smith chart, and paired azimuth/elevation cuts for one selected solved frequency. The cuts are produced by a separately labelled full-pattern NEC calculation; moving the cursor or changing the model hides the old cuts until the newly selected conditions are solved. Up to four immutable completed sweeps can be saved and overlaid. The active analyser chart can be exported as PNG; active plus visible saved data can be exported as CSV. Project-data export is versioned JSON containing the antenna request snapshot, completed configuration, raw parsed frequency records, derived records, warnings, and saved overlays. Import of that analyser JSON is not implemented in this phase.
 
 The separate experimental `/measurement-comparison` route now consumes this same impedance-sweep service and compares it with immutable one-port Touchstone measurement data. It does not import analyser project JSON or alter this page's sweep/overlay state. See [`MEASUREMENT_COMPARISON.md`](MEASUREMENT_COMPARISON.md).
 
@@ -31,6 +31,8 @@ One local browser Web Worker runs the existing GPL nec2c WebAssembly engine. The
 
 NEC execution remains synchronous inside its worker, not on the React/main thread. Cancel terminates that worker, rejects its outstanding request, and creates a fresh worker for the next job. A monotonically increasing UI job identity prevents a superseded completion or rejection from publishing state. No partial result is presented after cancellation.
 
+After a completed impedance sweep, the page requests one independent full-pattern deck at the selected frequency (initially the minimum-SWR point). That job is cancellable and carries an exact model/frequency identity. It does not add `RP` work to every sweep point and it cannot publish an earlier frequency's pattern after the cursor changes.
+
 ## Evidence completed on this branch
 
 - Unit calculations cover matched, real, complex, short-circuit, alternate-reference, limit, centre/span, and cursor-selection cases.
@@ -45,7 +47,7 @@ These are implementation and same-engine regression checks, not independent elec
 ## Known limits and manual checks
 
 - The antenna geometry and segmentation are fixed for the sweep. Users must check that segment length/radius and ground assumptions remain valid at the highest frequency; an analyser sweep does not automatically change geometry between points.
-- `XQ` results intentionally contain no radiation patterns, gain, efficiency, or currents. Those outputs belong to a normal Simulator calculation at selected frequencies.
+- The batched `XQ` sweep intentionally contains no radiation patterns, gain, efficiency, or currents. The paired cuts come from the separate selected-frequency full-pattern calculation and therefore add one solver job when requested.
 - Linear sweeps only are supported. Logarithmic, segmented, adaptive, and live VNA acquisition modes are not implemented.
 - Overlays are in-memory until exported; analyser project-data import is not yet available.
 - The PNG represents the currently selected chart, not the Smith chart or a composite report.
