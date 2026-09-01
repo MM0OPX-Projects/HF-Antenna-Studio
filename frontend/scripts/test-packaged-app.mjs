@@ -9,8 +9,13 @@ const changelogStorageKey = "antennasim:changelog-seen";
 const storageKey = "hfas-package-uninstall-preservation-sentinel";
 const storageValue = "preserve-project-profile-data";
 
-function normaliseDeckText(deck) {
-  return deck.replace(/\r\n?/g, "\n");
+function hasExplicitRealGroundCards(deck) {
+  const cards = deck
+    .split(/\r?\n/)
+    .map((card) => card.trim())
+    .filter(Boolean);
+  const geometryEnd = cards.findIndex((card) => card === "GE -1");
+  return geometryEnd >= 0 && /^GN\s+2(?:\s|$)/.test(cards[geometryEnd + 1] ?? "");
 }
 
 async function connectToPackagedBrowser() {
@@ -97,8 +102,8 @@ if (phase === "initial") {
   await page.getByTestId("vertical-mode-ground-mounted-explicit-radials").click();
   await page.getByTestId("run-vertical-nec").click();
   await page.getByTestId("vertical-results").waitFor({ timeout: 60_000 });
-  const verticalDeck = normaliseDeckText(await page.getByTestId("vertical-generated-nec").innerText());
-  if (!verticalDeck.includes("GE -1\nGN 2")) throw new Error("Packaged ground-mounted vertical did not use the explicit real-ground radial deck.");
+  const verticalDeck = await page.getByTestId("vertical-generated-nec").textContent() ?? "";
+  if (!hasExplicitRealGroundCards(verticalDeck)) throw new Error("Packaged ground-mounted vertical did not use the explicit real-ground radial deck.");
   await page.getByTestId("radial-current-path").waitFor({ timeout: 15_000 });
 
   await navigateTo("/phased-arrays", "Two-element phased vertical arrays");
@@ -108,8 +113,8 @@ if (phase === "initial") {
     .filter({ hasText: /GE -1\r?\nGN 2/ })
     .waitFor({ timeout: 30_000 });
   await page.getByTestId("phased-results").waitFor({ timeout: 120_000 });
-  const phasedDeck = normaliseDeckText(await page.getByTestId("phased-generated-nec").innerText());
-  if (!phasedDeck.includes("topology: shared-bonded-network") || !phasedDeck.includes("GE -1\nGN 2")) {
+  const phasedDeck = await page.getByTestId("phased-generated-nec").textContent() ?? "";
+  if (!phasedDeck.includes("topology: shared-bonded-network") || !hasExplicitRealGroundCards(phasedDeck)) {
     throw new Error("Packaged phased array did not use the explicit shared real-ground radial deck.");
   }
   await page.getByTestId("phased-current-visualisation").waitFor({ timeout: 15_000 });
