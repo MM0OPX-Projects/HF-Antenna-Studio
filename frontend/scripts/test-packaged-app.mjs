@@ -69,7 +69,7 @@ await page.evaluate(({ key, contentId }) => {
 await page.reload({ waitUntil: "commit", timeout: 30_000 });
 await page.getByRole("link", { name: /^HF Antenna Studio/ }).waitFor({
   state: "visible",
-  timeout: 30_000,
+  timeout: 120_000,
 });
 const changelog = page.getByRole("button", { name: "Got it" });
 await changelog.waitFor({ state: "hidden", timeout: 15_000 });

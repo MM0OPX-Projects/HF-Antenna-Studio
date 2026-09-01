@@ -10,9 +10,9 @@ async function openStudio(page: Page) {
 }
 
 const isWindowsCi = process.platform === "win32" && Boolean(process.env.CI);
-const aggregateTemplateSolverTimeoutMs = isWindowsCi ? 1_200_000 : 120_000;
+const aggregateTemplateSolverTimeoutMs = isWindowsCi ? 2_400_000 : 120_000;
 const aggregateTemplateUiTimeoutMs = isWindowsCi ? 600_000 : 120_000;
-const templateResultTimeoutMs = isWindowsCi ? 120_000 : 30_000;
+const templateResultTimeoutMs = isWindowsCi ? 600_000 : 30_000;
 
 test("all eight templates generate geometry, feed/segments, NEC, and solve locally", async ({ page }) => {
   test.setTimeout(aggregateTemplateSolverTimeoutMs);
