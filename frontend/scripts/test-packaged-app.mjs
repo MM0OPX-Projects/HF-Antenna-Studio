@@ -9,6 +9,10 @@ const changelogStorageKey = "antennasim:changelog-seen";
 const storageKey = "hfas-package-uninstall-preservation-sentinel";
 const storageValue = "preserve-project-profile-data";
 
+function normaliseDeckText(deck) {
+  return deck.replace(/\r\n?/g, "\n");
+}
+
 async function connectToPackagedBrowser() {
   let lastError;
   for (let attempt = 1; attempt <= 2; attempt += 1) {
@@ -93,7 +97,7 @@ if (phase === "initial") {
   await page.getByTestId("vertical-mode-ground-mounted-explicit-radials").click();
   await page.getByTestId("run-vertical-nec").click();
   await page.getByTestId("vertical-results").waitFor({ timeout: 60_000 });
-  const verticalDeck = await page.getByTestId("vertical-generated-nec").innerText();
+  const verticalDeck = normaliseDeckText(await page.getByTestId("vertical-generated-nec").innerText());
   if (!verticalDeck.includes("GE -1\nGN 2")) throw new Error("Packaged ground-mounted vertical did not use the explicit real-ground radial deck.");
   await page.getByTestId("radial-current-path").waitFor({ timeout: 15_000 });
 
@@ -101,10 +105,10 @@ if (phase === "initial") {
   await page.getByTestId("phased-radial-mode").selectOption("near-surface-explicit-wires");
   await page.getByTestId("phased-generated-nec")
     .filter({ hasText: "topology: shared-bonded-network" })
-    .filter({ hasText: "GE -1\nGN 2" })
+    .filter({ hasText: /GE -1\r?\nGN 2/ })
     .waitFor({ timeout: 30_000 });
   await page.getByTestId("phased-results").waitFor({ timeout: 120_000 });
-  const phasedDeck = await page.getByTestId("phased-generated-nec").innerText();
+  const phasedDeck = normaliseDeckText(await page.getByTestId("phased-generated-nec").innerText());
   if (!phasedDeck.includes("topology: shared-bonded-network") || !phasedDeck.includes("GE -1\nGN 2")) {
     throw new Error("Packaged phased array did not use the explicit shared real-ground radial deck.");
   }
