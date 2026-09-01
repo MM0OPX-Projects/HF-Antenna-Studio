@@ -1,12 +1,16 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
+const isWindowsCi = process.platform === "win32" && Boolean(process.env.CI);
+const currentTestTimeoutMs = isWindowsCi ? 720_000 : 120_000;
+const currentPanelTimeoutMs = isWindowsCi ? 600_000 : 60_000;
+
 async function dismissChangelog(page: Page): Promise<void> {
   const button = page.getByRole("button", { name: "Got it" });
   if (await button.isVisible().catch(() => false)) await button.click();
 }
 
 async function inspectFirstSegment(panel: Locator): Promise<void> {
-  await expect(panel).toBeVisible({ timeout: 60_000 });
+  await expect(panel).toBeVisible({ timeout: currentPanelTimeoutMs });
   await expect(panel).toHaveAttribute("data-current-source", "nec-solver");
   expect(Number(await panel.getAttribute("data-current-count"))).toBeGreaterThan(0);
   await panel.getByTestId("current-mode-phase").click();
@@ -23,30 +27,28 @@ async function inspectFirstSegment(panel: Locator): Promise<void> {
   await expect(panel.getByTestId(`${await panel.getAttribute("data-testid")}-3d`).locator("canvas")).toBeVisible();
 }
 
-test("actual NEC segment current controls work for dipole, vertical, loop, Yagi and phased-array models", async ({ page }) => {
-  const consoleProblems: string[] = [];
-  page.on("console", (message) => {
-    if (message.type() === "error") consoleProblems.push(`${message.type()}: ${message.text()}`);
+const currentModels = [
+  { name: "dipole", path: "/verified-dipole", panel: "dipole-current-visualisation", run: "run-dipole" },
+  { name: "vertical", path: "/vertical-antennas", panel: "vertical-current-visualisation", run: "run-vertical-nec" },
+  { name: "loop", path: "/loop-and-hexbeam-models", panel: "loop-current-visualisation" },
+  { name: "Yagi", path: "/yagi-beams", panel: "yagi-current-visualisation" },
+  { name: "phased array", path: "/phased-arrays", panel: "phased-current-visualisation" },
+] as const;
+
+for (const model of currentModels) {
+  test(`actual NEC segment current controls work for the ${model.name} model`, async ({ page }) => {
+    test.setTimeout(currentTestTimeoutMs);
+    const consoleProblems: string[] = [];
+    page.on("console", (message) => {
+      if (message.type() === "error") consoleProblems.push(`${message.type()}: ${message.text()}`);
+    });
+    page.on("pageerror", (error) => consoleProblems.push(`pageerror: ${error.message}`));
+
+    await page.goto(model.path);
+    await dismissChangelog(page);
+    if ("run" in model) await page.getByTestId(model.run).click();
+    await inspectFirstSegment(page.getByTestId(model.panel));
+
+    expect(consoleProblems).toEqual([]);
   });
-  page.on("pageerror", (error) => consoleProblems.push(`pageerror: ${error.message}`));
-
-  await page.goto("/verified-dipole");
-  await dismissChangelog(page);
-  await page.getByTestId("run-dipole").click();
-  await inspectFirstSegment(page.getByTestId("dipole-current-visualisation"));
-
-  await page.goto("/vertical-antennas");
-  await page.getByTestId("run-vertical-nec").click();
-  await inspectFirstSegment(page.getByTestId("vertical-current-visualisation"));
-
-  await page.goto("/loop-and-hexbeam-models");
-  await inspectFirstSegment(page.getByTestId("loop-current-visualisation"));
-
-  await page.goto("/yagi-beams");
-  await inspectFirstSegment(page.getByTestId("yagi-current-visualisation"));
-
-  await page.goto("/phased-arrays");
-  await inspectFirstSegment(page.getByTestId("phased-current-visualisation"));
-
-  expect(consoleProblems).toEqual([]);
-});
+}

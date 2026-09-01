@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Fixed
 
 - Made the installed WebView2 ground-radial acceptance checks insensitive to Windows line endings and collapsed-panel rendered-text differences while retaining the exact adjacent `GE -1` / `GN 2` NEC-card requirement
+- Isolated the five antenna-family current-visualisation browser checks so constrained Windows runners cannot consume one shared timeout before reaching the later Yagi and phased-array assertions
 - Expanded every shared azimuth polar view to its complete 360° circle so the 180° half and bottom label are no longer clipped by the elevation plot's shorter viewport
 - Completed elevation-cut traces to the 0° and 180° axes when NEC reports an exact horizon null (`-999.99 dB`), drawing those nulls only at the visual floor while continuing to withhold a fabricated numerical gain or interpolation
 
