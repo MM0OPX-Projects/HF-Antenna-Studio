@@ -68,10 +68,17 @@ await page.waitForLoadState("domcontentloaded");
 await page.evaluate(({ key, contentId }) => {
   localStorage.setItem(key, JSON.stringify({ contentId, seenAt: Date.now() }));
 }, { key: changelogStorageKey, contentId: expectedVersion });
-// WebView2 can commit the custom tauri.localhost navigation without forwarding a
-// DOMContentLoaded lifecycle event through CDP.  Resolve on the committed
-// navigation, then prove that React has hydrated before interacting with it.
-await page.reload({ waitUntil: "commit", timeout: 30_000 });
+// WebView2 does not consistently forward custom-protocol reload lifecycle events
+// through CDP. Mark the current document, request a reload without awaiting its
+// transport event, then require both a replacement document and hydrated React.
+await page.evaluate(() => {
+  document.documentElement.dataset.hfasPackageTestDocument = "stale";
+  location.reload();
+});
+await page.locator("html:not([data-hfas-package-test-document])").waitFor({
+  state: "attached",
+  timeout: 120_000,
+});
 await page.getByRole("link", { name: /^HF Antenna Studio/ }).waitFor({
   state: "visible",
   timeout: 120_000,
