@@ -115,10 +115,6 @@ if (phase === "initial") {
 
   await navigateTo("/phased-arrays", "Two-element phased vertical arrays");
   await page.getByTestId("phased-radial-mode").selectOption("near-surface-explicit-wires");
-  await page.getByTestId("phased-generated-nec")
-    .filter({ hasText: "topology: shared-bonded-network" })
-    .filter({ hasText: /GE -1\r?\nGN 2/ })
-    .waitFor({ timeout: 30_000 });
   await page.getByTestId("phased-results").waitFor({ timeout: 120_000 });
   const phasedDeck = await page.getByTestId("phased-generated-nec").textContent() ?? "";
   if (!phasedDeck.includes("topology: shared-bonded-network") || !hasExplicitRealGroundCards(phasedDeck)) {
