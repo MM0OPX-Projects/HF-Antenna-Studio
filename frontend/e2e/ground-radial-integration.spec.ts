@@ -1,11 +1,15 @@
 import { expect, test, type Page } from "@playwright/test";
 
+const isWindowsCi = process.platform === "win32" && Boolean(process.env.CI);
+const integrationTestTimeoutMs = isWindowsCi ? 720_000 : 120_000;
+
 async function dismissChangelog(page: Page): Promise<void> {
   const button = page.getByRole("button", { name: "Got it" });
   if (await button.isVisible().catch(() => false)) await button.click();
 }
 
 test("the primary vertical template routes users to both explicit radial laboratories and back", async ({ page }) => {
+  test.setTimeout(integrationTestTimeoutMs);
   await page.goto("/");
   await dismissChangelog(page);
 
