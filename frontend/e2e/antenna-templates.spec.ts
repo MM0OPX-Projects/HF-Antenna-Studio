@@ -11,7 +11,7 @@ async function openStudio(page: Page) {
 
 const isWindowsCi = process.platform === "win32" && Boolean(process.env.CI);
 const aggregateTemplateSolverTimeoutMs = isWindowsCi ? 2_400_000 : 120_000;
-const aggregateTemplateUiTimeoutMs = isWindowsCi ? 600_000 : 120_000;
+const templateUiTimeoutMs = isWindowsCi ? 300_000 : 120_000;
 const templateResultTimeoutMs = isWindowsCi ? 600_000 : 30_000;
 
 test("all eight templates generate geometry, feed/segments, NEC, and solve locally", async ({ page }) => {
@@ -60,10 +60,10 @@ test("all eight templates generate geometry, feed/segments, NEC, and solve local
   }
 });
 
-test("the common parameter UI enforces every declared range", async ({ page }) => {
-  test.setTimeout(aggregateTemplateUiTimeoutMs);
-  await openStudio(page);
-  for (const definition of antennaTemplateDefinitions) {
+for (const definition of antennaTemplateDefinitions) {
+  test(`${definition.name} common parameter UI enforces every declared range`, async ({ page }) => {
+    test.setTimeout(templateUiTimeoutMs);
+    await openStudio(page);
     await page.getByTestId(`template-${definition.id}`).click();
     await expect(page.getByRole("heading", { name: "Common parameter controls" })).toHaveCount(1);
     for (const parameter of definition.parameters) {
@@ -74,8 +74,8 @@ test("the common parameter UI enforces every declared range", async ({ page }) =
       expect(Number(await input.getAttribute("max"))).toBeCloseTo(toDisplayUnit(parameter.maxSI, unit), 8);
       await expect(page.getByTestId(`template-param-${parameter.key}-slider`)).toBeVisible();
     }
-  }
-});
+  });
+}
 
 test("band presets regenerate starting dimensions until a manual override is made", async ({ page }) => {
   await openStudio(page);

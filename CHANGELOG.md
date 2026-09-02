@@ -40,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Isolated the five antenna-family current-visualisation browser checks so constrained Windows runners cannot consume one shared timeout before reaching the later Yagi and phased-array assertions
 - Isolated the five dipole-height reference solves and made packaged WebView2 readiness depend on a replaced, hydrated document instead of unreliable custom-protocol reload lifecycle events
 - Kept the complete vertical-template/vertical-lab/phased-array return-path regression intact while giving that solver-backed round trip a bounded hosted-Windows allowance; local and Linux timeout limits remain unchanged
+- Isolated every antenna template's declared-range UI verification so hosted Windows rendering variance cannot consume a shared aggregate timeout; every minimum, maximum, input and slider assertion remains release-failing
 - Removed an invalid packaged-test visibility requirement from the intentionally collapsed phased-array NEC source while retaining exact solved-deck and current-output verification
 - Expanded every shared azimuth polar view to its complete 360° circle so the 180° half and bottom label are no longer clipped by the elevation plot's shorter viewport
 - Completed elevation-cut traces to the 0° and 180° axes when NEC reports an exact horizon null (`-999.99 dB`), drawing those nulls only at the visual floor while continuing to withhold a fabricated numerical gain or interpolation
