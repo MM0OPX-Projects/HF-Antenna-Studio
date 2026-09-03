@@ -36,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- Made the rapid dipole-height regression accept either the explicitly withheld stale trace or an already-completed result that is proven to belong to the final 1.00λ geometry; a visible stale result still fails the test
 - Made the installed WebView2 ground-radial acceptance checks insensitive to Windows line endings and collapsed-panel rendered-text differences while retaining the exact adjacent `GE -1` / `GN 2` NEC-card requirement
 - Isolated the five antenna-family current-visualisation browser checks so constrained Windows runners cannot consume one shared timeout before reaching the later Yagi and phased-array assertions
 - Isolated the five dipole-height reference solves and made packaged WebView2 readiness depend on a replaced, hydrated document instead of unreliable custom-protocol reload lifecycle events

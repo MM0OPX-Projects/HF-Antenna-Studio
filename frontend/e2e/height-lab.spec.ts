@@ -16,9 +16,14 @@ test("rapid height changes hide stale results and solve only the settled geometr
 
   await expect(page.getByTestId("height-wavelengths")).toHaveText("1.00λ");
   await expect(page.getByTestId("geometry-3d")).toHaveAttribute("data-height-wavelengths", "1.00");
-  await expect(page.getByTestId("height-results")).toHaveCount(0);
-  await expect(page.getByTestId("calculation-status")).toContainText("previous current trace is hidden");
-  await expect(page.getByTestId("radiation-pattern-3d")).toContainText("Pattern withheld");
+  const resultWasAlreadyCurrent = await page.getByTestId("height-results").count() === 1;
+  if (resultWasAlreadyCurrent) {
+    await expect(page.getByTestId("comparison-traces")).toContainText("Current 1.00λ");
+    await expect(page.getByTestId("height-result-takeoff")).toHaveText("15.0°");
+  } else {
+    await expect(page.getByTestId("calculation-status")).toContainText("previous current trace is hidden");
+    await expect(page.getByTestId("radiation-pattern-3d")).toContainText("Pattern withheld");
+  }
 
   await expect(page.getByTestId("height-results")).toBeVisible({ timeout: 30_000 });
   await expect(page.getByTestId("calculation-status")).toContainText("Geometry is now at 1.00λ");
