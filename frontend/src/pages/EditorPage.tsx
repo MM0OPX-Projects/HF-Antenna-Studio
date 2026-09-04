@@ -681,7 +681,7 @@ export function EditorPage() {
           </div>
 
           {viewportMode === "3d" && (
-            <div className="pointer-events-none absolute bottom-2 left-2 z-10 rounded border border-border bg-surface/80 px-2 py-1 text-[9px] font-mono text-text-secondary backdrop-blur-sm" aria-label="NEC coordinate legend">
+            <div className="pointer-events-none absolute left-2 top-12 z-10 rounded border border-border bg-surface/80 px-2 py-1 text-[9px] font-mono text-text-secondary backdrop-blur-sm" aria-label="NEC coordinate legend">
               <span className="text-red-500">X</span> / <span className="text-emerald-500">Y</span> / <span className="text-blue-500">Z up</span> · grid {groundGridMetrics.cellSize} m · snap {snapSize > 0 ? `${snapSize} m` : "off"}
             </div>
           )}
@@ -690,12 +690,6 @@ export function EditorPage() {
           {viewportMode === "3d" && (viewToggles.pattern || viewToggles.volumetric) && patternData && (
             <div className="absolute top-2 left-1/2 z-10 -translate-x-1/2">
               <ColorScale minLabel="Min" maxLabel="Max" unit="dBi" />
-            </div>
-          )}
-
-          {viewportMode === "3d" && (viewToggles.pattern || viewToggles.volumetric) && patternData && (
-            <div className="pointer-events-none absolute bottom-12 right-2 z-10 rounded border border-border bg-surface/80 px-2 py-1 text-[9px] text-text-secondary shadow backdrop-blur-sm" data-testid="pattern-scale-status">
-              Pattern display 1.50× · zoom with the viewport wheel
             </div>
           )}
 
