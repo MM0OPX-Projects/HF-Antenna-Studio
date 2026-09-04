@@ -22,7 +22,7 @@ import { PostProcessing } from "./PostProcessing";
 import { EditorAntennaModel } from "./EditorAntennaModel";
 import { RadiationPattern3D } from "./RadiationPattern3D";
 import { PatternOriginReference } from "./PatternOriginReference";
-import { patternOriginForExcitations } from "./pattern-origin";
+import { patternOriginForGeometry } from "./pattern-origin";
 import { VolumetricShells } from "./VolumetricShells";
 import { GroundReflection } from "./GroundReflection";
 import { CurrentDistribution3D } from "./CurrentDistribution3D";
@@ -684,22 +684,11 @@ function EditorSceneContent({
     [transmissionLines, wireDataList]
   );
 
-  // Anchor the visual pattern to the requested feed connection. Multi-source
-  // combined patterns use the feed centroid; unresolved imports fall back to
-  // the geometry centroid. This does not affect the solver model.
+  // Anchor the visual pattern to the lowest physical antenna point. This is a
+  // display reference only; it never affects the solver model or feed marker.
   const antennaCentroid = useMemo((): [number, number, number] => {
-    const feedOrigin = patternOriginForExcitations(wireDataList, excitations);
-    if (feedOrigin) return feedOrigin;
-    if (wires.length === 0) return [0, 0, 0];
-    let sumX = 0, sumY = 0, sumZ = 0;
-    for (const w of wires) {
-      sumX += (w.x1 + w.x2) / 2;
-      sumY += (w.y1 + w.y2) / 2;
-      sumZ += (w.z1 + w.z2) / 2;
-    }
-    const n = wires.length;
-    return [sumX / n, sumZ / n, -sumY / n];
-  }, [excitations, wireDataList, wires]);
+    return patternOriginForGeometry(wireDataList) ?? [0, 0, 0];
+  }, [wireDataList]);
   const displayedPatternScale = visualScale.patternScale * patternScaleMultiplier;
 
   // Ghost wire for add mode preview

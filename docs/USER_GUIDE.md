@@ -46,6 +46,8 @@ Choose the application-wide **Wire** material in the top bar: Copper is the defa
 
 ## Results
 
+The 3D radiation surface is a far-field visualisation and has no physical emission point. HF Antenna Studio places its display reference at the lowest physical antenna point, with the ground plane shown separately. The orange source marker remains at the actual NEC feed segment. This is a visual convention only and does not change NEC results.
+
 - **Azimuth cut** and **Elevation cut** are presented together wherever a solved antenna model is inspected. Design and Wire Editor pin both windows in their result area; Compare overlays condition-compatible models; Sweeps and Optimiser show the selected exact point or retained solution. Frequency Analyser and Measurement Comparison preserve their fast impedance-only batch and then run one separately labelled, cancellable full-pattern calculation at the selected or minimum-SWR frequency. Changing the antenna or frequency hides the old cuts until recalculation, so an earlier pattern is never presented as current.
 - `R + jX Ω` is the complex feed impedance at the selected source/reference point.
 - SWR is derived against the selected 50 Ω or 75 Ω reference; changing reference impedance changes SWR, not the solved antenna impedance.

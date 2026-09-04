@@ -11,6 +11,7 @@ import { CameraControls } from "./CameraControls";
 import { PostProcessing } from "./PostProcessing";
 import { RadiationPattern3D } from "./RadiationPattern3D";
 import { VolumetricShells } from "./VolumetricShells";
+import { patternOriginForGeometry } from "./pattern-origin";
 import { GroundReflection } from "./GroundReflection";
 import { CurrentDistribution3D } from "./CurrentDistribution3D";
 import { NearFieldPlane } from "./NearFieldPlane";
@@ -83,22 +84,11 @@ export function SceneRoot({
     []
   );
 
-  // Compute antenna centroid in Three.js coordinates for pattern positioning.
-  // NEC2: X=east, Y=north, Z=up → Three.js: X=east, Y=up, Z=south(=-north)
+  // Compute a visual-only pattern reference at the lowest physical antenna
+  // point, never at the feedpoint. NEC far-field results have no emission
+  // origin; this avoids a misleading detached bubble for centre-fed models.
   const antennaCentroid = useMemo((): [number, number, number] => {
-    if (wires.length === 0) return [0, 0, 0];
-    let sumX = 0;
-    let sumY = 0;
-    let sumZ = 0;
-    for (const w of wires) {
-      // Average of both endpoints for each wire
-      sumX += (w.x1 + w.x2) / 2;
-      sumY += (w.y1 + w.y2) / 2;
-      sumZ += (w.z1 + w.z2) / 2;
-    }
-    const n = wires.length;
-    // NEC2 → Three.js coordinate swap: [necX, necZ, -necY]
-    return [sumX / n, sumZ / n, -sumY / n];
+    return patternOriginForGeometry(wires) ?? [0, 0, 0];
   }, [wires]);
 
   return (
