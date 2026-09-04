@@ -158,7 +158,7 @@ function EditorSceneContent({
   currentAnimated = false,
   selectedCurrent = null,
   onCurrentSelect,
-  patternScaleMultiplier = 1,
+  patternScaleMultiplier = 1.5,
 }: EditorSceneProps) {
   const theme = useUIStore((s) => s.theme);
   const accurateFeedpoint = useUIStore((s) => s.accurateFeedpoint);
@@ -890,7 +890,7 @@ export function EditorScene({
   measurementSelectedTags = [],
   measurementPointMode = "closest",
   onMeasurementWireSelect,
-  patternScaleMultiplier = 1,
+  patternScaleMultiplier = 1.5,
 }: EditorSceneProps) {
   const theme = useUIStore((s) => s.theme);
   const isPicking = useEditorStore((s) => s.pickingExcitationForTag) !== null;
@@ -964,11 +964,11 @@ export function EditorScene({
       </div>
     )}
     {(radialSystems.length > 0 || excitations.length > 0) && (
-      <div className="pointer-events-none absolute bottom-2 right-2 z-20 max-w-xs rounded border border-border bg-surface/90 px-2.5 py-2 text-[10px] shadow backdrop-blur-sm" data-testid="editor-model-legend">
-        {excitations.length > 0 && <div data-testid="editor-feedpoint-legend"><div className="flex items-center gap-2 font-semibold text-amber-300"><span className="inline-block h-2.5 w-2.5 rounded-full bg-amber-500" />Orange sphere: requested feed connection</div>{excitations.map((source, index) => {
+      <div className="pointer-events-none absolute bottom-2 right-2 z-20 max-w-xs rounded border border-border bg-surface/90 px-2 py-1 text-[10px] shadow backdrop-blur-sm" data-testid="editor-model-legend">
+        {excitations.length > 0 && <div data-testid="editor-feedpoint-legend"><div className="flex items-center gap-2 font-semibold text-amber-300"><span className="inline-block h-2.5 w-2.5 rounded-full bg-amber-500" />Feedpoint source</div>{excitations.map((source, index) => {
           const wire = wires.find((candidate) => candidate.tag === source.wire_tag);
           const placement = wire ? feedpointPlacement(source, wire) : null;
-          return <p key={`${source.wire_tag}:${index}`} className="mt-1 text-text-secondary">Source {index + 1}: Wire {source.wire_tag}, requested {placement ? `${(placement.requestedRatio * 100).toFixed(1)}%` : "position unavailable"}; NEC segment {source.segment}{placement ? ` centre ${(placement.actualRatio * 100).toFixed(1)}%` : ""}</p>;
+          return <p key={`${source.wire_tag}:${index}`} className="mt-1 text-text-secondary">Source {index + 1} · Wire {source.wire_tag} · {placement ? `${(placement.requestedRatio * 100).toFixed(1)}% requested` : "position unavailable"} · NEC segment {source.segment}</p>;
         })}</div>}
         {radialSystems.length > 0 && <div className={excitations.length > 0 ? "mt-2 border-t border-border pt-2" : undefined} data-testid="editor-radial-legend">
           <div className="flex items-center gap-2 font-semibold text-cyan-300"><span className="inline-block h-1 w-5 rounded bg-cyan-400" />Explicit NEC radial wires</div>

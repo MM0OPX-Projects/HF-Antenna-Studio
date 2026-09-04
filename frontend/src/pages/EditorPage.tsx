@@ -176,7 +176,9 @@ export function EditorPage() {
   } = useWireMeasurement();
 
   const [viewportMode, setViewportMode] = useState<"2d" | "3d">("2d");
-  const [patternScaleMultiplier, setPatternScaleMultiplier] = useState(1);
+  // Keep the radiation surface at a stable, readable size. Camera controls
+  // remain the primary way to zoom the complete 3D scene.
+  const patternScaleMultiplier = 1.5;
 
   // Editor section dropdown: replaces 6 individual accordion toggles
   type EditorSection = "wires" | "templates" | "tools" | "settings";
@@ -692,23 +694,9 @@ export function EditorPage() {
           )}
 
           {viewportMode === "3d" && (viewToggles.pattern || viewToggles.volumetric) && patternData && (
-            <label className="absolute bottom-12 right-2 z-20 w-40 rounded border border-border bg-surface/90 px-2 py-1.5 text-[9px] text-text-secondary shadow backdrop-blur-sm" data-testid="pattern-scale-control">
-              <span className="flex items-center justify-between">
-                <span>Pattern size</span>
-                <span className="font-mono text-text-primary">{patternScaleMultiplier.toFixed(2)}×</span>
-              </span>
-              <input
-                type="range"
-                min={0.25}
-                max={1.5}
-                step={0.05}
-                value={patternScaleMultiplier}
-                onChange={(event) => setPatternScaleMultiplier(Number(event.currentTarget.value))}
-                className="mt-1 w-full accent-violet-400"
-                aria-label="3D radiation pattern visual size"
-              />
-              <span className="block">Origin: {excitations.length > 1 ? `${excitations.length}-source feed centroid` : "feedpoint"}</span>
-            </label>
+            <div className="pointer-events-none absolute bottom-12 right-2 z-10 rounded border border-border bg-surface/80 px-2 py-1 text-[9px] text-text-secondary shadow backdrop-blur-sm" data-testid="pattern-scale-status">
+              Pattern display 1.50× · zoom with the viewport wheel
+            </div>
           )}
 
           {/* Pattern frequency slider — bottom-right above dBi legend on mobile, centered on desktop */}

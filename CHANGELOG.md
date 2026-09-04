@@ -33,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- Simplified the Wire Editor 3D overlays: radiation patterns use a stable 1.5× display scale with normal viewport zoom, the stale feedpoint-origin wording is gone, and the feedpoint legend is compact while detailed placement diagnostics remain available in the inspector
 - Re-anchored every 3D radiation-pattern surface to the lowest physical antenna point (with a ground-plane reference retained) instead of the excitation/feedpoint. Feed markers and all NEC calculations remain unchanged; this fixes misleading gaps for centre-fed vertical dipoles and other elevated or arbitrary-wire models.
 - Preserved historical project and NEC-import behaviour during the conductor-material migration: schema-v8 upgrades older projects to lossless Perfect conductor, and NEC/MAA imports without a conductivity card remain lossless instead of being silently changed to Copper
 - Made all new-wire and existing-wire precision numbers normally editable with Backspace/Delete, temporary blank and partial input states, and safe restoration of the last valid value on blur
