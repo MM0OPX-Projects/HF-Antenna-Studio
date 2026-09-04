@@ -7,6 +7,9 @@ export interface ConductorMaterial {
   conductivitySPerM: number | null;
 }
 
+// Representative room-temperature bulk conductivities. These are generic
+// engineering presets, not alloy/temperature certificates; see
+// docs/CONDUCTOR_MATERIALS.md for sources and limitations.
 export const CONDUCTOR_PRESETS: ReadonlyArray<{ id: ConductorMaterialId; label: string; conductivitySPerM: number | null }> = [
   { id: "copper", label: "Copper", conductivitySPerM: 5.8e7 },
   { id: "aluminum", label: "Aluminium", conductivitySPerM: 3.54e7 },
