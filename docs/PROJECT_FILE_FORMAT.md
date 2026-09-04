@@ -1,6 +1,6 @@
 # HF Antenna Studio project files
 
-Status: implemented browser-local project-management subset, extended 2026-08-25
+Status: implemented browser-local project-management subset, extended 2026-09-04
 
 ## Purpose and boundaries
 
@@ -20,7 +20,7 @@ Browser storage is not encryption and is not a backup. Anyone with access to the
 - Encoding: UTF-8 JSON.
 - Extension: `.hfas`.
 - Legacy imports accepted: `.antennasim` and `.json`.
-- Current model schema: `version: 5`.
+- Current model schema: `version: 8`.
 - Application version: `app_version`.
 - Timestamps: ISO 8601 UTC strings.
 - Model mode: `simulator`, `editor`, `model-comparison`, `parameter-sweep`, or `antenna-optimiser`.
@@ -29,10 +29,11 @@ A minimal current simulator file is structurally equivalent to:
 
 ```json
 {
-  "version": 5,
+  "version": 8,
   "app_version": "1.0.0",
   "created_at": "2026-08-06T12:00:00.000Z",
   "mode": "simulator",
+  "conductor": { "id": "copper", "conductivitySPerM": 58000000 },
   "simulator": {
     "templateId": "dipole",
     "params": {
@@ -57,12 +58,22 @@ An editor file contains:
 - manual-segmentation and length-lock intent where set;
 - excitation, load, and transmission-line definitions;
 - persistent endpoint junctions;
+- managed wire-editor radial systems, including hub endpoint, driven wire, generated-wire tags, representation, dimensions, rotation, droop and clearance;
 - ground and explicit `GE` behaviour;
 - primary and multi-block frequency ranges;
 - the design frequency used for segmentation;
 - retained imported NEC source/card diagnostics when the model originated from a supported NEC import.
+- optional specialist-Module transfer provenance, including its fidelity class, original SI parameters, exact source NEC deck, reference impedance and the reviewed editor-model fingerprint.
+
+An editor excitation may include optional `position_ratio` in the closed range 0–1. This records the user's requested proportional feed position independently of the discrete NEC segment. Older project files without it remain valid; the editor derives the position from the stored segment centre. The solver/export contract continues to use the explicit wire tag, segment, and complex voltage values.
 
 Schema v5 adds three reproducibility-input modes. `modelComparison` stores exactly four slot definitions, common conditions, impedance-sweep settings, and the complete radial-system identity. `parameterSweep.definition` and `antennaOptimiser.definition` store their schema-v2 definitions, including ground constants and radial topology. Point results, solver caches, optimiser history, and plots are intentionally recalculated rather than treated as canonical project input.
+
+Schema v6 adds `editor.radialSystems`. Older editor files migrate with an empty list; existing loose wires are never guessed to be a radial field. Generated radial wires remain ordinary NEC `GW` geometry, while the group record preserves the safe parametric regeneration contract.
+
+Schema v7 adds optional `editor.modelTransfer` evidence. An exact transfer records the source Module and schema, original parameters/deck, 50/75-ohm reference, declared losses and the semantic editor fingerprint accepted at review time. Editing the free-form model does not rewrite this evidence; the Wire Editor compares the current fingerprint and visibly marks the model modified. Older files migrate with `modelTransfer: null`; no origin is inferred.
+
+Schema v8 adds the root `conductor` object, containing a material identifier and conductivity in S/m (or `null` for Perfect conductor). New projects use Copper at `5.8e7 S/m`. Migration deliberately assigns Perfect conductor to v1-v7 files because those versions did not encode finite wire loss; this preserves their historical calculation contract.
 
 ## Schema history and migration
 
@@ -72,7 +83,10 @@ Schema v5 adds three reproducibility-input modes. `modelComparison` stores exact
 | 2 | Persistent editor junctions | Missing source/load/TL and frequency-segment collections are added as empty lists. |
 | 3 | Expanded editor and NEC-import state | Migrates to v4 without inventing simulator sweep intent that was never stored. |
 | 4 | Explicit simulator frequency range and segments | Migrates unchanged to v5. |
-| 5 | Comparison, parameter-sweep, and optimiser project modes with explicit radial identity | Current write format; v1-v4 inputs are retained without inventing workflow state. |
+| 5 | Comparison, parameter-sweep, and optimiser project modes with explicit radial identity | Migrates to v6; workflow inputs are retained. |
+| 6 | Managed parametric radial systems in the arbitrary Wire Editor | Migrates to v7 with no invented Module provenance. |
+| 7 | Optional reviewed specialist-Module transfer provenance and semantic fingerprint | Migrates to v8 with the historical lossless conductor contract. |
+| 8 | Application-wide antenna-conductor material and conductivity | Current write format; older projects become explicit Perfect conductor rather than silently acquiring copper loss. |
 
 Migration operates on a detached JSON copy. Import retains the exact source text in memory during review, reports every applied migration, and does not add or open the migrated project until the user confirms **Import and open**. A newer unknown schema is rejected. The source file is never rewritten.
 
@@ -113,8 +127,8 @@ Recovery is always explicit: the Projects page offers **Recover** or **Discard**
 
 Automated tests cover:
 
-- v1 editor through v5 migration;
-- v3 simulator through v5 migration with the missing-sweep limitation reported;
+- v1 editor through v8 migration, including explicit legacy Perfect-conductor preservation;
+- v3 simulator through v8 migration with the missing-sweep limitation reported;
 - immutable source objects and exact source-text retention during review;
 - current-schema JSON round trips for simulator, editor, comparison, parameter-sweep, and optimiser models;
 - exact real-ground radial-system identity across capture, JSON round trip, restore, autosave route mapping, and browser reopen;
@@ -127,8 +141,8 @@ Automated tests cover:
 
 - Browser `localStorage` quotas vary by browser/profile. The library is intended for canonical models, not large result arrays.
 - The web build cannot provide a persistent arbitrary Windows filesystem path with universal browser support. **Save As** creates a new local-library record; **Export** creates the portable file.
-- Project names are local-library metadata and are represented by the export filename, not embedded in the v5 model document.
+- Project names are local-library metadata and are represented by the export filename, not embedded in the v8 model document.
 - Comparison, parameter-sweep, and optimiser inputs are embedded in `.hfas`; their calculated results retain separate evidence exports and are recalculated after open. Measurement-comparison and other specialist laboratory state is not yet a canonical `.hfas` mode.
 - Import rejects unsupported extensions and source text over 5,000,000 characters, but runtime validation is not yet a complete finite-number/range/aggregate-array schema audit. Broader untrusted-input and fuzz testing remain Phase 4 work.
-- Schema v5 follows documented SI field conventions but does not yet carry the future canonical contract's explicit top-level unit declaration, document UUID, title, or notes.
+- Schema v8 follows documented SI field conventions but does not yet carry the future canonical contract's explicit top-level unit declaration, document UUID, title, or notes.
 - Native packaged atomic filesystem writes, backup rotation, Windows path/encoding tests, and cross-browser quota testing are not claimed.

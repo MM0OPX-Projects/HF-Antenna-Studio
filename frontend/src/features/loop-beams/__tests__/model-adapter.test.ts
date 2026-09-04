@@ -1,8 +1,12 @@
 import { readFileSync } from "node:fs";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
+import { useUIStore } from "../../../stores/uiStore";
+import { LEGACY_CONDUCTOR } from "../../../engine/conductor";
 import { adaptLoopBeamToNec, segmentLoopBeamWires } from "../nec-adapter";
 import { generateLoopBeamModel, loopBeamWavelengthM, resizeCubicalQuad, startingCubicalQuadModel, startingDeltaLoopModel, startingDiamondLoopModel, startingHexbeamModel, startingSquareLoopModel, validateLoopBeamModel } from "../model";
 import type { LoopBeamWire } from "../schema";
+
+beforeEach(() => useUIStore.getState().setConductor(LEGACY_CONDUCTOR));
 
 function length(wire: LoopBeamWire): number { return Math.hypot(wire.endM.x - wire.startM.x, wire.endM.y - wire.startM.y, wire.endM.z - wire.startM.z); }
 function total(wires: LoopBeamWire[], family: LoopBeamWire["family"]): number { return wires.filter((wire) => wire.family === family).reduce((sum, wire) => sum + length(wire), 0); }

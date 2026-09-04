@@ -14,6 +14,7 @@ import { formatPhaseDegrees } from "../features/phased-arrays/presentation";
 import type { LineLengthInput, PhasedArrayModel, PhasedRadialTopology, RadialRepresentation, SavedPhasedTrace } from "../features/phased-arrays/schema";
 import { usePhasedArrayCalculation } from "../features/phased-arrays/usePhasedArrayCalculation";
 import { YagiSliderField } from "../features/yagi-beams/YagiSliderField";
+import { useUIStore } from "../stores/uiStore";
 
 const TRACE_COLORS = ["#a855f7", "#14b8a6", "#eab308", "#f43f5e"];
 const BAND_PRESETS = [{ id: "40m", label: "40 m", hz: 7_100_000 }, { id: "20m", label: "20 m", hz: 14_100_000 }, { id: "15m", label: "15 m", hz: 21_200_000 }, { id: "10m", label: "10 m", hz: 28_400_000 }];
@@ -34,12 +35,13 @@ function NullableTermination({ label, value, testId, onChange }: { label: string
 }
 
 export function PhasedArraysPage() {
+  const conductor = useUIStore((state) => state.conductor);
   const [model, setModel] = useState(() => startingPhasedArrayModel());
   const [displayMode, setDisplayMode] = useState<PatternDisplayMode>("absolute");
   const [traces, setTraces] = useState<SavedPhasedTrace[]>([]);
   const [phaseSweep, setPhaseSweep] = useState(false);
   const generated = useMemo(() => generatePhasedArray(model), [model]);
-  const key = useMemo(() => phasedArrayModelKey(model), [model]);
+  const key = useMemo(() => phasedArrayModelKey(model), [conductor, model]);
   const segmentation = useMemo(() => segmentPhasedWires(generated), [generated]);
   const valid = !hasPhasedErrors(generated) && !segmentation.issues.some((issue) => issue.severity === "error");
   const calculation = usePhasedArrayCalculation(model, valid);
@@ -49,7 +51,7 @@ export function PhasedArraysPage() {
   const errors = [...generated.issues, ...segmentation.issues].filter((issue, index, all) => issue.severity === "error" && all.findIndex((candidate) => candidate.code === issue.code) === index);
   const warnings = [...generated.issues, ...segmentation.issues].filter((issue, index, all) => issue.severity === "warning" && all.findIndex((candidate) => candidate.code === issue.code) === index);
   const resultWarnings = (result?.warnings ?? []).filter((message) => !warnings.some((warning) => warning.message === message));
-  const previewDeck = useMemo(() => { try { return model.mode === "physical-feed-network" ? adaptPhysicalNetworkToNec(generated).deck : adaptIdealCalibrationToNec(generated, 1).deck; } catch { return null; } }, [generated, model.mode]);
+  const previewDeck = useMemo(() => { try { return model.mode === "physical-feed-network" ? adaptPhysicalNetworkToNec(generated).deck : adaptIdealCalibrationToNec(generated, 1).deck; } catch { return null; } }, [conductor, generated, model.mode]);
   const shownDeck = result?.generatedNec ?? previewDeck;
 
   useEffect(() => {

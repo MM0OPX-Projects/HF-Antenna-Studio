@@ -3,11 +3,13 @@ import { HeightLabScheduler, type HeightCalculationState } from "../height-lab/s
 import { generateYagiModel, yagiModelKey } from "./model";
 import { runYagiModel } from "./service";
 import type { YagiAntennaModel, YagiSolverResult } from "./schema";
+import { useUIStore } from "../../stores/uiStore";
 
 const EMPTY: HeightCalculationState<YagiSolverResult> = { key: "", phase: "idle", result: null, error: null };
 
 export function useYagiCalculation(model: YagiAntennaModel, valid: boolean) {
-  const key = useMemo(() => yagiModelKey(model), [model]);
+  const conductor = useUIStore((state) => state.conductor);
+  const key = useMemo(() => yagiModelKey(model), [conductor, model]);
   const [scheduler] = useState(() => new HeightLabScheduler<YagiSolverResult>(450, 48));
   const [state, setState] = useState(EMPTY);
   useEffect(() => {

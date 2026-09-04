@@ -1,6 +1,7 @@
 import { HF_AMATEUR_BANDS } from "../antenna-templates/bands";
 import { defaultNearSurfaceClearanceM, validateNearSurfaceRadialPlane } from "../ground-radials/model";
 import { SPEED_OF_LIGHT_M_PER_S } from "../verified-dipole/model";
+import { useUIStore } from "../../stores/uiStore";
 import type {
   GeneratedVerticalModel,
   VerticalAntennaModel,
@@ -182,7 +183,7 @@ export function generateVerticalModel(model: VerticalAntennaModel): GeneratedVer
 }
 
 export function verticalModelKey(model: VerticalAntennaModel): string {
-  return JSON.stringify(model);
+  return JSON.stringify({ model, conductor: useUIStore.getState().conductor });
 }
 
 export function hasVerticalErrors(generated: GeneratedVerticalModel): boolean {

@@ -69,14 +69,14 @@ export function GainTable({ data }: GainTableProps) {
   }
 
   return (
-    <div className="space-y-0.5">
+    <div className="w-full max-w-lg space-y-0.5" data-testid="gain-performance-summary">
       {metrics.map((m) => (
         <div
           key={m.label}
-          className="flex justify-between items-center py-1 text-[11px] font-mono"
+          className="grid grid-cols-[minmax(8rem,12rem)_minmax(8rem,auto)] items-center gap-x-5 py-1 text-[11px] font-mono"
         >
           <span className="text-text-secondary">{m.label}</span>
-          <span className={m.colorClass ?? "text-text-primary"}>{m.value}</span>
+          <span className={`text-right ${m.colorClass ?? "text-text-primary"}`}>{m.value}</span>
         </div>
       ))}
     </div>

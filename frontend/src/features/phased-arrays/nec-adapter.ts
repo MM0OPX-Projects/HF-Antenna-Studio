@@ -1,4 +1,6 @@
 import type { NecDeckRunRequest } from "../../engine/wasm/worker";
+import { applyConductorToDeck } from "../../engine/conductor";
+import { useUIStore } from "../../stores/uiStore";
 import { lineMetrics, phasedWavelengthM } from "./model";
 import type {
   ComplexValue,
@@ -118,7 +120,7 @@ function finishDeck(
   if (lines.some((line) => line.startsWith("GW ") && line.length > 80)) {
     throw new RangeError("A generated GW card exceeds NEC's 80-column portability limit.");
   }
-  const deck = `${lines.join("\n")}\n`;
+  const deck = applyConductorToDeck(`${lines.join("\n")}\n`, useUIStore.getState().conductor);
   const request: NecDeckRunRequest = {
     deck,
     parse: fullPattern

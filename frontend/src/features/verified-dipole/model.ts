@@ -24,7 +24,6 @@ export interface HorizontalDipoleModel {
   ground: DipoleGround;
   referenceImpedanceOhm: 50 | 75;
   orientation: "x";
-  conductor: { kind: "perfect" };
 }
 export function createDefaultDipoleModel(): HorizontalDipoleModel {
   return {
@@ -37,6 +36,5 @@ export function createDefaultDipoleModel(): HorizontalDipoleModel {
     ground: { kind: "perfect" },
     referenceImpedanceOhm: 50,
     orientation: "x",
-    conductor: { kind: "perfect" },
   };
 }

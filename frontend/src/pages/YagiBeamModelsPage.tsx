@@ -12,6 +12,7 @@ import { useYagiCalculation } from "../features/yagi-beams/useYagiCalculation";
 import { YagiCurrentPlot } from "../features/yagi-beams/YagiCurrentPlot";
 import { YagiGeometry3D } from "../features/yagi-beams/YagiGeometry3D";
 import { YagiSliderField } from "../features/yagi-beams/YagiSliderField";
+import { useUIStore } from "../stores/uiStore";
 
 const TRACE_COLORS = ["#a855f7", "#14b8a6", "#eab308", "#f43f5e"];
 
@@ -26,12 +27,13 @@ function statusText(phase: string): string {
 }
 
 export function YagiBeamModelsPage() {
+  const conductor = useUIStore((state) => state.conductor);
   const [model, setModel] = useState(() => startingYagiModel());
   const [mode, setMode] = useState<PatternDisplayMode>("absolute");
   const [traces, setTraces] = useState<SavedYagiTrace[]>([]);
   const generated = useMemo(() => generateYagiModel(model), [model]);
-  const key = useMemo(() => yagiModelKey(model), [model]);
-  const adapted = useMemo(() => { try { return adaptYagiToNec(generated); } catch { return null; } }, [generated]);
+  const key = useMemo(() => yagiModelKey(model), [conductor, model]);
+  const adapted = useMemo(() => { try { return adaptYagiToNec(generated); } catch { return null; } }, [conductor, generated]);
   const valid = !hasYagiErrors(generated) && adapted !== null;
   const calculation = useYagiCalculation(model, valid);
   const result = calculation.result;

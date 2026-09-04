@@ -6,31 +6,33 @@
  * shows a summary.
  */
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useEditorStore } from "../../stores/editorStore";
 import type { EditorWire } from "../../stores/editorStore";
-import { centerSegment } from "../../engine/segmentation";
-import { useUIStore } from "../../stores/uiStore";
 import { NumberInput } from "../ui/NumberInput";
-import type { Excitation } from "../../templates/types";
 import { LoadEditor } from "./LoadEditor";
+import { FeedpointInspector } from "./FeedpointInspector";
+import { RadialSystemPanel } from "./RadialSystemPanel";
+import { editorUnitDecimals, editorUnitToMetres, metresToEditorUnit, type EditorLengthUnit } from "../../features/wire-editor/units";
 
 function CoordField({
   label,
   value,
   onChange,
+  unit,
 }: {
   label: string;
   value: number;
   onChange: (v: number) => void;
+  unit: EditorLengthUnit;
 }) {
   return (
     <NumberInput
       label={label}
-      value={value}
-      onChange={onChange}
-      decimals={6}
-      unit="m"
+      value={metresToEditorUnit(value, unit)}
+      onChange={(next) => onChange(editorUnitToMetres(next, unit))}
+      decimals={editorUnitDecimals(unit)}
+      unit={unit}
     />
   );
 }
@@ -41,12 +43,16 @@ function WireLengthSection({
   onToggleLock,
   onBend,
   onHang,
+  onSetDirection,
+  unit,
 }: {
   wire: EditorWire;
-  onSetLength: (len: number) => void;
+  onSetLength: (len: number, anchor: "start" | "end" | "center") => void;
   onToggleLock: () => void;
   onBend: (position: number, angleDeg: number, plane: "horizontal" | "vertical", numSegments: number) => void;
   onHang: (numSegments: number, targetLength?: number) => void;
+  onSetDirection: (bearingDeg: number, elevationDeg: number, anchor: "start" | "end" | "center") => void;
+  unit: EditorLengthUnit;
 }) {
   const [showBend, setShowBend] = useState(false);
   const [bendAngle, setBendAngle] = useState(90);
@@ -55,10 +61,19 @@ function WireLengthSection({
   const [showHang, setShowHang] = useState(false);
   const [hangSegments, setHangSegments] = useState(5);
   const [hangLength, setHangLength] = useState<number | null>(null); // null = wire length + 1m
+  const [anchor, setAnchor] = useState<"start" | "end" | "center">("center");
 
   const length = Math.sqrt(
     (wire.x2 - wire.x1) ** 2 + (wire.y2 - wire.y1) ** 2 + (wire.z2 - wire.z1) ** 2
   );
+  const direction = useMemo(() => {
+    const dx = wire.x2 - wire.x1;
+    const dy = wire.y2 - wire.y1;
+    const dz = wire.z2 - wire.z1;
+    const bearingDeg = ((Math.atan2(dx, dy) * 180 / Math.PI) + 360) % 360;
+    const elevationDeg = Math.atan2(dz, Math.hypot(dx, dy)) * 180 / Math.PI;
+    return { bearingDeg, elevationDeg };
+  }, [wire]);
 
   return (
     <div className="border-t border-border pt-2 space-y-1.5">
@@ -66,12 +81,12 @@ function WireLengthSection({
       <div className="flex items-center gap-1">
         <div className="flex-1">
           <NumberInput
-            value={length}
-            onChange={(v) => { if (v > 0) onSetLength(v); }}
+            value={metresToEditorUnit(length, unit)}
+            onChange={(v) => { if (v > 0) onSetLength(editorUnitToMetres(v, unit), anchor); }}
             min={0.000001}
-            max={1000}
-            decimals={6}
-            unit="m"
+            max={metresToEditorUnit(1000, unit)}
+            decimals={editorUnitDecimals(unit)}
+            unit={unit}
           />
         </div>
         <button
@@ -91,6 +106,19 @@ function WireLengthSection({
             )}
           </svg>
         </button>
+      </div>
+      <label className="flex items-center gap-2 text-[10px] text-text-secondary">
+        Keep
+        <select value={anchor} onChange={(event) => setAnchor(event.currentTarget.value as typeof anchor)} className="flex-1 rounded border border-border bg-background px-1.5 py-1 text-[10px] text-text-primary">
+          <option value="start">start fixed</option>
+          <option value="center">centre fixed</option>
+          <option value="end">end fixed</option>
+        </select>
+      </label>
+      <div className="grid grid-cols-2 gap-2 rounded border border-border/70 bg-background/50 p-2">
+        <NumberInput label="Bearing" value={direction.bearingDeg} onChange={(value) => onSetDirection(value, direction.elevationDeg, anchor)} min={0} max={360} decimals={1} unit="deg" />
+        <NumberInput label="Elevation" value={direction.elevationDeg} onChange={(value) => onSetDirection(direction.bearingDeg, value, anchor)} min={-90} max={90} decimals={1} unit="deg" />
+        <p className="col-span-2 text-[9px] leading-4 text-text-secondary">Bearing is clockwise from +Y (north). Elevation is above the X/Y plane.</p>
       </div>
 
       {/* Bend wire tool */}
@@ -222,21 +250,16 @@ function WireLengthSection({
 export function WirePropertiesPanel() {
   const selectedTags = useEditorStore((s) => s.selectedTags);
   const wires = useEditorStore((s) => s.wires);
-  const excitations = useEditorStore((s) => s.excitations);
   const updateWire = useEditorStore((s) => s.updateWire);
-  const setExcitation = useEditorStore((s) => s.setExcitation);
-  const removeExcitation = useEditorStore((s) => s.removeExcitation);
   const splitWire = useEditorStore((s) => s.splitWire);
   const resetSegments = useEditorStore((s) => s.resetSegments);
   const deleteWires = useEditorStore((s) => s.deleteWires);
   const setWireLength = useEditorStore((s) => s.setWireLength);
+  const setWireDirection = useEditorStore((s) => s.setWireDirection);
   const toggleLengthLock = useEditorStore((s) => s.toggleLengthLock);
   const bendWire = useEditorStore((s) => s.bendWire);
   const hangWire = useEditorStore((s) => s.hangWire);
-  const pickingExcitationForTag = useEditorStore((s) => s.pickingExcitationForTag);
-  const setPickingExcitationForTag = useEditorStore((s) => s.setPickingExcitationForTag);
-  const accurateFeedpoint = useUIStore((s) => s.accurateFeedpoint);
-  const setAccurateFeedpoint = useUIStore((s) => s.setAccurateFeedpoint);
+  const [unit, setUnit] = useState<EditorLengthUnit>("m");
 
   const selectedWires = wires.filter((w) => selectedTags.has(w.tag));
 
@@ -289,17 +312,11 @@ export function WirePropertiesPanel() {
 
   // Single wire selected
   const wire = selectedWires[0]!;
-  const excitation: Excitation | undefined = excitations.find((e) => e.wire_tag === wire.tag);
-  const hasExcitation = !!excitation;
-  const isPicking = pickingExcitationForTag === wire.tag;
-
   return (
     <div className="p-2 space-y-3">
       {/* Wire header */}
       <div className="flex items-center justify-between">
-        <h4 className="text-xs font-medium text-text-primary">
-          Wire <span className="text-accent">{wire.tag}</span>
-        </h4>
+        <div><h4 className="text-xs font-medium text-text-primary">Wire and Feedpoint Inspector</h4><p className="text-[10px] text-text-secondary">Selected wire <span className="font-mono text-accent">{wire.tag}</span></p></div>
         <div className="flex items-center gap-1">
           <NumberInput
             value={wire.segments}
@@ -323,6 +340,14 @@ export function WirePropertiesPanel() {
           )}
         </div>
       </div>
+      <label className="flex items-center justify-between gap-2 text-[10px] text-text-secondary">Display units
+        <select value={unit} onChange={(event) => setUnit(event.currentTarget.value as EditorLengthUnit)} className="rounded border border-border bg-background px-2 py-1 text-[10px] text-text-primary" data-testid="wire-inspector-units">
+          <option value="m">metres</option><option value="mm">millimetres</option><option value="ft">feet</option><option value="in">inches</option>
+        </select>
+      </label>
+
+      {/* Keep source placement prominent; it is a primary modelling action. */}
+      <FeedpointInspector wire={wire} unit={unit} />
 
       {/* Endpoint 1 */}
       <div className="space-y-1">
@@ -332,16 +357,19 @@ export function WirePropertiesPanel() {
         <CoordField
           label="X"
           value={wire.x1}
+          unit={unit}
           onChange={(v) => handleCoordChange(wire.tag, "x1", v)}
         />
         <CoordField
           label="Y"
           value={wire.y1}
+          unit={unit}
           onChange={(v) => handleCoordChange(wire.tag, "y1", v)}
         />
         <CoordField
           label="Z"
           value={wire.z1}
+          unit={unit}
           onChange={(v) => handleCoordChange(wire.tag, "z1", v)}
         />
       </div>
@@ -354,16 +382,19 @@ export function WirePropertiesPanel() {
         <CoordField
           label="X"
           value={wire.x2}
+          unit={unit}
           onChange={(v) => handleCoordChange(wire.tag, "x2", v)}
         />
         <CoordField
           label="Y"
           value={wire.y2}
+          unit={unit}
           onChange={(v) => handleCoordChange(wire.tag, "y2", v)}
         />
         <CoordField
           label="Z"
           value={wire.z2}
+          unit={unit}
           onChange={(v) => handleCoordChange(wire.tag, "z2", v)}
         />
       </div>
@@ -387,139 +418,15 @@ export function WirePropertiesPanel() {
       {/* Wire length — editable + lock toggle */}
       <WireLengthSection
         wire={wire}
-        onSetLength={(len) => setWireLength(wire.tag, len, "end")}
+        unit={unit}
+        onSetLength={(len, anchor) => setWireLength(wire.tag, len, anchor)}
+        onSetDirection={(bearing, elevation, anchor) => setWireDirection(wire.tag, bearing, elevation, anchor)}
         onToggleLock={() => toggleLengthLock(wire.tag)}
         onBend={(pos, angle, plane, segs) => bendWire(wire.tag, pos, angle, plane, segs)}
         onHang={(segs, len) => hangWire(wire.tag, segs, len)}
       />
 
-      {/* Excitation */}
-      <div className="border-t border-border pt-2 space-y-1.5">
-        <div className="text-[11px] text-text-secondary font-medium">
-          Excitation
-        </div>
-        {hasExcitation ? (
-          <>
-            {/* Segment picker: number input + total */}
-            <div className="flex items-center gap-1">
-              <NumberInput
-                label="Seg"
-                value={excitation.segment}
-                onChange={(v) => setExcitation(wire.tag, v)}
-                min={1}
-                max={wire.segments}
-                decimals={0}
-              />
-              <span className="text-[11px] text-text-secondary font-mono">
-                of {wire.segments}
-              </span>
-            </div>
-
-            {/* Quick-pick buttons */}
-            <div className="flex gap-1">
-              <button
-                onClick={() => setExcitation(wire.tag, 1)}
-                className={`flex-1 py-0.5 text-[11px] rounded transition-colors ${
-                  excitation.segment === 1
-                    ? "bg-accent/20 text-accent"
-                    : "bg-surface-hover text-text-secondary hover:text-text-primary"
-                }`}
-              >
-                Start
-              </button>
-              <button
-                onClick={() =>
-                  setExcitation(wire.tag, centerSegment(wire.segments))
-                }
-                className={`flex-1 py-0.5 text-[11px] rounded transition-colors ${
-                  excitation.segment === centerSegment(wire.segments)
-                    ? "bg-accent/20 text-accent"
-                    : "bg-surface-hover text-text-secondary hover:text-text-primary"
-                }`}
-              >
-                Center
-              </button>
-              <button
-                onClick={() => setExcitation(wire.tag, wire.segments)}
-                className={`flex-1 py-0.5 text-[11px] rounded transition-colors ${
-                  excitation.segment === wire.segments
-                    ? "bg-accent/20 text-accent"
-                    : "bg-surface-hover text-text-secondary hover:text-text-primary"
-                }`}
-              >
-                End
-              </button>
-            </div>
-
-            {/* Pick on wire + Remove */}
-            <div className="flex gap-1">
-              <button
-                onClick={() =>
-                  setPickingExcitationForTag(isPicking ? null : wire.tag)
-                }
-                className={`flex-1 py-0.5 text-[11px] rounded transition-colors ${
-                  isPicking
-                    ? "bg-swr-warning/30 text-swr-warning"
-                    : "bg-swr-warning/10 text-swr-warning hover:bg-swr-warning/20"
-                }`}
-              >
-                {isPicking ? "Cancel pick" : "Pick on wire"}
-              </button>
-              <button
-                onClick={() => {
-                  removeExcitation(wire.tag);
-                  if (isPicking) setPickingExcitationForTag(null);
-                }}
-                className="flex-1 py-0.5 text-[11px] rounded bg-swr-bad/10 text-swr-bad hover:bg-swr-bad/20 transition-colors"
-              >
-                Remove
-              </button>
-            </div>
-
-            {/* Accurate feedpoint visualization */}
-            <div className="relative flex items-center gap-1.5 group/feedhelp">
-              <input
-                type="checkbox"
-                checked={accurateFeedpoint}
-                onChange={(e) => setAccurateFeedpoint(e.target.checked)}
-                className="accent-accent w-3 h-3"
-              />
-              <span className="text-[11px] text-text-secondary">
-                Accurate feedpoint
-              </span>
-              <span className="text-[11px] text-text-secondary/50 cursor-help">
-                ?
-              </span>
-              <div className="absolute bottom-full left-0 mb-1 hidden group-hover/feedhelp:block bg-surface border border-border rounded-md px-2.5 py-1.5 shadow-lg text-[11px] text-text-secondary leading-relaxed w-52 z-50 pointer-events-none">
-                NEC2 applies voltage at the segment center, not the wire
-                endpoint. When enabled, the marker shows the exact segment
-                center. When disabled, endpoint segments snap to the wire
-                edge for a cleaner visual at junctions.
-              </div>
-            </div>
-          </>
-        ) : (
-          <div className="space-y-1">
-            <button
-              onClick={() =>
-                setExcitation(wire.tag, centerSegment(wire.segments))
-              }
-              className="w-full py-0.5 text-[11px] rounded bg-swr-warning/20 text-swr-warning hover:bg-swr-warning/30 transition-colors"
-            >
-              Set as feedpoint
-            </button>
-            <button
-              onClick={() => {
-                setExcitation(wire.tag, centerSegment(wire.segments));
-                setPickingExcitationForTag(wire.tag);
-              }}
-              className="w-full py-0.5 text-[11px] rounded bg-swr-warning/10 text-swr-warning hover:bg-swr-warning/20 transition-colors"
-            >
-              Pick on wire
-            </button>
-          </div>
-        )}
-      </div>
+      <RadialSystemPanel wire={wire} />
 
       <LoadEditor wire={wire} />
 

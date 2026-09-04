@@ -1,8 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
+import { useUIStore } from "../../../stores/uiStore";
+import { LEGACY_CONDUCTOR } from "../../../engine/conductor";
 import { readFileSync } from "node:fs";
 import { adaptVerticalToNec, segmentVerticalWires } from "../nec-adapter";
 import { buildVerticalWires, generateVerticalModel, regenerateVerticalStartingDimensions, startingVerticalModel, switchVerticalConfiguration, validateVerticalModel, wavelengthM } from "../model";
 import { nec2UserGuideExample10Equivalent } from "../validation-cases";
+
+beforeEach(() => useUIStore.getState().setConductor(LEGACY_CONDUCTOR));
 
 function distance(a: { x: number; y: number; z: number }, b: { x: number; y: number; z: number }): number {
   return Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);

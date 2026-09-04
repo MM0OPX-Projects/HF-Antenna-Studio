@@ -1,7 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
+import { useUIStore } from "../../../stores/uiStore";
+import { LEGACY_CONDUCTOR } from "../../../engine/conductor";
 import { readFileSync } from "node:fs";
 import { adaptYagiToNec, segmentYagiWires } from "../nec-adapter";
 import { buildYagiWires, generateYagiModel, regenerateYagiStartingDimensions, resizeYagi, startingYagiModel, validateYagiModel, yagiWavelengthM } from "../model";
+
+beforeEach(() => useUIStore.getState().setConductor(LEGACY_CONDUCTOR));
 
 describe("typed Yagi model and NEC adapter", () => {
   it("creates distinct 2-element, 3-element, and configurable arrays on a +Y boom", () => {

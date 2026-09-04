@@ -21,6 +21,8 @@ import { CameraControls } from "./CameraControls";
 import { PostProcessing } from "./PostProcessing";
 import { EditorAntennaModel } from "./EditorAntennaModel";
 import { RadiationPattern3D } from "./RadiationPattern3D";
+import { PatternOriginReference } from "./PatternOriginReference";
+import { patternOriginForExcitations } from "./pattern-origin";
 import { VolumetricShells } from "./VolumetricShells";
 import { GroundReflection } from "./GroundReflection";
 import { CurrentDistribution3D } from "./CurrentDistribution3D";
@@ -41,6 +43,7 @@ import type { WireMeasurementPointMode } from "../../utils/wire-measurement";
 import { CurrentVisualisationControls } from "../../features/current-visualisation/CurrentVisualisationControls";
 import { SafeCanvas } from "./SafeCanvas";
 import type { CurrentVisualMode } from "../../features/current-visualisation/types";
+import { feedpointPlacement, requestedFeedRatio } from "../../features/wire-editor/feedpoint";
 
 interface EditorSceneProps {
   viewToggles: ViewToggles;
@@ -56,6 +59,7 @@ interface EditorSceneProps {
   currentAnimated?: boolean;
   selectedCurrent?: SegmentCurrent | null;
   onCurrentSelect?: (current: SegmentCurrent) => void;
+  patternScaleMultiplier?: number;
 }
 
 /** Ground plane for raycasting (XZ plane at y=0 in Three.js = z=0 in NEC2) */
@@ -154,6 +158,7 @@ function EditorSceneContent({
   currentAnimated = false,
   selectedCurrent = null,
   onCurrentSelect,
+  patternScaleMultiplier = 1,
 }: EditorSceneProps) {
   const theme = useUIStore((s) => s.theme);
   const accurateFeedpoint = useUIStore((s) => s.accurateFeedpoint);
@@ -167,8 +172,11 @@ function EditorSceneContent({
   const selectedTags = useEditorStore((s) => s.selectedTags);
   const selectedEndpoints = useEditorStore((s) => s.selectedEndpoints);
   const junctions = useEditorStore((s) => s.junctions);
+  const radialSystems = useEditorStore((s) => s.radialSystems);
   const mode = useEditorStore((s) => s.mode);
   const snapSize = useEditorStore((s) => s.snapSize);
+  const continuousDraw = useEditorStore((s) => s.continuousDraw);
+  const endpointSnap = useEditorStore((s) => s.endpointSnap);
   const verticalDrag = useEditorStore((s) => s.verticalDrag);
   const selectWire = useEditorStore((s) => s.selectWire);
   const deselectAll = useEditorStore((s) => s.deselectAll);
@@ -188,12 +196,14 @@ function EditorSceneContent({
   const setPickingExcitationForTag = useEditorStore((s) => s.setPickingExcitationForTag);
 
   /** Handle segment pick in 3D viewport — sets excitation and exits pick mode */
+  const setExcitationPosition = useEditorStore((s) => s.setExcitationPosition);
   const handleSegmentPick = useCallback(
-    (tag: number, segment: number) => {
-      setExcitation(tag, segment);
+    (tag: number, segment: number, positionRatio?: number) => {
+      if (positionRatio === undefined) setExcitation(tag, segment);
+      else setExcitationPosition(tag, positionRatio);
       setPickingExcitationForTag(null);
     },
-    [setExcitation, setPickingExcitationForTag]
+    [setExcitation, setExcitationPosition, setPickingExcitationForTag]
   );
 
   /** Build a map from wire tag to excitation segment for quick lookup */
@@ -204,6 +214,15 @@ function EditorSceneContent({
     }
     return map;
   }, [excitations]);
+
+  const excitationRatioMap = useMemo(() => {
+    const map = new Map<number, number>();
+    for (const excitation of excitations) {
+      const wire = wires.find((candidate) => candidate.tag === excitation.wire_tag);
+      if (wire) map.set(excitation.wire_tag, requestedFeedRatio(excitation, wire.segments));
+    }
+    return map;
+  }, [excitations, wires]);
 
   // Add mode state: first click sets start point, second click sets end
   const [addStart, setAddStart] = useState<[number, number, number] | null>(null);
@@ -273,6 +292,26 @@ function EditorSceneContent({
     setGhostEnd(null);
   }, [mode]);
 
+  useEffect(() => {
+    if (mode !== "add") return;
+    const clearPendingWire = () => {
+      setAddStart(null);
+      setAddStartConnection(null);
+      setGhostEnd(null);
+    };
+    const stopChain = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      clearPendingWire();
+    };
+    const stopChainFromPointer = () => clearPendingWire();
+    window.addEventListener("keydown", stopChain);
+    window.addEventListener("hf-editor-cancel-drawing", stopChainFromPointer);
+    return () => {
+      window.removeEventListener("keydown", stopChain);
+      window.removeEventListener("hf-editor-cancel-drawing", stopChainFromPointer);
+    };
+  }, [mode]);
+
   /** Raycast to ground plane to get NEC2 coordinates (horizontal movement: X/Y) */
   const raycastToGround = useCallback(
     (event: ThreeEvent<MouseEvent | PointerEvent>): [number, number, number] | null => {
@@ -319,19 +358,27 @@ function EditorSceneContent({
         z2: end[2],
         radius: 0.0005,
       };
-      const hasConnection = Boolean(addStartConnection || endConnection);
+      const effectiveEndConnection = endpointSnap ? endConnection : undefined;
+      const effectiveStartConnection = endpointSnap ? addStartConnection : null;
+      const hasConnection = Boolean(effectiveStartConnection || effectiveEndConnection);
       const tag = hasConnection
         ? addConnectedWire(wire, {
-            start: addStartConnection ?? undefined,
-            end: endConnection,
+            start: effectiveStartConnection ?? undefined,
+            end: effectiveEndConnection,
           })
         : addWire(wire);
       if (tag === null) return;
-      setAddStart(null);
-      setAddStartConnection(null);
-      setGhostEnd(null);
+      if (continuousDraw) {
+        setAddStart(end);
+        setAddStartConnection({ wireTag: tag, endpoint: "end" });
+        setGhostEnd(end);
+      } else {
+        setAddStart(null);
+        setAddStartConnection(null);
+        setGhostEnd(null);
+      }
     },
-    [addStart, addStartConnection, addConnectedWire, addWire],
+    [addStart, addStartConnection, addConnectedWire, addWire, continuousDraw, endpointSnap],
   );
 
   /** Handle clicking on empty space */
@@ -548,18 +595,20 @@ function EditorSceneContent({
       if (mode === "add") {
         if (!addStart) {
           setAddStart(position);
-          setAddStartConnection(ref);
+          setAddStartConnection(endpointSnap ? ref : null);
           setGhostEnd(position);
         } else {
-          completeWire(position, ref);
+          completeWire(position, endpointSnap ? ref : undefined);
         }
         return;
       }
       if (mode === "select" || mode === "move") {
+        if (event.nativeEvent.shiftKey || event.nativeEvent.ctrlKey || event.nativeEvent.metaKey) toggleSelection(tag);
+        else selectWire(tag);
         selectEndpoint(ref);
       }
     },
-    [mode, wires, addStart, completeWire, selectEndpoint],
+    [mode, wires, addStart, completeWire, selectEndpoint, endpointSnap, selectWire, toggleSelection],
   );
 
   /** Handle endpoint drag start (move mode — endpoint only) */
@@ -618,6 +667,10 @@ function EditorSceneContent({
     [wires]
   );
   const visualScale = useMemo(() => createVisualScale(wireDataList), [wireDataList]);
+  const radialWireTags = useMemo(
+    () => new Set(radialSystems.flatMap((system) => system.generatedWireTags)),
+    [radialSystems],
+  );
 
   // Feedpoint tag set
   const feedpointTags = useMemo(
@@ -631,8 +684,12 @@ function EditorSceneContent({
     [transmissionLines, wireDataList]
   );
 
-  // Antenna centroid for pattern
+  // Anchor the visual pattern to the requested feed connection. Multi-source
+  // combined patterns use the feed centroid; unresolved imports fall back to
+  // the geometry centroid. This does not affect the solver model.
   const antennaCentroid = useMemo((): [number, number, number] => {
+    const feedOrigin = patternOriginForExcitations(wireDataList, excitations);
+    if (feedOrigin) return feedOrigin;
     if (wires.length === 0) return [0, 0, 0];
     let sumX = 0, sumY = 0, sumZ = 0;
     for (const w of wires) {
@@ -642,7 +699,8 @@ function EditorSceneContent({
     }
     const n = wires.length;
     return [sumX / n, sumZ / n, -sumY / n];
-  }, [wires]);
+  }, [excitations, wireDataList, wires]);
+  const displayedPatternScale = visualScale.patternScale * patternScaleMultiplier;
 
   // Ghost wire for add mode preview
   const ghostWire = useMemo(() => {
@@ -697,6 +755,7 @@ function EditorSceneContent({
             isSelected={selectedTags.has(wire.tag)}
             hasFeedpoint={feedpointTags.has(wire.tag)}
             feedSegment={excitationSegmentMap.get(wire.tag)}
+            feedPositionRatio={excitationRatioMap.get(wire.tag)}
             isPicking={pickingExcitationForTag === wire.tag}
             accurateFeedpoint={accurateFeedpoint}
             mode={mode}
@@ -740,6 +799,7 @@ function EditorSceneContent({
                   : undefined
             }
             onMeasurementSelect={onMeasurementWireSelect}
+            isRadial={radialWireTags.has(wire.tag)}
           />
         ))}
 
@@ -772,10 +832,13 @@ function EditorSceneContent({
       )}
 
       {/* Radiation pattern — surface mode */}
+      {(viewToggles.pattern || viewToggles.volumetric) && patternData && (
+        <PatternOriginReference center={antennaCentroid} radius={displayedPatternScale * 1.04} />
+      )}
       {viewToggles.pattern && !viewToggles.volumetric && patternData && (
         <RadiationPattern3D
           pattern={patternData}
-          scale={visualScale.patternScale}
+          scale={displayedPatternScale}
           opacity={0.65}
           center={antennaCentroid}
         />
@@ -785,7 +848,7 @@ function EditorSceneContent({
       {viewToggles.volumetric && patternData && (
         <VolumetricShells
           pattern={patternData}
-          scale={visualScale.patternScale}
+          scale={displayedPatternScale}
           center={antennaCentroid}
         />
       )}
@@ -817,7 +880,7 @@ function EditorSceneContent({
       {viewToggles.slice && patternData && (
         <RadiationSlice
           pattern={patternData}
-          scale={visualScale.patternScale}
+          scale={displayedPatternScale}
           center={antennaCentroid}
         />
       )}
@@ -838,9 +901,14 @@ export function EditorScene({
   measurementSelectedTags = [],
   measurementPointMode = "closest",
   onMeasurementWireSelect,
+  patternScaleMultiplier = 1,
 }: EditorSceneProps) {
   const theme = useUIStore((s) => s.theme);
   const isPicking = useEditorStore((s) => s.pickingExcitationForTag) !== null;
+  const mode = useEditorStore((s) => s.mode);
+  const radialSystems = useEditorStore((s) => s.radialSystems);
+  const excitations = useEditorStore((s) => s.excitations);
+  const wires = useEditorStore((s) => s.wires);
   const sceneBg = theme === "dark" ? "#0A0A0F" : "#E8E8ED";
   const [currentMode, setCurrentMode] = useState<CurrentVisualMode>("magnitude");
   const [currentAnimated, setCurrentAnimated] = useState(false);
@@ -862,13 +930,21 @@ export function EditorScene({
   );
 
   return (
-    <>
+    <div
+      className="h-full w-full"
+      data-testid="wire-editor-3d"
+      onContextMenu={(event) => {
+        if (mode !== "add") return;
+        event.preventDefault();
+        window.dispatchEvent(new Event("hf-editor-cancel-drawing"));
+      }}
+    >
     <SafeCanvas
       gl={glConfig}
       camera={{ position: [15, 12, 15], fov: 50, near: 0.1, far: 500 }}
       style={{
         background: sceneBg,
-        cursor: measurementActive || isPicking ? "crosshair" : undefined,
+        cursor: measurementActive || isPicking || mode === "add" ? "crosshair" : undefined,
       }}
     >
       {/* Scene background as Three.js Color so it appears in screenshots */}
@@ -888,6 +964,7 @@ export function EditorScene({
           currentAnimated={currentAnimated}
           selectedCurrent={effectiveSelectedCurrent}
           onCurrentSelect={setSelectedCurrent}
+          patternScaleMultiplier={patternScaleMultiplier}
         />
         {!measurementActive && <SceneRaycaster tooltipRef={tooltipRef} />}
       </Suspense>
@@ -897,11 +974,24 @@ export function EditorScene({
         <CurrentVisualisationControls currents={currents} mode={currentMode} animated={currentAnimated} selected={effectiveSelectedCurrent} onModeChange={setCurrentMode} onAnimatedChange={setCurrentAnimated} onSelect={setSelectedCurrent} compact />
       </div>
     )}
+    {(radialSystems.length > 0 || excitations.length > 0) && (
+      <div className="pointer-events-none absolute bottom-2 right-2 z-20 max-w-xs rounded border border-border bg-surface/90 px-2.5 py-2 text-[10px] shadow backdrop-blur-sm" data-testid="editor-model-legend">
+        {excitations.length > 0 && <div data-testid="editor-feedpoint-legend"><div className="flex items-center gap-2 font-semibold text-amber-300"><span className="inline-block h-2.5 w-2.5 rounded-full bg-amber-500" />Orange sphere: requested feed connection</div>{excitations.map((source, index) => {
+          const wire = wires.find((candidate) => candidate.tag === source.wire_tag);
+          const placement = wire ? feedpointPlacement(source, wire) : null;
+          return <p key={`${source.wire_tag}:${index}`} className="mt-1 text-text-secondary">Source {index + 1}: Wire {source.wire_tag}, requested {placement ? `${(placement.requestedRatio * 100).toFixed(1)}%` : "position unavailable"}; NEC segment {source.segment}{placement ? ` centre ${(placement.actualRatio * 100).toFixed(1)}%` : ""}</p>;
+        })}</div>}
+        {radialSystems.length > 0 && <div className={excitations.length > 0 ? "mt-2 border-t border-border pt-2" : undefined} data-testid="editor-radial-legend">
+          <div className="flex items-center gap-2 font-semibold text-cyan-300"><span className="inline-block h-1 w-5 rounded bg-cyan-400" />Explicit NEC radial wires</div>
+          {radialSystems.map((system) => <p key={system.id} data-testid={`editor-radial-legend-${system.id}`} className="mt-1 text-text-secondary">{system.name}: {system.count} × {system.lengthM.toFixed(3)} m · {system.representation === "near-surface-explicit" ? `near surface at ${system.clearanceM * 1000} mm clearance` : `${system.droopAngleDeg.toFixed(1)}° droop`} · {system.rotationDeg.toFixed(1)}° rotation</p>)}
+        </div>}
+      </div>
+    )}
     <div
       ref={tooltipRef}
       className="fixed z-50 pointer-events-none bg-surface/95 backdrop-blur-sm border border-border rounded-md px-2.5 py-1.5 shadow-lg text-[11px] font-mono leading-relaxed whitespace-nowrap"
       style={{ display: "none" }}
     />
-    </>
+    </div>
   );
 }

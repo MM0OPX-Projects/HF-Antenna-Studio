@@ -76,7 +76,7 @@ test("recovery survives reload and legacy imports are reviewed before migration"
     mimeType: "application/json",
     buffer: Buffer.from(JSON.stringify(legacy, null, 2)),
   });
-  await expect(page.getByText("Source schema 1; current schema 5.")).toBeVisible();
+  await expect(page.getByText("Source schema 1; current schema 8.")).toBeVisible();
   await expect(page.getByText(/explicit sweep intent was unavailable/)).toBeVisible();
   await page.getByRole("button", { name: "Import and open" }).click();
   await expect(page).toHaveURL(/\/$/);

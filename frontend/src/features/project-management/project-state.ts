@@ -1,6 +1,7 @@
 import { useAntennaStore } from "../../stores/antennaStore";
 import { useEditorStore } from "../../stores/editorStore";
 import { useSimulationStore } from "../../stores/simulationStore";
+import { useUIStore } from "../../stores/uiStore";
 import { getDefaultTemplate, getTemplate, templateMap } from "../../templates";
 import { getDefaultParams } from "../../templates/types";
 import {
@@ -60,12 +61,13 @@ export function isManagedProjectRoute(pathname: string): boolean {
 
 /** Capture only reproducibility inputs. Solver results are deliberately cache data. */
 export function captureProject(mode: ManagedProjectMode): ProjectFile {
-  if (mode === "model-comparison") return createModelComparisonProject(comparisonWorkspace.definitions, comparisonWorkspace.conditions, comparisonWorkspace.sweep);
-  if (mode === "parameter-sweep") return createParameterSweepProject(parameterSweepWorkspace);
-  if (mode === "antenna-optimiser") return createAntennaOptimiserProject(optimiserWorkspace);
+  const withConductor = (project: ProjectFile): ProjectFile => ({ ...project, conductor: { ...useUIStore.getState().conductor } });
+  if (mode === "model-comparison") return withConductor(createModelComparisonProject(comparisonWorkspace.definitions, comparisonWorkspace.conditions, comparisonWorkspace.sweep));
+  if (mode === "parameter-sweep") return withConductor(createParameterSweepProject(parameterSweepWorkspace));
+  if (mode === "antenna-optimiser") return withConductor(createAntennaOptimiserProject(optimiserWorkspace));
   if (mode === "editor") {
     const state = useEditorStore.getState();
-    return createEditorProject(
+    return withConductor(createEditorProject(
       state.wires,
       state.excitations,
       state.loads,
@@ -78,22 +80,25 @@ export function captureProject(mode: ManagedProjectMode): ProjectFile {
       state.necImport,
       state.frequencySegments,
       state.geometryGroundFlag,
-    );
+      state.radialSystems,
+      state.modelTransfer,
+    ));
   }
 
   const state = useAntennaStore.getState();
-  return createSimulatorProject(
+  return withConductor(createSimulatorProject(
     state.template.id,
     state.params,
     state.ground,
     null,
     state.frequencyRange,
     state.frequencySegments,
-  );
+  ));
 }
 
 export function restoreProject(project: ProjectFile): void {
   useSimulationStore.getState().reset();
+  useUIStore.getState().setConductor(project.conductor);
   if (project.mode === "model-comparison") {
     if (!project.modelComparison) throw new Error("The model-comparison project has no comparison definition.");
     setComparisonWorkspace(project.modelComparison);
@@ -137,6 +142,7 @@ export function restoreProject(project: ProjectFile): void {
     })),
     model.excitations,
     model.junctions,
+    model.radialSystems,
   );
   for (const load of model.loads) useEditorStore.getState().addLoad(load);
   for (const line of model.transmissionLines) useEditorStore.getState().addTransmissionLine(line);
@@ -145,6 +151,8 @@ export function restoreProject(project: ProjectFile): void {
   useEditorStore.getState().setFrequencyRange(model.frequencyRange);
   useEditorStore.getState().setFrequencySegments(model.frequencySegments ?? []);
   useEditorStore.getState().setNecImport(model.necImport ?? null);
+  useEditorStore.getState().setModelTransfer(model.modelTransfer ?? null);
+  if (model.modelTransfer) useUIStore.getState().setMatching({ type: "none", ratio: 1, feedlineZ0: model.modelTransfer.referenceImpedanceOhm });
 }
 
 export function createNewProject(mode: ManagedProjectMode): ProjectFile {

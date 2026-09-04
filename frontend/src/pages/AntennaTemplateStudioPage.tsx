@@ -11,6 +11,7 @@ import { runTemplateModel, type TemplateSolverResult } from "../features/antenna
 import type { TemplateGround, TemplateId } from "../features/antenna-templates/schema";
 import { HeightRadiation3D } from "../features/height-lab/HeightRadiation3D";
 import { RadiationCutPair } from "../components/results/RadiationCutPair";
+import { useUIStore } from "../stores/uiStore";
 
 type GroundPreset = "perfect" | "average" | "pastoral" | "dry" | "custom";
 const GROUND: Record<Exclude<GroundPreset, "custom">, TemplateGround> = {
@@ -23,6 +24,7 @@ const GROUND: Record<Exclude<GroundPreset, "custom">, TemplateGround> = {
 function signed(value: number): string { return `${value >= 0 ? "+" : "−"} j${Math.abs(value).toFixed(2)}`; }
 
 export function AntennaTemplateStudioPage() {
+  const conductor = useUIStore((state) => state.conductor);
   const [templateId, setTemplateId] = useState<TemplateId>("horizontal-dipole");
   const definition = useMemo(() => getTemplateDefinition(templateId), [templateId]);
   const [parametersSI, setParametersSI] = useState<Record<string, number>>(() => initialTemplateParameters(definition));
@@ -39,13 +41,13 @@ export function AntennaTemplateStudioPage() {
     ? { kind: "real", conductivitySPerM: conductivity, relativePermittivity: permittivity }
     : GROUND[groundPreset], [conductivity, groundPreset, permittivity]);
   const generated = useMemo(() => generateTemplateModel(definition, parametersSI, ground, manualDimensions), [definition, ground, manualDimensions, parametersSI]);
-  const modelKey = useMemo(() => templateModelKey(generated.model), [generated.model]);
+  const modelKey = useMemo(() => templateModelKey(generated.model), [conductor, generated.model]);
   const result = completed?.key === modelKey ? completed.result : null;
   const adapted = useMemo(() => {
     if (hasTemplateErrors(generated)) return null;
     try { return adaptTemplateToNec(generated.model, definition); }
     catch { return null; }
-  }, [definition, generated]);
+  }, [conductor, definition, generated]);
 
   function chooseTemplate(id: TemplateId) {
     const next = getTemplateDefinition(id);

@@ -236,7 +236,7 @@ Full model boundaries, topology details, and remaining convergence work are in [
 2. Run systematic 0.01λ/0.02λ/0.04λ segmentation and 1°/2°/5° pattern-grid convergence, especially at feed bridges, array nulls, and ground contact.
 3. Add a second solver family rather than relying mainly on two NEC-2 implementations.
 4. Add package-authored reference decks where redistribution/provenance permits; project-authored decks can expose cross-build drift but not every shared modelling error.
-5. Validate conductor loss, realistic radial fields, feed/matching networks, mast/feed-line/common-mode effects, and real installations separately.
+5. The NEC `LD 5` conductor-loss path is contract- and solver-smoke-tested, but numerical loss/efficiency accuracy for Copper, Aluminium, Steel, Stainless steel and arbitrary custom conductivity still requires independent external reference cases. Continue to validate realistic radial fields, feed/matching networks, mast/feed-line/common-mode effects, and real installations separately. Historical comparison fixtures remain Perfect-conductor cases so their published baselines are not silently redefined.
 6. Perform controlled calibrated measurements with complete construction and environment records. Measurement agreement is not replaced by same-method solver agreement.
 7. Repeat on the packaged Windows 11 desktop runtime, offline, with the exact shipped solver binary; this campaign exercises the browser/Wasm development baseline.
 8. Preserve raw comparator outputs or a signed machine-readable result bundle in a future release process after licensing, size, and provenance policy is agreed.

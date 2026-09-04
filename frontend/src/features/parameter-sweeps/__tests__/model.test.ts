@@ -38,7 +38,7 @@ describe("parameter sweep model planning", () => {
     const built = buildSweepModel(candidate, { [parameterId]: value });
     expect(built.family).toBe(family);
     expect(builtParameterValue(built, parameterId)).toBe(value);
-    expect(JSON.parse(built.modelKey)).toEqual(built.model);
+    expect(JSON.parse(built.modelKey)).toEqual({ model: built.model, conductor: { id: "copper", conductivitySPerM: 5.8e7 } });
   });
 
   it("provides a valid reproducible default definition", () => {

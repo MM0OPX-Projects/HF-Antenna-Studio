@@ -17,6 +17,9 @@ export interface AzimuthCutSample {
   requestedElevationDeg: number;
   actualElevationDeg: number;
   thetaIndex: number;
+  /** Bearing of the strongest valid sample in this selected cut. */
+  peakBearingDeg: number | null;
+  peakGainDbi: number | null;
 }
 
 function validGain(gain: number): boolean {
@@ -48,6 +51,9 @@ function strongestGridPoint(pattern: PatternData): { thetaIndex: number; phiInde
   let phiIndex = 0;
   let gainDbi = -Infinity;
   for (let ti = 0; ti < pattern.theta_count; ti += 1) {
+    const theta = pattern.theta_start + ti * pattern.theta_step;
+    // Standard workspace cuts describe the physical upper hemisphere only.
+    if (Math.abs(theta) > 90 + 1e-6) continue;
     for (let pi = 0; pi < pattern.phi_count; pi += 1) {
       const candidate = pattern.gain_dbi[ti]?.[pi] ?? -999.99;
       if (validGain(candidate) && candidate > gainDbi) {
@@ -58,6 +64,41 @@ function strongestGridPoint(pattern: PatternData): { thetaIndex: number; phiInde
     }
   }
   return Number.isFinite(gainDbi) ? { thetaIndex, phiIndex, gainDbi } : null;
+}
+
+function nearestCanonicalThetaIndex(pattern: PatternData, physicalThetaDeg: number): number {
+  const target = Math.abs(physicalThetaDeg);
+  let selected = 0;
+  let selectedTheta = pattern.theta_start;
+  let distance = Infinity;
+  for (let index = 0; index < pattern.theta_count; index += 1) {
+    const theta = pattern.theta_start + index * pattern.theta_step;
+    if (theta < -1e-6 || theta > 90 + 1e-6) continue;
+    const candidateDistance = Math.abs(theta - target);
+    if (candidateDistance < distance) {
+      selected = index;
+      selectedTheta = theta;
+      distance = candidateDistance;
+    }
+  }
+  if (Number.isFinite(distance)) return selected;
+
+  // Some imported grids contain signed theta only. Retain support and let the
+  // caller rotate phi by 180 degrees to preserve the physical bearing.
+  for (let index = 0; index < pattern.theta_count; index += 1) {
+    const theta = pattern.theta_start + index * pattern.theta_step;
+    const candidateDistance = Math.abs(Math.abs(theta) - target);
+    if (candidateDistance < distance || (candidateDistance === distance && theta > selectedTheta)) {
+      selected = index;
+      selectedTheta = theta;
+      distance = candidateDistance;
+    }
+  }
+  return selected;
+}
+
+function physicalPhiDeg(thetaDeg: number, phiDeg: number): number {
+  return thetaDeg < -1e-6 ? phiDeg + 180 : phiDeg;
 }
 
 /** Select one real NEC theta row and expose it as a complete 360° cut. */
@@ -71,29 +112,20 @@ export function azimuthCutFromPattern(
   const requested = requestedElevationDeg === undefined
     ? Math.max(0, Math.min(90, 90 - Math.abs(pattern.theta_start + strongest.thetaIndex * pattern.theta_step)))
     : Math.max(0, Math.min(90, requestedElevationDeg));
-  let thetaIndex = strongest.thetaIndex;
-  if (requestedElevationDeg !== undefined) {
-    const requestedTheta = 90 - requested;
-    let distance = Infinity;
-    for (let index = 0; index < pattern.theta_count; index += 1) {
-      const theta = pattern.theta_start + index * pattern.theta_step;
-      const candidateDistance = Math.abs(theta - requestedTheta);
-      if (candidateDistance < distance) {
-        thetaIndex = index;
-        distance = candidateDistance;
-      }
-    }
-  }
+  const thetaIndex = nearestCanonicalThetaIndex(pattern, 90 - requested);
   const theta = pattern.theta_start + thetaIndex * pattern.theta_step;
   const points = normalize(Array.from({ length: pattern.phi_count }, (_, phiIndex) => ({
-    angleDeg: bearingForPhi(pattern.phi_start + phiIndex * pattern.phi_step, convention),
+    angleDeg: bearingForPhi(physicalPhiDeg(theta, pattern.phi_start + phiIndex * pattern.phi_step), convention),
     gainDbi: pattern.gain_dbi[thetaIndex]?.[phiIndex] ?? -999.99,
   })).sort((left, right) => left.angleDeg - right.angleDeg));
+  const peak = points.reduce<NormalizedPatternPoint | null>((best, point) => !best || point.gainDbi > best.gainDbi ? point : best, null);
   return {
     points,
     requestedElevationDeg: requested,
-    actualElevationDeg: Math.max(0, Math.min(90, 90 - (requestedElevationDeg === undefined ? Math.abs(theta) : theta))),
+    actualElevationDeg: Math.max(0, Math.min(90, 90 - Math.abs(theta))),
     thetaIndex,
+    peakBearingDeg: peak?.angleDeg ?? null,
+    peakGainDbi: peak?.gainDbi ?? null,
   };
 }
 
@@ -120,9 +152,10 @@ export function radiationCutSeriesFromPattern(
     ? [{ id, label, color, points, current: true }]
     : [];
   const azimuth = azimuthCutFromPattern(pattern, undefined, "legacy-compass")?.points ?? [];
-  const bestPhiDeg = pattern.phi_start + bestPhiIndex * pattern.phi_step;
+  const bestThetaDeg = pattern.theta_start + bestThetaIndex * pattern.theta_step;
+  const bestPhiDeg = physicalPhiDeg(bestThetaDeg, pattern.phi_start + bestPhiIndex * pattern.phi_step);
   const elevation = normalize(extractFullElevationCut(pattern, bestPhiDeg));
-  const necThetaDeg = pattern.theta_start + bestThetaIndex * pattern.theta_step;
+  const necThetaDeg = bestThetaDeg;
 
   return {
     azimuth: series(azimuth),

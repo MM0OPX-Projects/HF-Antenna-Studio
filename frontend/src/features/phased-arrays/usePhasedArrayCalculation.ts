@@ -3,11 +3,13 @@ import { HeightLabScheduler, type HeightCalculationState } from "../height-lab/s
 import { generatePhasedArray, phasedArrayModelKey } from "./model";
 import { phasedCalibrationCacheSize, runPhasedArrayModel } from "./service";
 import type { PhasedArrayModel, PhasedArraySolverResult } from "./schema";
+import { useUIStore } from "../../stores/uiStore";
 
 const EMPTY: HeightCalculationState<PhasedArraySolverResult> = { key: "", phase: "idle", result: null, error: null };
 
 export function usePhasedArrayCalculation(model: PhasedArrayModel, valid: boolean) {
-  const key = useMemo(() => phasedArrayModelKey(model), [model]);
+  const conductor = useUIStore((state) => state.conductor);
+  const key = useMemo(() => phasedArrayModelKey(model), [conductor, model]);
   const [scheduler] = useState(() => new HeightLabScheduler<PhasedArraySolverResult>(450, 48));
   const [state, setState] = useState(EMPTY);
   useEffect(() => {

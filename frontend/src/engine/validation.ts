@@ -281,6 +281,35 @@ export function validateSimulationRequest(
     }
   }
 
+  // An NEC voltage source is applied across a segment. A source placed at the
+  // end of an otherwise isolated wire is often an incomplete representation
+  // of an end-fed system unless a counterpoise, feed line, or ground return is
+  // modelled. This is advisory because some advanced models are intentional.
+  for (const source of excitations) {
+    const wire = wires.find((candidate) => candidate.tag === source.wire_tag);
+    if (!wire || (source.segment !== 1 && source.segment !== wire.segments)) continue;
+    const atStart = source.segment === 1;
+    const point = atStart
+      ? { x: wire.x1, y: wire.y1, z: wire.z1 }
+      : { x: wire.x2, y: wire.y2, z: wire.z2 };
+    const hasWireReturn = wires.some((candidate) => candidate.tag !== wire.tag && [
+      { x: candidate.x1, y: candidate.y1, z: candidate.z1 },
+      { x: candidate.x2, y: candidate.y2, z: candidate.z2 },
+    ].some((endpoint) => Math.hypot(endpoint.x - point.x, endpoint.y - point.y, endpoint.z - point.z) <= 1e-6));
+    const hasGroundReturn = ground.type !== "free_space" && Math.abs(point.z) <= 1e-6;
+    const hasTransmissionLineReturn = transmissionLines.some((line) =>
+      (line.wire_tag1 === wire.tag && line.segment1 === source.segment) ||
+      (line.wire_tag2 === wire.tag && line.segment2 === source.segment));
+    if (!hasWireReturn && !hasGroundReturn && !hasTransmissionLineReturn) {
+      issues.push({
+        severity: "warning",
+        code: "end_feed_return_path",
+        message: `Source on wire ${wire.tag}, segment ${source.segment} is at an isolated wire end. Verify that the model includes the intended counterpoise, feed-line/common-mode path, second conductor, or ground return.`,
+        wireTags: [wire.tag],
+      });
+    }
+  }
+
   // 5. Zero-length wires
   for (const w of wires) {
     const values = [w.x1, w.y1, w.z1, w.x2, w.y2, w.z2, w.radius, w.segments];

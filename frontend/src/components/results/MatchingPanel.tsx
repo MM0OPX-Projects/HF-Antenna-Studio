@@ -25,11 +25,11 @@ function ComponentRow({ comp }: { comp: MatchingComponent }) {
   const posLabel = comp.position === "series" ? "Series" : "Shunt";
 
   return (
-    <div className="flex items-center justify-between py-0.5">
+    <div className="grid grid-cols-[minmax(8rem,12rem)_minmax(6rem,auto)] items-center gap-x-5 py-0.5">
       <span className="text-[10px] text-text-secondary">
         {posLabel} {symbol}
       </span>
-      <span className="text-[11px] font-mono text-text-primary">{value}</span>
+      <span className="text-right text-[11px] font-mono text-text-primary">{value}</span>
     </div>
   );
 }
@@ -122,7 +122,7 @@ export function MatchingPanel({ data }: MatchingPanelProps) {
   );
 
   return (
-    <div className="space-y-2">
+    <div className="w-full max-w-xl space-y-2" data-testid="matching-summary">
       {/* Load impedance summary */}
       <div className="bg-background rounded-md p-2">
         <p className="text-[10px] text-text-secondary">

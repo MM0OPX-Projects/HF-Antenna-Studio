@@ -3,6 +3,8 @@ import type { DipoleSegmentation } from "./segmentation";
 import { assessDipoleModel } from "./validation";
 import { hertzToMegahertz } from "./units";
 import type { NecDeckRunRequest } from "../../engine/wasm/worker";
+import { applyConductorToDeck } from "../../engine/conductor";
+import { useUIStore } from "../../stores/uiStore";
 
 export interface DipoleNecModel {
   wire: {
@@ -102,7 +104,7 @@ export function adaptDipoleToNec(model: HorizontalDipoleModel): AdaptedDipoleNec
     ground: model.ground,
     pattern,
   };
-  const deck = serializeDipoleNec(necModel);
+  const deck = applyConductorToDeck(serializeDipoleNec(necModel), useUIStore.getState().conductor);
 
   return {
     model: necModel,

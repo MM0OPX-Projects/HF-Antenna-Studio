@@ -5,6 +5,7 @@ async function openYagis(page: Page) {
   await page.goto("/yagi-beams");
   const changelog = page.getByRole("button", { name: "Got it" });
   if (await changelog.isVisible().catch(() => false)) await changelog.click();
+  await page.getByLabel("Global antenna wire material").selectOption("perfect");
 }
 
 async function waitForSolved(page: Page) {

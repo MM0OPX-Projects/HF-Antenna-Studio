@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Navbar } from "../components/layout/Navbar";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
@@ -10,6 +11,11 @@ import type { VerifiedDipoleResult } from "../features/verified-dipole/result";
 import { runVerifiedDipole } from "../features/verified-dipole/service";
 import { assessDipoleModel } from "../features/verified-dipole/validation";
 import { lengthToMetres, megahertzToHertz, metresToLength, wavelengthMetres, type LengthUnit } from "../features/verified-dipole/units";
+import { createVerifiedDipoleTransfer } from "../features/verified-dipole/transfer";
+import type { EditorModelTransfer } from "../features/model-transfer/types";
+import { TransferReviewDialog } from "../components/model-transfer/TransferReviewDialog";
+import { useEditorStore } from "../stores/editorStore";
+import { useUIStore } from "../stores/uiStore";
 
 interface DimensionValue { value: number; unit: LengthUnit }
 
@@ -43,6 +49,10 @@ function formatSigned(value: number): string {
 }
 
 export function VerifiedDipolePage() {
+  const navigate = useNavigate();
+  const applyModelTransfer = useEditorStore((state) => state.applyModelTransfer);
+  const setMatching = useUIStore((state) => state.setMatching);
+  const conductor = useUIStore((state) => state.conductor);
   const [frequencyMhz, setFrequencyMhz] = useState(14.1);
   const [length, setLength] = useState<DimensionValue>({ value: 10.15, unit: "m" });
   const [diameter, setDiameter] = useState<DimensionValue>({ value: 1, unit: "mm" });
@@ -54,6 +64,7 @@ export function VerifiedDipolePage() {
   const [completedRun, setCompletedRun] = useState<{ modelKey: string; result: VerifiedDipoleResult } | null>(null);
   const [failedRun, setFailedRun] = useState<{ modelKey: string; message: string } | null>(null);
   const [running, setRunning] = useState(false);
+  const [transferReview, setTransferReview] = useState<EditorModelTransfer | null>(null);
 
   const model = useMemo<HorizontalDipoleModel>(() => ({
     schemaVersion: 1,
@@ -67,16 +78,15 @@ export function VerifiedDipolePage() {
       : { kind: groundKind },
     referenceImpedanceOhm: referenceOhm,
     orientation: "x",
-    conductor: { kind: "perfect" },
   }), [conductivity, diameter, frequencyMhz, groundKind, height, length, permittivity, referenceOhm]);
 
   const assessment = useMemo(() => assessDipoleModel(model), [model]);
-  const modelKey = useMemo(() => JSON.stringify(model), [model]);
+  const modelKey = useMemo(() => JSON.stringify({ model, conductor }), [conductor, model]);
   const result = completedRun?.modelKey === modelKey ? completedRun.result : null;
   const error = failedRun?.modelKey === modelKey ? failedRun.message : null;
   const generated = useMemo(() => {
     try { return adaptDipoleToNec(model); } catch { return null; }
-  }, [model]);
+  }, [conductor, model]);
 
   async function calculate() {
     setRunning(true);
@@ -140,6 +150,7 @@ export function VerifiedDipolePage() {
                 </div>
                 {assessment.errors.length > 0 && <div role="alert" className="rounded-md border border-red-500/40 bg-red-500/10 p-3 text-xs text-red-600 dark:text-red-300">{assessment.errors.map((message) => <p key={message}>{message}</p>)}</div>}
                 <Button className="w-full" size="lg" onClick={calculate} loading={running} disabled={!assessment.valid} data-testid="run-dipole">{running ? 'Running local NEC…' : 'Generate & run NEC'}</Button>
+                <Button className="w-full" variant="secondary" onClick={() => setTransferReview(createVerifiedDipoleTransfer(model))} disabled={!assessment.valid || !generated} data-testid="open-dipole-in-editor">Open in Wire Editor…</Button>
               </div>
             </Card>
 
@@ -170,6 +181,16 @@ export function VerifiedDipolePage() {
           </div>
         </div>
       </main>
+      {transferReview && <TransferReviewDialog
+        transfer={transferReview}
+        onCancel={() => setTransferReview(null)}
+        onConfirm={() => {
+          applyModelTransfer(transferReview);
+          setMatching({ type: "none", ratio: 1, feedlineZ0: transferReview.referenceImpedanceOhm });
+          setTransferReview(null);
+          navigate("/editor");
+        }}
+      />}
     </div>
   );
 }

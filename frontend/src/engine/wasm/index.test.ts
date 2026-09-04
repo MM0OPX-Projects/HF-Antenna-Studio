@@ -1,4 +1,6 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { useUIStore } from "../../stores/uiStore";
+import { LEGACY_CONDUCTOR } from "../conductor";
 import { WasmEngine } from ".";
 import type { SimulateAdvancedRequest } from "../types";
 
@@ -25,6 +27,8 @@ class SilentWorker {
     this.terminated = true;
   }
 }
+
+beforeEach(() => useUIStore.getState().setConductor(LEGACY_CONDUCTOR));
 
 class AnsweringWorker extends SilentWorker {
   posted: unknown = null;

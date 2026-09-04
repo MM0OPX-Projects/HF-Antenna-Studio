@@ -15,9 +15,19 @@ import type { WireGeometry, Excitation, GroundConfig, FrequencyRange, FrequencyS
 import type { LumpedLoad, TransmissionLine } from "../api/nec";
 import type { NecImportState } from "../engine/types";
 import type { GeometryGroundFlag } from "../engine/geometry-ground";
+import type { EditorModelTransfer, ModelTransferProvenance } from "../features/model-transfer/types";
+import { cloneModelTransferProvenance } from "../features/model-transfer/types";
 import { autoSegment, centerSegment } from "../engine/segmentation";
 import { computeSteps } from "../utils/ham-bands";
 import { clampFrequencyMhz, MAX_FREQUENCY_MHZ, MIN_FREQUENCY_MHZ } from "../engine/limits";
+import { requestedFeedRatio, segmentCentreRatio, segmentForFeedRatio } from "../features/wire-editor/feedpoint";
+import {
+  normalizeRadialSettings,
+  radialEndpoint,
+  radialSystemIssues,
+  type EditorRadialSystem,
+  type RadialSystemSettings,
+} from "../features/wire-editor/radial-system";
 import {
   expandJunctionEndpoints,
   findCoincidentEndpoints,
@@ -40,6 +50,7 @@ export type EditorMode = "select" | "add" | "move";
 // Re-export for convenience
 export type { LumpedLoad, TransmissionLine } from "../api/nec";
 export type { EditorJunction, EndpointRef, WireEndpoint } from "../utils/editor-junctions";
+export type { EditorRadialSystem, RadialSystemSettings } from "../features/wire-editor/radial-system";
 
 export interface EditorActionResult {
   ok: boolean;
@@ -63,6 +74,8 @@ interface EditorSnapshot {
   transmissionLines: TransmissionLine[];
   junctions: EditorJunction[];
   nextJunctionId: number;
+  radialSystems: EditorRadialSystem[];
+  nextRadialSystemId: number;
 }
 
 // ---- Default state ----
@@ -89,6 +102,9 @@ interface EditorState {
   junctions: EditorJunction[];
   /** Next stable junction identifier */
   nextJunctionId: number;
+  /** Parametric radial fields whose generated members remain ordinary NEC wires. */
+  radialSystems: EditorRadialSystem[];
+  nextRadialSystemId: number;
   /** Whether to compute current distribution */
   computeCurrents: boolean;
   /** Currently selected wire tags */
@@ -111,6 +127,10 @@ interface EditorState {
   snapSize: number;
   /** Whether grid is shown */
   showGrid: boolean;
+  /** Continue a newly drawn wire from the preceding endpoint. */
+  continuousDraw: boolean;
+  /** Allow explicit wire endpoints to form persistent junctions while drawing. */
+  endpointSnap: boolean;
   /** Next available tag number */
   nextTag: number;
   /** Design frequency for auto-segmentation */
@@ -119,6 +139,8 @@ interface EditorState {
   necImport: NecImportState | null;
   /** Most recent raw-only NEC import that was refused without replacing the model. */
   blockedNecImport: NecImportState | null;
+  /** Durable origin and fidelity evidence for a model transferred from a specialist module. */
+  modelTransfer: ModelTransferProvenance | null;
 
   // Undo/redo
   undoStack: EditorSnapshot[];
@@ -159,7 +181,7 @@ interface EditorState {
   /** Clear all wires */
   clearAll: () => void;
   /** Set all wires at once (e.g. from import) */
-  setWires: (wires: EditorWire[], excitations?: Excitation[], junctions?: EditorJunction[]) => void;
+  setWires: (wires: EditorWire[], excitations?: Excitation[], junctions?: EditorJunction[], radialSystems?: EditorRadialSystem[]) => void;
   /** Atomically replace the complete editable model with a reviewed NEC import. */
   loadImportedModel: (model: {
     wires: EditorWire[];
@@ -172,6 +194,9 @@ interface EditorState {
     frequencySegments: FrequencySegment[];
     necImport: NecImportState;
   }) => void;
+  /** Atomically replace the workspace with a reviewed specialist-module transfer. */
+  applyModelTransfer: (transfer: EditorModelTransfer) => void;
+  setModelTransfer: (value: ModelTransferProvenance | null) => void;
   setNecImport: (value: NecImportState | null) => void;
   setBlockedNecImport: (value: NecImportState | null) => void;
 
@@ -195,6 +220,12 @@ interface EditorState {
   setJunctions: (junctions: EditorJunction[]) => void;
   clearEditorMessage: () => void;
 
+  // ---- Parametric radial systems ----
+  addRadialSystem: (hub: EndpointRef, drivenWireTag: number, settings: RadialSystemSettings) => EditorActionResult;
+  updateRadialSystem: (id: number, settings: RadialSystemSettings) => EditorActionResult;
+  removeRadialSystem: (id: number) => EditorActionResult;
+  explodeRadialSystem: (id: number) => EditorActionResult;
+
   // ---- Mode ----
   setMode: (mode: EditorMode) => void;
   /** Vertical-drag toggle for mobile (replaces Shift key) */
@@ -217,6 +248,8 @@ interface EditorState {
   clearFrequencySegments: () => void;
   setSnapSize: (size: number) => void;
   setShowGrid: (show: boolean) => void;
+  setContinuousDraw: (enabled: boolean) => void;
+  setEndpointSnap: (enabled: boolean) => void;
   setDesignFrequency: (mhz: number) => void;
 
   // ---- Excitation ----
@@ -224,6 +257,10 @@ interface EditorState {
   pickingExcitationForTag: number | null;
   setPickingExcitationForTag: (tag: number | null) => void;
   setExcitation: (wireTag: number, segment: number) => void;
+  setExcitationPosition: (wireTag: number, positionRatio: number) => void;
+  /** Move one existing source to another wire/position while preserving its voltage. */
+  moveExcitationToPosition: (sourceWireTag: number, targetWireTag: number, positionRatio: number) => EditorActionResult;
+  updateExcitation: (wireTag: number, updates: Pick<Partial<Excitation>, "voltage_real" | "voltage_imag">) => void;
   removeExcitation: (wireTag: number) => void;
 
   // ---- V2: Loads ----
@@ -241,7 +278,9 @@ interface EditorState {
 
   // ---- Wire Length ----
   /** Set wire to a specific length, keeping the anchor endpoint fixed */
-  setWireLength: (tag: number, length: number, anchor: "start" | "end") => void;
+  setWireLength: (tag: number, length: number, anchor: "start" | "end" | "center") => void;
+  /** Rotate a wire without changing its length. Bearing is clockwise from +Y; elevation is above XY. */
+  setWireDirection: (tag: number, bearingDeg: number, elevationDeg: number, anchor: "start" | "end" | "center") => void;
   /** Toggle length lock on a wire */
   toggleLengthLock: (tag: number) => void;
   /** Bend a wire: split at position and rotate the second half by angle */
@@ -293,6 +332,12 @@ function takeSnapshot(state: EditorState): EditorSnapshot {
       endpoints: junction.endpoints.map((endpoint) => ({ ...endpoint })),
     })),
     nextJunctionId: state.nextJunctionId,
+    radialSystems: state.radialSystems.map((system) => ({
+      ...system,
+      hub: { ...system.hub },
+      generatedWireTags: [...system.generatedWireTags],
+    })),
+    nextRadialSystemId: state.nextRadialSystemId,
   };
 }
 
@@ -365,7 +410,12 @@ function reconcileSegmentReferences(state: EditorState, wires: EditorWire[]) {
   return {
     excitations: state.excitations.map((excitation) => ({
       ...excitation,
-      segment: scaleSegment(excitation.wire_tag, excitation.segment),
+      segment: (() => {
+        const before = state.wires.find((wire) => wire.tag === excitation.wire_tag);
+        const after = wires.find((wire) => wire.tag === excitation.wire_tag);
+        if (!before || !after || before.segments === after.segments) return excitation.segment;
+        return segmentForFeedRatio(requestedFeedRatio(excitation, before.segments), after.segments);
+      })(),
     })),
     loads: state.loads.map((load) => ({
       ...load,
@@ -541,6 +591,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   transmissionLines: [],
   junctions: [],
   nextJunctionId: 1,
+  radialSystems: [],
+  nextRadialSystemId: 1,
   computeCurrents: true,
   selectedTags: new Set<number>(),
   selectedEndpoints: [],
@@ -553,10 +605,13 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   frequencySegments: [],
   snapSize: 0.1,
   showGrid: true,
+  continuousDraw: true,
+  endpointSnap: true,
   nextTag: 1,
   designFrequencyMhz: DEFAULT_FREQUENCY_MHZ,
   necImport: null,
   blockedNecImport: null,
+  modelTransfer: null,
   clipboard: [],
   clipboardJunctions: [],
 
@@ -582,9 +637,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       ...pushUndo(state),
       wires: [...state.wires, wire],
       nextTag: tag + 1,
+      selectedTags: new Set([tag]),
+      selectedEndpoints: [],
       // Auto-add excitation if this is the first wire
       excitations: state.excitations.length === 0
-        ? [{ wire_tag: tag, segment: centerSegment(segments), voltage_real: 1, voltage_imag: 0 }]
+        ? [{ wire_tag: tag, segment: centerSegment(segments), voltage_real: 1, voltage_imag: 0, position_ratio: 0.5 }]
         : state.excitations,
     });
     return tag;
@@ -668,7 +725,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       selectedEndpoints: [],
       lastEditorMessage: null,
       excitations: state.excitations.length === 0
-        ? [{ wire_tag: tag, segment: centerSegment(wire.segments), voltage_real: 1, voltage_imag: 0 }]
+        ? [{ wire_tag: tag, segment: centerSegment(wire.segments), voltage_real: 1, voltage_imag: 0, position_ratio: 0.5 }]
         : state.excitations,
     });
     return tag;
@@ -676,6 +733,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   updateWire: (tag, updates) => {
     const state = get();
+    const owner = state.radialSystems.find((system) => system.generatedWireTags.includes(tag));
+    if (owner) {
+      set({ lastEditorMessage: `Wire ${tag} belongs to ${owner.name}. Change it through the radial-system controls or explode the group first.` });
+      return;
+    }
     const idx = state.wires.findIndex((w) => w.tag === tag);
     if (idx === -1) return;
 
@@ -828,7 +890,14 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   deleteWires: (tags) => {
     const state = get();
-    const tagSet = new Set(tags);
+    const requested = new Set(tags);
+    const protectedMember = state.radialSystems.find((system) => system.generatedWireTags.some((tag) => requested.has(tag)) && !requested.has(system.drivenWireTag));
+    if (protectedMember) {
+      set({ lastEditorMessage: `${protectedMember.name} is managed as one object. Remove or explode it from the radial-system controls first.` });
+      return;
+    }
+    const removedSystems = state.radialSystems.filter((system) => requested.has(system.drivenWireTag));
+    const tagSet = new Set([...tags, ...removedSystems.flatMap((system) => system.generatedWireTags)]);
     const newWires = state.wires.filter((w) => !tagSet.has(w.tag));
     const newExcitations = state.excitations.filter((e) => !tagSet.has(e.wire_tag));
     const newLoads = state.loads.filter((load) => load.wire_tag === 0 || !tagSet.has(load.wire_tag));
@@ -852,6 +921,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       selectedTags: newSelected,
       selectedEndpoints: state.selectedEndpoints.filter((endpoint) => !tagSet.has(endpoint.wireTag)),
       junctions: newJunctions,
+      radialSystems: state.radialSystems.filter((system) => !removedSystems.some((removed) => removed.id === system.id)),
+      lastEditorMessage: removedSystems.length > 0 ? `Removed the driven wire and ${removedSystems.length} attached radial system${removedSystems.length === 1 ? "" : "s"}.` : null,
     });
   },
 
@@ -981,9 +1052,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     if (!wire || length <= 0) return;
 
     // Anchor is the fixed end; the other end moves along the direction vector
+    const centre = [(wire.x1 + wire.x2) / 2, (wire.y1 + wire.y2) / 2, (wire.z1 + wire.z2) / 2] as const;
     const [ax, ay, az] = anchor === "start"
       ? [wire.x1, wire.y1, wire.z1]
-      : [wire.x2, wire.y2, wire.z2];
+      : anchor === "end"
+        ? [wire.x2, wire.y2, wire.z2]
+        : centre;
     const [mx, my, mz] = anchor === "start"
       ? [wire.x2, wire.y2, wire.z2]
       : [wire.x1, wire.y1, wire.z1];
@@ -996,6 +1070,38 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       dx = 0; dy = 0; dz = 1;
     } else {
       dx /= dist; dy /= dist; dz /= dist;
+    }
+
+    if (anchor === "center") {
+      const half = length / 2;
+      const updated = {
+        x1: ax + dx * half,
+        y1: ay + dy * half,
+        z1: az + dz * half,
+        x2: ax - dx * half,
+        y2: ay - dy * half,
+        z2: az - dz * half,
+      };
+      let moved = state.wires.map((candidate) => candidate.tag === tag ? { ...candidate, ...updated } : candidate);
+      for (const [endpoint, position] of [
+        [{ wireTag: tag, endpoint: "start" as const }, { x: updated.x1, y: updated.y1, z: updated.z1 }],
+        [{ wireTag: tag, endpoint: "end" as const }, { x: updated.x2, y: updated.y2, z: updated.z2 }],
+      ] as Array<[EndpointRef, Point3]>) {
+        for (const member of expandJunctionEndpoints([endpoint], state.junctions)) {
+          moved = setEndpointPosition(moved, member, position);
+        }
+      }
+      const conflict = lengthLockConflict(
+        state.wires.map((candidate) => candidate.tag === tag ? { ...candidate, lengthLocked: false } : candidate),
+        moved,
+      );
+      if (conflict !== null) {
+        set({ lastEditorMessage: `Wire ${conflict} has a locked length and prevents resizing this connection.` });
+        return;
+      }
+      moved = recomputeMovedWireSegments(state.wires, moved, state.designFrequencyMhz);
+      set({ ...pushUndo(state), wires: moved, ...reconcileSegmentReferences(state, moved), lastEditorMessage: null });
+      return;
     }
 
     const newX = ax + dx * length;
@@ -1040,6 +1146,33 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       ...reconcileSegmentReferences(state, newWires),
       lastEditorMessage: null,
     });
+  },
+
+  setWireDirection: (tag, bearingDeg, elevationDeg, anchor) => {
+    const state = get();
+    const wire = state.wires.find((candidate) => candidate.tag === tag);
+    if (!wire || !Number.isFinite(bearingDeg) || !Number.isFinite(elevationDeg)) return;
+    const length = wireLength(wire);
+    if (length < 1e-9) return;
+    const bearing = bearingDeg * Math.PI / 180;
+    const elevation = Math.max(-90, Math.min(90, elevationDeg)) * Math.PI / 180;
+    const horizontal = Math.cos(elevation) * length;
+    const vector = {
+      x: Math.sin(bearing) * horizontal,
+      y: Math.cos(bearing) * horizontal,
+      z: Math.sin(elevation) * length,
+    };
+    if (anchor === "start") {
+      get().updateWire(tag, { x2: wire.x1 + vector.x, y2: wire.y1 + vector.y, z2: wire.z1 + vector.z });
+    } else if (anchor === "end") {
+      get().updateWire(tag, { x1: wire.x2 - vector.x, y1: wire.y2 - vector.y, z1: wire.z2 - vector.z });
+    } else {
+      const centre = { x: (wire.x1 + wire.x2) / 2, y: (wire.y1 + wire.y2) / 2, z: (wire.z1 + wire.z2) / 2 };
+      get().updateWire(tag, {
+        x1: centre.x - vector.x / 2, y1: centre.y - vector.y / 2, z1: centre.z - vector.z / 2,
+        x2: centre.x + vector.x / 2, y2: centre.y + vector.y / 2, z2: centre.z + vector.z / 2,
+      });
+    }
   },
 
   toggleLengthLock: (tag) => {
@@ -1286,14 +1419,17 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       selectedEndpoints: [],
       junctions: [],
       nextJunctionId: 1,
+      radialSystems: [],
+      nextRadialSystemId: 1,
       nextTag: 1,
       geometryGroundFlag: null,
       necImport: null,
       blockedNecImport: null,
+      modelTransfer: null,
     });
   },
 
-  setWires: (wires, excitations, junctions = []) => {
+  setWires: (wires, excitations, junctions = [], radialSystems = []) => {
     const state = get();
     const maxTag = wires.reduce((max, w) => Math.max(max, w.tag), 0);
     const newWires = wires.map((w) => ({ ...w }));
@@ -1312,6 +1448,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       })),
       nextJunctionId: junctions.reduce((max, junction) => Math.max(max, junction.id), 0) + 1,
       nextTag: maxTag + 1,
+      radialSystems: radialSystems.map((system) => ({ ...system, hub: { ...system.hub }, generatedWireTags: [...system.generatedWireTags] })),
+      nextRadialSystemId: radialSystems.reduce((max, system) => Math.max(max, system.id), 0) + 1,
     });
   },
 
@@ -1335,11 +1473,14 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         },
       },
       blockedNecImport: null,
+      modelTransfer: null,
       designFrequencyMhz: clampFrequencyMhz(
         (model.frequencyRange.start_mhz + model.frequencyRange.stop_mhz) / 2,
       ),
       junctions: [],
       nextJunctionId: 1,
+      radialSystems: [],
+      nextRadialSystemId: 1,
       nextTag: maxTag + 1,
       selectedTags: new Set(),
       selectedEndpoints: [],
@@ -1355,8 +1496,46 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     });
   },
 
+  applyModelTransfer: (transfer) => {
+    if (transfer.fidelity === "blocked" || !transfer.parity.semanticMatch) {
+      throw new Error("A blocked or non-equivalent model transfer cannot replace the editor workspace.");
+    }
+    const maxTag = transfer.wires.reduce((max, wire) => Math.max(max, wire.tag), 0);
+    set({
+      wires: transfer.wires.map((wire) => ({ ...wire, selected: false, segmentsManual: true })),
+      excitations: transfer.excitations.map((source) => ({ ...source })),
+      loads: transfer.loads.map((load) => ({ ...load })),
+      transmissionLines: transfer.transmissionLines.map((line) => ({ ...line })),
+      junctions: transfer.junctions.map((junction) => ({ ...junction, endpoints: junction.endpoints.map((endpoint) => ({ ...endpoint })) })),
+      nextJunctionId: transfer.junctions.reduce((max, junction) => Math.max(max, junction.id), 0) + 1,
+      radialSystems: transfer.radialSystems.map((system) => ({ ...system, hub: { ...system.hub }, generatedWireTags: [...system.generatedWireTags] })),
+      nextRadialSystemId: transfer.radialSystems.reduce((max, system) => Math.max(max, system.id), 0) + 1,
+      ground: { ...transfer.ground },
+      geometryGroundFlag: transfer.geometryGroundFlag,
+      frequencyRange: { ...transfer.frequencyRange },
+      frequencySegments: transfer.frequencySegments.map((range) => ({ ...range })),
+      designFrequencyMhz: transfer.designFrequencyMhz,
+      modelTransfer: cloneModelTransferProvenance(transfer.provenance),
+      necImport: null,
+      blockedNecImport: null,
+      nextTag: maxTag + 1,
+      selectedTags: new Set(),
+      selectedEndpoints: [],
+      undoStack: [],
+      redoStack: [],
+      canUndo: false,
+      canRedo: false,
+      geometryTransaction: null,
+      clipboard: [],
+      clipboardJunctions: [],
+      pickingExcitationForTag: null,
+      lastEditorMessage: `${transfer.title} transferred from ${transfer.provenance.sourceModuleName}. The reviewed electromagnetic inputs matched at transfer time.`,
+    });
+  },
+
   setNecImport: (value) => set({ necImport: value }),
   setBlockedNecImport: (value) => set({ blockedNecImport: value }),
+  setModelTransfer: (value) => set({ modelTransfer: cloneModelTransferProvenance(value) }),
 
   // ---- Selection ----
 
@@ -1564,6 +1743,184 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   clearEditorMessage: () => set({ lastEditorMessage: null }),
 
+  // ---- Parametric radial systems ----
+
+  addRadialSystem: (hub, drivenWireTag, requestedSettings) => {
+    const state = get();
+    const drivenWire = state.wires.find((wire) => wire.tag === drivenWireTag);
+    if (!drivenWire || hub.wireTag !== drivenWireTag) {
+      return actionResult(false, "Choose the start or end of the driven wire as the radial hub.");
+    }
+    if (state.radialSystems.some((system) => sameEndpoint(system.hub, hub))) {
+      return actionResult(false, "A managed radial system is already attached to this endpoint.");
+    }
+    let wires = state.wires.map((wire) => ({ ...wire }));
+    const settings = normalizeRadialSettings(requestedSettings);
+    let hubPoint = getEndpointPosition(wires, hub);
+    if (!hubPoint) return actionResult(false, "The selected radial hub no longer exists.");
+
+    // NEC-2 cannot use explicit wires exactly on or below real ground. Raising
+    // the selected hub is an explicit consequence of choosing near-surface mode.
+    if (settings.representation === "near-surface-explicit") {
+      const raised = { ...hubPoint, z: settings.clearanceM };
+      for (const member of expandJunctionEndpoints([hub], state.junctions)) {
+        wires = setEndpointPosition(wires, member, raised);
+      }
+      hubPoint = raised;
+    }
+    const issues = radialSystemIssues(hubPoint, settings);
+    if (issues.length > 0) return actionResult(false, issues[0]!);
+
+    const generated: EditorWire[] = [];
+    let nextTag = state.nextTag;
+    for (let index = 0; index < settings.count; index += 1) {
+      const end = radialEndpoint(hubPoint, settings, index);
+      const geometry = {
+        x1: hubPoint.x, y1: hubPoint.y, z1: hubPoint.z,
+        x2: end.x, y2: end.y, z2: end.z,
+        radius: settings.diameterM / 2,
+      };
+      generated.push({ ...geometry, tag: nextTag++, segments: computeSegments(geometry, state.designFrequencyMhz) });
+    }
+    wires = [...wires, ...generated];
+    let junctions = state.junctions;
+    let nextJunctionId = state.nextJunctionId;
+    for (const radial of generated) {
+      ({ junctions, nextJunctionId } = attachCoincidentEndpoint(
+        wires,
+        junctions,
+        hub,
+        { wireTag: radial.tag, endpoint: "start" },
+        nextJunctionId,
+      ));
+    }
+
+    const ratio = hub.endpoint === "start" ? 0 : 1;
+    const existingSource = state.excitations.findIndex((source) => source.wire_tag === drivenWireTag);
+    const source: Excitation = existingSource >= 0
+      ? { ...state.excitations[existingSource]!, segment: segmentForFeedRatio(ratio, drivenWire.segments), position_ratio: ratio }
+      : { wire_tag: drivenWireTag, segment: segmentForFeedRatio(ratio, drivenWire.segments), voltage_real: 1, voltage_imag: 0, position_ratio: ratio };
+    const excitations = [...state.excitations];
+    if (existingSource >= 0) excitations[existingSource] = source;
+    else excitations.push(source);
+
+    const system: EditorRadialSystem = {
+      id: state.nextRadialSystemId,
+      name: `Radial system ${state.nextRadialSystemId}`,
+      hub: { ...hub },
+      drivenWireTag,
+      generatedWireTags: generated.map((wire) => wire.tag),
+      ...settings,
+    };
+    const message = settings.representation === "near-surface-explicit"
+      ? `Added ${settings.count} near-surface radial wires at z=${settings.clearanceM.toFixed(4)} m. These are raised NEC wires, not buried or exact-contact conductors.`
+      : `Added ${settings.count} elevated radial wires and placed the source next to their hub.`;
+    set({
+      ...pushUndo(state),
+      wires,
+      junctions,
+      nextJunctionId,
+      nextTag,
+      radialSystems: [...state.radialSystems, system],
+      nextRadialSystemId: state.nextRadialSystemId + 1,
+      excitations,
+      ground: settings.representation === "near-surface-explicit"
+        ? (state.ground.type === "perfect" || state.ground.type === "free_space" ? { type: "average" } : state.ground)
+        : (state.ground.type === "free_space" ? { type: "perfect" } : state.ground),
+      geometryGroundFlag: -1,
+      selectedTags: new Set([drivenWireTag]),
+      selectedEndpoints: [hub],
+      lastEditorMessage: message,
+      necImport: null,
+    });
+    return actionResult(true, message);
+  },
+
+  updateRadialSystem: (id, requestedSettings) => {
+    const state = get();
+    const current = state.radialSystems.find((system) => system.id === id);
+    if (!current) return actionResult(false, "The radial system no longer exists.");
+    const settings = normalizeRadialSettings(requestedSettings);
+    let wires = state.wires.filter((wire) => !current.generatedWireTags.includes(wire.tag));
+    let hubPoint = getEndpointPosition(wires, current.hub);
+    if (!hubPoint) return actionResult(false, "The radial hub no longer exists.");
+    if (settings.representation === "near-surface-explicit") {
+      const raised = { ...hubPoint, z: settings.clearanceM };
+      for (const member of expandJunctionEndpoints([current.hub], state.junctions)) {
+        if (!current.generatedWireTags.includes(member.wireTag)) wires = setEndpointPosition(wires, member, raised);
+      }
+      hubPoint = raised;
+    }
+    const issues = radialSystemIssues(hubPoint, settings);
+    if (issues.length > 0) return actionResult(false, issues[0]!);
+    const generated: EditorWire[] = [];
+    let nextTag = state.nextTag;
+    for (let index = 0; index < settings.count; index += 1) {
+      const end = radialEndpoint(hubPoint, settings, index);
+      const geometry = { x1: hubPoint.x, y1: hubPoint.y, z1: hubPoint.z, x2: end.x, y2: end.y, z2: end.z, radius: settings.diameterM / 2 };
+      generated.push({ ...geometry, tag: nextTag++, segments: computeSegments(geometry, state.designFrequencyMhz) });
+    }
+    wires = [...wires, ...generated];
+    let junctions = state.junctions.map((junction) => ({
+      ...junction,
+      endpoints: junction.endpoints.filter((endpoint) => !current.generatedWireTags.includes(endpoint.wireTag)),
+    })).filter((junction) => junction.endpoints.length >= 2);
+    let nextJunctionId = state.nextJunctionId;
+    for (const radial of generated) {
+      ({ junctions, nextJunctionId } = attachCoincidentEndpoint(wires, junctions, current.hub, { wireTag: radial.tag, endpoint: "start" }, nextJunctionId));
+    }
+    const radialSystems = state.radialSystems.map((system) => system.id === id ? {
+      ...system,
+      ...settings,
+      generatedWireTags: generated.map((wire) => wire.tag),
+    } : system);
+    const removed = new Set(current.generatedWireTags);
+    const message = `Regenerated ${current.name} with ${settings.count} explicit radial wires.`;
+    set({
+      ...pushUndo(state), wires, junctions, nextJunctionId, nextTag, radialSystems,
+      loads: state.loads.filter((load) => !removed.has(load.wire_tag)),
+      transmissionLines: state.transmissionLines.filter((line) => !removed.has(line.wire_tag1) && !removed.has(line.wire_tag2)),
+      ground: settings.representation === "near-surface-explicit"
+        ? (state.ground.type === "perfect" || state.ground.type === "free_space" ? { type: "average" } : state.ground)
+        : (state.ground.type === "free_space" ? { type: "perfect" } : state.ground),
+      geometryGroundFlag: -1,
+      lastEditorMessage: message,
+      necImport: null,
+    });
+    return actionResult(true, message);
+  },
+
+  removeRadialSystem: (id) => {
+    const state = get();
+    const system = state.radialSystems.find((candidate) => candidate.id === id);
+    if (!system) return actionResult(false, "The radial system no longer exists.");
+    const removed = new Set(system.generatedWireTags);
+    const message = `Removed ${system.name} and its ${system.generatedWireTags.length} generated wires.`;
+    set({
+      ...pushUndo(state),
+      wires: state.wires.filter((wire) => !removed.has(wire.tag)),
+      junctions: state.junctions.map((junction) => ({ ...junction, endpoints: junction.endpoints.filter((endpoint) => !removed.has(endpoint.wireTag)) })).filter((junction) => junction.endpoints.length >= 2),
+      excitations: state.excitations.filter((source) => !removed.has(source.wire_tag)),
+      loads: state.loads.filter((load) => !removed.has(load.wire_tag)),
+      transmissionLines: state.transmissionLines.filter((line) => !removed.has(line.wire_tag1) && !removed.has(line.wire_tag2)),
+      radialSystems: state.radialSystems.filter((candidate) => candidate.id !== id),
+      selectedTags: new Set([system.drivenWireTag]),
+      selectedEndpoints: [system.hub],
+      lastEditorMessage: message,
+      necImport: null,
+    });
+    return actionResult(true, message);
+  },
+
+  explodeRadialSystem: (id) => {
+    const state = get();
+    const system = state.radialSystems.find((candidate) => candidate.id === id);
+    if (!system) return actionResult(false, "The radial system no longer exists.");
+    const message = `${system.name} is now ordinary editable wires; its junction and NEC geometry were retained.`;
+    set({ ...pushUndo(state), radialSystems: state.radialSystems.filter((candidate) => candidate.id !== id), lastEditorMessage: message });
+    return actionResult(true, message);
+  },
+
   // ---- Mode ----
 
   setMode: (mode) => set({ mode, verticalDrag: false }),
@@ -1599,6 +1956,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   clearFrequencySegments: () => set({ frequencySegments: [] }),
   setSnapSize: (size) => set({ snapSize: size }),
   setShowGrid: (show) => set({ showGrid: show }),
+  setContinuousDraw: (enabled) => set({ continuousDraw: enabled }),
+  setEndpointSnap: (enabled) => set({ endpointSnap: enabled }),
   setDesignFrequency: (mhz) => {
     const state = get();
     const designFrequencyMhz = clampFrequencyMhz(mhz);
@@ -1660,11 +2019,19 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   setExcitation: (wireTag, segment) => {
     const state = get();
+    const radialOwner = state.radialSystems.find((system) => system.generatedWireTags.includes(wireTag));
+    if (radialOwner) {
+      set({ lastEditorMessage: `Wire ${wireTag} is part of ${radialOwner.name}; its feed remains on driven Wire ${radialOwner.drivenWireTag}. Explode the group to feed this wire independently.` });
+      return;
+    }
+    const wire = state.wires.find((candidate) => candidate.tag === wireTag);
+    if (!wire) return;
+    const selected = Math.min(wire.segments, Math.max(1, Math.round(segment)));
     const existing = state.excitations.findIndex((e) => e.wire_tag === wireTag);
     const previous = existing >= 0 ? state.excitations[existing] : undefined;
     const exc: Excitation = previous
-      ? { ...previous, segment }
-      : { wire_tag: wireTag, segment, voltage_real: 1, voltage_imag: 0 };
+      ? { ...previous, segment: selected, position_ratio: segmentCentreRatio(selected, wire.segments) }
+      : { wire_tag: wireTag, segment: selected, voltage_real: 1, voltage_imag: 0, position_ratio: segmentCentreRatio(selected, wire.segments) };
     let newExcitations: Excitation[];
     if (existing >= 0) {
       newExcitations = [...state.excitations];
@@ -1673,6 +2040,59 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       newExcitations = [...state.excitations, exc];
     }
     set({ ...pushUndo(state), excitations: newExcitations });
+  },
+
+  setExcitationPosition: (wireTag, positionRatio) => {
+    const state = get();
+    const radialOwner = state.radialSystems.find((system) => system.generatedWireTags.includes(wireTag));
+    if (radialOwner) {
+      set({ lastEditorMessage: `Wire ${wireTag} is a managed radial. The source remains on driven Wire ${radialOwner.drivenWireTag}.` });
+      return;
+    }
+    const wire = state.wires.find((candidate) => candidate.tag === wireTag);
+    if (!wire) return;
+    const ratio = Math.min(1, Math.max(0, positionRatio));
+    const segment = segmentForFeedRatio(ratio, wire.segments);
+    const existing = state.excitations.findIndex((source) => source.wire_tag === wireTag);
+    const source: Excitation = existing >= 0
+      ? { ...state.excitations[existing]!, segment, position_ratio: ratio }
+      : { wire_tag: wireTag, segment, voltage_real: 1, voltage_imag: 0, position_ratio: ratio };
+    const excitations = [...state.excitations];
+    if (existing >= 0) excitations[existing] = source;
+    else excitations.push(source);
+    set({ ...geometryHistory(state), excitations });
+  },
+
+  moveExcitationToPosition: (sourceWireTag, targetWireTag, positionRatio) => {
+    const state = get();
+    const radialOwner = state.radialSystems.find((system) => system.generatedWireTags.includes(targetWireTag));
+    if (radialOwner) return actionResult(false, `Wire ${targetWireTag} is a managed radial; the source remains on driven Wire ${radialOwner.drivenWireTag}.`);
+    const targetWire = state.wires.find((wire) => wire.tag === targetWireTag);
+    const sourceIndex = state.excitations.findIndex((source) => source.wire_tag === sourceWireTag);
+    if (!targetWire || sourceIndex < 0) return actionResult(false, "The selected source or target wire no longer exists.");
+    const occupied = state.excitations.findIndex((source) => source.wire_tag === targetWireTag);
+    if (occupied >= 0 && occupied !== sourceIndex) {
+      return actionResult(false, `Wire ${targetWireTag} already has a source. Remove it before moving this feedpoint there.`);
+    }
+    const ratio = Math.min(1, Math.max(0, positionRatio));
+    const excitations = [...state.excitations];
+    excitations[sourceIndex] = {
+      ...excitations[sourceIndex]!,
+      wire_tag: targetWireTag,
+      segment: segmentForFeedRatio(ratio, targetWire.segments),
+      position_ratio: ratio,
+    };
+    set({ ...geometryHistory(state), excitations, lastEditorMessage: null });
+    return actionResult(true, `Moved the feedpoint to Wire ${targetWireTag}.`);
+  },
+
+  updateExcitation: (wireTag, updates) => {
+    const state = get();
+    const index = state.excitations.findIndex((source) => source.wire_tag === wireTag);
+    if (index < 0) return;
+    const excitations = [...state.excitations];
+    excitations[index] = { ...excitations[index]!, ...updates };
+    set({ ...pushUndo(state), excitations });
   },
 
   removeExcitation: (wireTag) => {
@@ -1965,6 +2385,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       transmissionLines: previous.transmissionLines,
       junctions: previous.junctions,
       nextJunctionId: previous.nextJunctionId,
+      radialSystems: previous.radialSystems,
+      nextRadialSystemId: previous.nextRadialSystemId,
       selectedTags: new Set(),
       selectedEndpoints: [],
       undoStack: newUndoStack,
@@ -1989,6 +2411,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       transmissionLines: next.transmissionLines,
       junctions: next.junctions,
       nextJunctionId: next.nextJunctionId,
+      radialSystems: next.radialSystems,
+      nextRadialSystemId: next.nextRadialSystemId,
       selectedTags: new Set(),
       selectedEndpoints: [],
       undoStack: [...state.undoStack, current],
@@ -2008,11 +2432,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   commitGeometryTransaction: () => {
     const state = get();
     if (!state.geometryTransaction) return;
-    const before = JSON.stringify({
-      wires: state.geometryTransaction.wires,
-      junctions: state.geometryTransaction.junctions,
-    });
-    const after = JSON.stringify({ wires: state.wires, junctions: state.junctions });
+    const before = JSON.stringify(state.geometryTransaction);
+    const after = JSON.stringify(takeSnapshot(state));
     set({
       ...(before === after ? {} : pushSnapshot(state, state.geometryTransaction)),
       geometryTransaction: null,
@@ -2030,6 +2451,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       transmissionLines: snapshot.transmissionLines,
       junctions: snapshot.junctions,
       nextJunctionId: snapshot.nextJunctionId,
+      radialSystems: snapshot.radialSystems,
+      nextRadialSystemId: snapshot.nextRadialSystemId,
       geometryTransaction: null,
       lastEditorMessage: "Movement cancelled.",
     });

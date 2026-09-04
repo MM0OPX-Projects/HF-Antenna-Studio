@@ -7,6 +7,7 @@ import type { VerticalAntennaModel } from "../vertical-antennas/schema";
 import { generateYagiModel, startingYagiModel } from "../yagi-beams/model";
 import type { YagiAntennaModel } from "../yagi-beams/schema";
 import type { ParameterAxis, ParameterId, ParameterSweepDefinition, ParameterSweepFamily } from "./types";
+import { useUIStore } from "../../stores/uiStore";
 
 export const MAX_PARAMETER_SWEEP_JOBS = 81;
 export const MAX_TWO_DIMENSIONAL_AXIS_POINTS = 9;
@@ -90,7 +91,7 @@ export function parameterSweepJobCount(definition: ParameterSweepDefinition): nu
 }
 
 export function parameterSweepDefinitionKey(definition: ParameterSweepDefinition): string {
-  return JSON.stringify(definition);
+  return JSON.stringify({ definition, conductor: useUIStore.getState().conductor });
 }
 
 export function validateParameterSweepDefinition(definition: ParameterSweepDefinition): string[] {
@@ -138,7 +139,7 @@ export function buildSweepModel(definition: ParameterSweepDefinition, values: Pa
     const model: HorizontalDipoleModel = { ...start, frequencyHz, totalLengthM: SPEED_OF_LIGHT_M_PER_S / frequencyHz * 0.476, heightM: SPEED_OF_LIGHT_M_PER_S / frequencyHz * 0.5, ground: commonGround(definition).kind === "perfect" ? { kind: "perfect" } : { kind: "real", conductivitySPerM: definition.ground.kind === "sommerfeld-norton" ? definition.ground.conductivitySPerM : 0.005, relativePermittivity: definition.ground.kind === "sommerfeld-norton" ? definition.ground.relativePermittivity : 13 }, referenceImpedanceOhm: definition.referenceImpedanceOhm };
     if (values["dipole-height"] !== undefined) model.heightM = values["dipole-height"]!;
     if (values["dipole-length"] !== undefined) model.totalLengthM = values["dipole-length"]!;
-    return { family: "dipole", model, modelKey: JSON.stringify(model), issues: [] };
+    return { family: "dipole", model, modelKey: JSON.stringify({ model, conductor: useUIStore.getState().conductor }), issues: [] };
   }
   if (definition.family === "vertical") {
     let model = createWorkflowVerticalModel(frequencyHz, definition.ground, definition.radialSystems, 4, definition.referenceImpedanceOhm);
@@ -146,7 +147,7 @@ export function buildSweepModel(definition: ParameterSweepDefinition, values: Pa
     if (values["vertical-length"] !== undefined) model.radiatorLengthM = values["vertical-length"]!;
     if (values["radial-count"] !== undefined) model.radials = { ...model.radials, count: values["radial-count"]! };
     const generated = generateVerticalModel(model);
-    return { family: "vertical", model, modelKey: JSON.stringify(model), issues: generated.issues.map((issue) => `${issue.severity}: ${issue.message}`) };
+    return { family: "vertical", model, modelKey: JSON.stringify({ model, conductor: useUIStore.getState().conductor }), issues: generated.issues.map((issue) => `${issue.severity}: ${issue.message}`) };
   }
   if (definition.family === "yagi") {
     let model = startingYagiModel(frequencyHz, 1);
@@ -154,14 +155,14 @@ export function buildSweepModel(definition: ParameterSweepDefinition, values: Pa
     if (values["yagi-director-spacing"] !== undefined) model.directors = [{ ...model.directors[0]!, spacingFromPreviousM: values["yagi-director-spacing"]! }];
     if (values["yagi-height"] !== undefined) model.boomHeightM = values["yagi-height"]!;
     const generated = generateYagiModel(model);
-    return { family: "yagi", model, modelKey: JSON.stringify(model), issues: generated.issues.map((issue) => `${issue.severity}: ${issue.message}`) };
+    return { family: "yagi", model, modelKey: JSON.stringify({ model, conductor: useUIStore.getState().conductor }), issues: generated.issues.map((issue) => `${issue.severity}: ${issue.message}`) };
   }
   let model = createWorkflowPhasedModel(frequencyHz, definition.ground, definition.radialSystems);
   if (values["array-spacing"] !== undefined) model.spacingM = values["array-spacing"]!;
   if (values["array-phase"] !== undefined) model.ideal = { ...model.ideal, phase2Deg: values["array-phase"]! };
   model = { ...model, provenance: { ...model.provenance, manualDimensions: true } };
   const generated = generatePhasedArray(model);
-  return { family: "phased-array", model, modelKey: JSON.stringify(model), issues: generated.issues.map((issue) => `${issue.severity}: ${issue.message}`) };
+  return { family: "phased-array", model, modelKey: JSON.stringify({ model, conductor: useUIStore.getState().conductor }), issues: generated.issues.map((issue) => `${issue.severity}: ${issue.message}`) };
 }
 
 export function builtParameterValue(built: BuiltSweepModel, parameterId: ParameterId): number {

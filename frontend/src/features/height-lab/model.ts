@@ -1,6 +1,7 @@
 import type { HorizontalDipoleModel } from "../verified-dipole/model";
 import { megahertzToHertz, wavelengthMetres } from "../verified-dipole/units";
 import type { GroundPresetId } from "./types";
+import { useUIStore } from "../../stores/uiStore";
 
 export interface HeightLabParameters {
   frequencyMhz: number;
@@ -29,10 +30,9 @@ export function createHeightLabModel(parameters: HeightLabParameters): Horizonta
         },
     referenceImpedanceOhm: 50,
     orientation: "x",
-    conductor: { kind: "perfect" },
   };
 }
 
 export function heightLabModelKey(model: HorizontalDipoleModel): string {
-  return JSON.stringify(model);
+  return JSON.stringify({ model, conductor: useUIStore.getState().conductor });
 }

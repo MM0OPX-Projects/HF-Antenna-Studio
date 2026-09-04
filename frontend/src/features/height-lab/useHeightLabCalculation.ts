@@ -3,6 +3,7 @@ import type { HorizontalDipoleModel } from "../verified-dipole/model";
 import { runVerifiedDipole } from "../verified-dipole/service";
 import type { VerifiedDipoleResult } from "../verified-dipole/result";
 import { heightLabModelKey } from "./model";
+import { useUIStore } from "../../stores/uiStore";
 import { HeightLabScheduler, type HeightCalculationState } from "./scheduler";
 
 const EMPTY_STATE: HeightCalculationState<VerifiedDipoleResult> = {
@@ -13,7 +14,8 @@ const EMPTY_STATE: HeightCalculationState<VerifiedDipoleResult> = {
 };
 
 export function useHeightLabCalculation(model: HorizontalDipoleModel, valid: boolean) {
-  const key = useMemo(() => heightLabModelKey(model), [model]);
+  const conductor = useUIStore((state) => state.conductor);
+  const key = useMemo(() => heightLabModelKey(model), [conductor, model]);
   const [scheduler] = useState(() => new HeightLabScheduler<VerifiedDipoleResult>(450, 40));
   const [state, setState] = useState(EMPTY_STATE);
 

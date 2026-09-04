@@ -7,6 +7,7 @@ async function openStudio(page: Page) {
   await page.goto("/antenna-templates");
   const changelog = page.getByRole("button", { name: "Got it" });
   if (await changelog.isVisible().catch(() => false)) await changelog.click();
+  await page.getByLabel("Global antenna wire material").selectOption("perfect");
 }
 
 const isWindowsCi = process.platform === "win32" && Boolean(process.env.CI);

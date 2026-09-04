@@ -1,6 +1,8 @@
 import type { NecDeckRunRequest } from "../../engine/wasm/worker";
 import type { AntennaTemplateDefinition, TemplateAntennaModel, TemplateValidationIssue } from "./schema";
 import { segmentTemplateModel, type TemplateSegmentation } from "./segmentation";
+import { applyConductorToDeck } from "../../engine/conductor";
+import { useUIStore } from "../../stores/uiStore";
 
 export interface AdaptedTemplateNec {
   deck: string;
@@ -42,7 +44,7 @@ export function adaptTemplateToNec(model: TemplateAntennaModel, definition: Ante
     "RP 0 19 72 1000 0 0 5 5",
     "EN",
   );
-  const deck = `${lines.join("\n")}\n`;
+  const deck = applyConductorToDeck(`${lines.join("\n")}\n`, useUIStore.getState().conductor);
   return {
     deck,
     segmentation,

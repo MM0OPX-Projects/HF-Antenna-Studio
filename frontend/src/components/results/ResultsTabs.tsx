@@ -31,9 +31,10 @@ const TABS = [
 
 interface ResultsPanelProps {
   showSummary?: boolean;
+  compactRadiationCuts?: boolean;
 }
 
-export function ResultsPanel({ showSummary = true }: ResultsPanelProps = {}) {
+export function ResultsPanel({ showSummary = true, compactRadiationCuts = false }: ResultsPanelProps = {}) {
   const status = useSimulationStore((s) => s.status);
   const result = useSimulationStore((s) => s.result);
   const error = useSimulationStore((s) => s.error);
@@ -156,7 +157,7 @@ export function ResultsPanel({ showSummary = true }: ResultsPanelProps = {}) {
               );
               const hasMatching = matching.ratio !== 1 || matching.feedlineZ0 !== 50;
               return (
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid w-full max-w-xl grid-cols-2 gap-2" data-testid="results-quick-summary">
                   <div className="bg-background rounded-md p-2">
                     <div className="text-[10px] text-text-secondary">
                       SWR{hasMatching ? ` (${matching.feedlineZ0}\u03A9)` : ""}
@@ -194,6 +195,7 @@ export function ResultsPanel({ showSummary = true }: ResultsPanelProps = {}) {
 
             {resultsTab !== "pattern" && <RadiationCutPair
               pattern={selectedFreqResult?.pattern}
+              compact={compactRadiationCuts}
               title="Azimuth and elevation cuts"
               context={selectedFreqResult
                 ? `Current solved antenna · ${selectedFreqResult.frequency_mhz.toFixed(6)} MHz · both plots use the same NEC result as the 3D pattern`
@@ -311,6 +313,7 @@ export function ResultsPanel({ showSummary = true }: ResultsPanelProps = {}) {
                   {selectedFreqResult.pattern ? (
                     <RadiationCutPair
                       pattern={selectedFreqResult.pattern}
+                      compact={compactRadiationCuts}
                       title="Azimuth and elevation cuts"
                       context={`Current solved antenna · ${selectedFreqResult.frequency_mhz.toFixed(6)} MHz · both plots use the same NEC result as the 3D pattern`}
                       testId="results-radiation-cuts"

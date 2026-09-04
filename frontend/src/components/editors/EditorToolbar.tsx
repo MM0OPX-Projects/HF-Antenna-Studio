@@ -69,6 +69,8 @@ export function EditorToolbar() {
   const duplicateSelected = useEditorStore((s) => s.duplicateSelected);
   const mirrorSelected = useEditorStore((s) => s.mirrorSelected);
   const clipboard = useEditorStore((s) => s.clipboard);
+  const setExcitationPosition = useEditorStore((s) => s.setExcitationPosition);
+  const setPickingExcitationForTag = useEditorStore((s) => s.setPickingExcitationForTag);
 
   const hasSelection = selectedTags.size > 0;
   const singleSelected = selectedTags.size === 1;
@@ -87,8 +89,22 @@ export function EditorToolbar() {
   ];
 
   const handleMirrorY = useCallback(() => mirrorSelected("y"), [mirrorSelected]);
+  const handlePlaceFeed = useCallback(() => {
+    if (!singleSelected) return;
+    const tag = [...selectedTags][0]!;
+    setExcitationPosition(tag, 0.5);
+    setPickingExcitationForTag(tag);
+  }, [selectedTags, setExcitationPosition, setPickingExcitationForTag, singleSelected]);
 
   const operationButtons: ToolButton[] = [
+    {
+      id: "feed",
+      label: "Feed",
+      icon: "●",
+      title: "Place a feedpoint on the selected wire",
+      action: handlePlaceFeed,
+      disabled: !singleSelected,
+    },
     {
       id: "copy",
       label: "Copy",

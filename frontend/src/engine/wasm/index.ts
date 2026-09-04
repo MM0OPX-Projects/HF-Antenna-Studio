@@ -37,6 +37,8 @@ import {
   assertSupportedFrequencyMhz,
   assertSupportedFrequencyRange,
 } from "../limits";
+import { useUIStore } from "../../stores/uiStore";
+import { applyConductorToDeck, applyConductorToLoads } from "../conductor";
 
 // ---------------------------------------------------------------------------
 // Worker pool (single worker per type, lazy-initialized)
@@ -228,7 +230,7 @@ export class WasmEngine implements SimulationEngine {
     const message: WorkerRequest = {
       type: "simulate",
       id,
-      request,
+      request: { ...request, loads: applyConductorToLoads(request.loads, useUIStore.getState().conductor) },
     };
     return submitSimulationRequest(message);
   }
@@ -246,7 +248,7 @@ export class WasmEngine implements SimulationEngine {
     const message: WorkerRequest = {
       type: "run-deck",
       id: generateId(),
-      request,
+      request: { ...request, deck: applyConductorToDeck(request.deck, useUIStore.getState().conductor) },
     };
     return submitSimulationRequest(message, timeoutMs, signal);
   }
@@ -297,7 +299,7 @@ export class WasmEngine implements SimulationEngine {
         steps: data.frequency_steps,
       },
       frequencySegments: data.frequencySegments,
-      loads: data.loads,
+      loads: applyConductorToLoads(data.loads, useUIStore.getState().conductor),
       transmission_lines: data.transmission_lines,
       compute_currents: true,
       comment: data.title || "AntennaSim export",
@@ -391,7 +393,7 @@ export class WasmEngine implements SimulationEngine {
     const startMsg: OptimizerWorkerRequest = {
       type: "start",
       id,
-      request,
+      request: { ...request, loads: applyConductorToLoads(request.loads, useUIStore.getState().conductor) },
     };
     worker.postMessage(startMsg);
 

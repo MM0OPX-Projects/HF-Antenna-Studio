@@ -1,8 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
+import { useUIStore } from "../../../stores/uiStore";
+import { LEGACY_CONDUCTOR } from "../../../engine/conductor";
 import { readFileSync } from "node:fs";
 import { adaptIdealCalibrationToNec, adaptIdealFinalToNec, adaptPhysicalNetworkToNec, segmentPhasedWires } from "../nec-adapter";
 import { buildPhasedWires, complexPhaseDeg, elementBases, generatePhasedArray, lineMetrics, phasedWavelengthM, startingPhasedArrayModel, switchPhasedRadialRepresentation, validatePhasedArrayModel } from "../model";
 import { formatPhaseDegrees } from "../presentation";
+
+beforeEach(() => useUIStore.getState().setConductor(LEGACY_CONDUCTOR));
 
 describe("typed phased-array model and NEC adapter", () => {
   it("normalises numerical signed zero in phase results", () => {

@@ -104,7 +104,7 @@ export async function runComparisonSlot(
       schemaVersion: 1, kind: "center-fed-horizontal-dipole", frequencyHz, totalLengthM: lambda * 0.477,
       wireDiameterM: 0.001, heightM: definition.parameterValue,
       ground: conditions.ground.kind === "perfect" ? { kind: "perfect" } : { kind: "real", ...realGround(conditions)! },
-      referenceImpedanceOhm: conditions.referenceImpedanceOhm, orientation: "x", conductor: { kind: "perfect" },
+      referenceImpedanceOhm: conditions.referenceImpedanceOhm, orientation: "x",
     };
     const run = await runVerifiedDipole(model, { signal: options.signal });
     const direction = baseMetrics(run.result.azimuthPattern);
@@ -147,6 +147,6 @@ export async function runComparisonSlot(
 
 export function createDipoleSweepPlanForTest(definition: ComparisonSlotDefinition, conditions: ComparisonConditions) {
   const lambda = SPEED_OF_LIGHT_M_PER_S / (conditions.frequencyMhz * 1_000_000);
-  const model: HorizontalDipoleModel = { schemaVersion: 1, kind: "center-fed-horizontal-dipole", frequencyHz: conditions.frequencyMhz * 1_000_000, totalLengthM: lambda * 0.477, wireDiameterM: 0.001, heightM: definition.parameterValue, ground: { kind: "perfect" }, referenceImpedanceOhm: conditions.referenceImpedanceOhm, orientation: "x", conductor: { kind: "perfect" } };
+  const model: HorizontalDipoleModel = { schemaVersion: 1, kind: "center-fed-horizontal-dipole", frequencyHz: conditions.frequencyMhz * 1_000_000, totalLengthM: lambda * 0.477, wireDiameterM: 0.001, heightM: definition.parameterValue, ground: { kind: "perfect" }, referenceImpedanceOhm: conditions.referenceImpedanceOhm, orientation: "x" };
   return adaptDipoleToNec(model);
 }

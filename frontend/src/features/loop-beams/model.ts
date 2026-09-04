@@ -1,5 +1,6 @@
 import { SPEED_OF_LIGHT_M_PER_S } from "../verified-dipole/model";
 import { buildG3txqBroadbandHexbeam, g3txqFeedGapM } from "../../engine/g3txq-hexbeam";
+import { useUIStore } from "../../stores/uiStore";
 import type { CubicalQuadModel, DeltaFeedLocation, DeltaLoopModel, DiamondLoopModel, GeneratedLoopBeamModel, HexBand, HexbeamModel, LoopBeamIssue, LoopBeamModel, LoopBeamPoint3M, LoopBeamSupport, LoopBeamWire, SquareLoopModel } from "./schema";
 
 export const LOOP_BEAM_BANDS: ReadonlyArray<{ id: HexBand; label: string; frequencyHz: number }> = [
@@ -100,5 +101,5 @@ export function generateLoopBeamModel(model: LoopBeamModel): GeneratedLoopBeamMo
   return { model, ...built, feedConductorOrientation: orientation(feed), intendedForwardAxis: model.kind === "cubical-quad" || model.kind === "hexbeam" ? "+Y" : null, issues: validateLoopBeamModel(model, built.wires, built.feedWireId) };
 }
 export function resizeCubicalQuad(model: CubicalQuadModel, loopCount: 2 | 3 | 4): CubicalQuadModel { const base = startingCubicalQuadModel(model.frequencyHz, loopCount); return { ...model, loopCount, directorPerimetersM: base.directorPerimetersM.map((value, i) => model.directorPerimetersM[i] ?? value), directorSpacingsM: base.directorSpacingsM.map((value, i) => model.directorSpacingsM[i] ?? value), provenance: { ...model.provenance, manualDimensions: true } }; }
-export function loopBeamModelKey(model: LoopBeamModel): string { return JSON.stringify(model); }
+export function loopBeamModelKey(model: LoopBeamModel): string { return JSON.stringify({ model, conductor: useUIStore.getState().conductor }); }
 export function hasLoopBeamErrors(generated: GeneratedLoopBeamModel): boolean { return generated.issues.some((issue) => issue.severity === "error"); }

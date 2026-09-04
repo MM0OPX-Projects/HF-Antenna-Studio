@@ -11,6 +11,7 @@ import type { VerticalAntennaModel, VerticalConfiguration, VerticalGround, Verti
 import { VerticalCurrentPlot } from "../features/vertical-antennas/VerticalCurrentPlot";
 import { VerticalGeometry3D } from "../features/vertical-antennas/VerticalGeometry3D";
 import { VerticalSliderField } from "../features/vertical-antennas/VerticalSliderField";
+import { useUIStore } from "../stores/uiStore";
 
 const METRES_PER_FOOT = 0.3048;
 const METRES_PER_INCH = 0.0254;
@@ -24,6 +25,7 @@ const MODE_INFO: Record<VerticalConfiguration, { title: string; description: str
 function signedReactance(value: number): string { return `${value >= 0 ? "+" : "−"} j${Math.abs(value).toFixed(2)}`; }
 
 export function VerticalAntennasPage() {
+  const conductor = useUIStore((state) => state.conductor);
   const [model, setModel] = useState<VerticalAntennaModel>(() => startingVerticalModel());
   const [imperial, setImperial] = useState(false);
   const [patternMode, setPatternMode] = useState<"absolute" | "normalised">("absolute");
@@ -32,11 +34,11 @@ export function VerticalAntennasPage() {
   const [completed, setCompleted] = useState<{ key: string; result: VerticalSolverResult } | null>(null);
   const controllerRef = useRef<AbortController | null>(null);
   const generated = useMemo(() => generateVerticalModel(model), [model]);
-  const key = useMemo(() => verticalModelKey(model), [model]);
+  const key = useMemo(() => verticalModelKey(model), [conductor, model]);
   const adapted = useMemo(() => {
     if (hasVerticalErrors(generated)) return null;
     try { return adaptVerticalToNec(generated); } catch { return null; }
-  }, [generated]);
+  }, [conductor, generated]);
   const result = completed?.key === key ? completed.result : null;
   const lambda = wavelengthM(model.frequencyHz);
   const lengthUnit = imperial ? "ft" : "m";

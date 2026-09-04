@@ -1,4 +1,6 @@
 import type { NecDeckRunRequest } from "../../engine/wasm/worker";
+import { applyConductorToDeck } from "../../engine/conductor";
+import { useUIStore } from "../../stores/uiStore";
 import { yagiWavelengthM } from "./model";
 import type { GeneratedYagiModel, SegmentedYagiWire, YagiIssue, YagiSegmentation } from "./schema";
 
@@ -66,7 +68,7 @@ export function adaptYagiToNec(generated: GeneratedYagiModel): AdaptedYagiNec {
     "RP 0 46 180 1000 0 0 2 2",
     "EN",
   );
-  const deck = `${lines.join("\n")}\n`;
+  const deck = applyConductorToDeck(`${lines.join("\n")}\n`, useUIStore.getState().conductor);
   if (lines.some((line) => line.startsWith("GW ") && line.length > 80)) throw new RangeError("A generated GW card exceeds NEC's 80-column portability limit.");
   return {
     deck,

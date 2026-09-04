@@ -1,5 +1,7 @@
 import { readFileSync } from "node:fs";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
+import { useUIStore } from "../../../stores/uiStore";
+import { LEGACY_CONDUCTOR } from "../../../engine/conductor";
 import { createDefaultDipoleModel, type HorizontalDipoleModel } from "../model";
 import { adaptDipoleToNec } from "../nec-adapter";
 import { assessDipoleModel } from "../validation";
@@ -15,6 +17,8 @@ function halfWaveModel(overrides: Partial<HorizontalDipoleModel> = {}): Horizont
     ...overrides,
   };
 }
+
+beforeEach(() => useUIStore.getState().setConductor(LEGACY_CONDUCTOR));
 
 describe("verified dipole NEC adapter", () => {
   it("starts a new dipole with 1 mm wire", () => {

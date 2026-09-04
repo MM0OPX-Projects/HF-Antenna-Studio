@@ -1,7 +1,7 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { LOOP_BEAM_PERFECT_GROUND_REGRESSION_CASES } from "../src/features/loop-beams/validation-cases";
 
-async function openLab(page: Page) { await page.goto("/loop-and-hexbeam-models"); const changelog = page.getByRole("button", { name: "Got it" }); if (await changelog.isVisible().catch(() => false)) await changelog.click(); }
+async function openLab(page: Page) { await page.goto("/loop-and-hexbeam-models"); const changelog = page.getByRole("button", { name: "Got it" }); if (await changelog.isVisible().catch(() => false)) await changelog.click(); await page.getByLabel("Global antenna wire material").selectOption("perfect"); }
 async function waitForSolved(page: Page) { await expect(page.getByTestId("loop-results")).toBeVisible({ timeout: 30_000 }); await expect(page.getByTestId("loop-solver-error")).toHaveCount(0); }
 function numeric(text: string): number { return Number(text.match(/[+−-]?\d+(?:\.\d+)?/)![0].replace("−", "-")); }
 async function impedance(locator: Locator) { const text = (await locator.innerText()).replace("−", "-"); const match = text.match(/^([+-]?\d+(?:\.\d+)?)\s+([+-])\s+j(\d+(?:\.\d+)?)/); if (!match) throw new Error(`Could not parse impedance: ${text}`); return { resistance: Number(match[1]), reactance: Number(match[3]) * (match[2] === "-" ? -1 : 1) }; }

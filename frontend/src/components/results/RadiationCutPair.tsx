@@ -15,6 +15,7 @@ interface RadiationCutPairProps {
   pending?: boolean;
   stale?: boolean;
   testId?: string;
+  compact?: boolean;
 }
 
 export function RadiationCutPair({
@@ -27,6 +28,7 @@ export function RadiationCutPair({
   pending = false,
   stale = false,
   testId = "radiation-cut-pair",
+  compact = false,
 }: RadiationCutPairProps) {
   const [mode, setMode] = useState<PatternDisplayMode>("absolute");
   const derived = useMemo(() => pattern ? radiationCutSeriesFromPattern(pattern) : null, [pattern]);
@@ -57,9 +59,9 @@ export function RadiationCutPair({
     {!available && <Card className="grid min-h-32 place-items-center p-5 text-center text-xs text-text-secondary" data-testid={`${testId}-empty`}>
       {pending ? "Calculating azimuth and elevation cuts with NEC…" : emptyMessage}
     </Card>}
-    {available && <div className="grid gap-3 2xl:grid-cols-2">
-      <Card className="overflow-hidden p-2" data-testid={`${testId}-azimuth`}><HeightPolarPlot plane="azimuth" mode={mode} series={pattern && !azimuthSeries ? azimuth.map((item) => ({ ...item, pattern, azimuthConvention: "legacy-compass" as const })) : azimuth} /></Card>
-      <Card className="overflow-hidden p-2" data-testid={`${testId}-elevation`}><HeightPolarPlot plane="elevation" mode={mode} series={elevation} /></Card>
+    {available && <div className={`grid gap-3 ${compact ? "lg:grid-cols-2" : "2xl:grid-cols-2"}`}>
+      <Card className="overflow-hidden p-2" data-testid={`${testId}-azimuth`}><div className={compact ? "mx-auto w-full max-w-[500px]" : undefined}><HeightPolarPlot plane="azimuth" mode={mode} compactControls={compact} series={pattern && !azimuthSeries ? azimuth.map((item) => ({ ...item, pattern, azimuthConvention: "legacy-compass" as const })) : azimuth} /></div></Card>
+      <Card className="overflow-hidden p-2" data-testid={`${testId}-elevation`}><div className={compact ? "mx-auto w-full max-w-[500px]" : undefined}><HeightPolarPlot plane="elevation" mode={mode} series={elevation} /></div></Card>
     </div>}
   </section>;
 }

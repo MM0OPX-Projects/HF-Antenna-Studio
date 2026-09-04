@@ -20,6 +20,8 @@ import { downloadViewportScreenshot } from "../../utils/screenshot";
 import type { GroundConfig } from "../../templates/types";
 import { editorModelFingerprint } from "../../features/wire-editor/model-fingerprint";
 import { resolveGeometryGroundFlag } from "../../engine/geometry-ground";
+import { conductorFromLoads } from "../../engine/conductor";
+import { useUIStore } from "../../stores/uiStore";
 
 interface ImportExportPanelProps {
   className?: string;
@@ -69,6 +71,7 @@ export function ImportExportPanel({ className = "" }: ImportExportPanelProps) {
   const blockedNecImport = useEditorStore((s) => s.blockedNecImport);
   const setNecImport = useEditorStore((s) => s.setNecImport);
   const setBlockedNecImport = useEditorStore((s) => s.setBlockedNecImport);
+  const setConductor = useUIStore((s) => s.setConductor);
 
   const [message, setMessage] = useState<{ kind: "success" | "warning" | "error"; text: string } | null>(null);
 
@@ -117,6 +120,7 @@ export function ImportExportPanel({ className = "" }: ImportExportPanelProps) {
           clearAll();
           setWires(data.wires, Array.isArray(data.excitations) ? data.excitations : []);
           for (const load of data.loads ?? []) addLoad(load);
+          setConductor(conductorFromLoads(data.loads ?? []));
           for (const line of data.transmission_lines ?? []) addTransmissionLine(line);
           if (data.ground) setGround(data.ground);
           if (data.geometry_ground_flag === -1 || data.geometry_ground_flag === 0 || data.geometry_ground_flag === 1) {
@@ -166,6 +170,7 @@ export function ImportExportPanel({ className = "" }: ImportExportPanelProps) {
                 imported_model_fingerprint: importedModelFingerprint,
               },
             });
+            setConductor(conductorFromLoads(response.loads ?? []));
             const warnings = document.diagnostics.filter((item) => item.severity === "warning").length;
             setMessage({
               kind: warnings > 0 ? "warning" : "success",
@@ -178,6 +183,7 @@ export function ImportExportPanel({ className = "" }: ImportExportPanelProps) {
           clearAll();
           setWires(resp.wires, resp.excitations);
           for (const load of resp.loads ?? []) addLoad(load);
+          setConductor(conductorFromLoads(resp.loads ?? []));
           for (const line of resp.transmission_lines ?? []) addTransmissionLine(line);
           setGround(resp.ground ?? mapGroundType(resp.ground_type));
           setFrequencyRange({
@@ -197,7 +203,7 @@ export function ImportExportPanel({ className = "" }: ImportExportPanelProps) {
         e.target.value = "";
       }
     },
-    [clearAll, setWires, addLoad, addTransmissionLine, setGround, setGeometryGroundFlag, setFrequencyRange, setFrequencySegments, setNecImport, setBlockedNecImport, loadImportedModel]
+    [clearAll, setWires, addLoad, addTransmissionLine, setGround, setGeometryGroundFlag, setFrequencyRange, setFrequencySegments, setNecImport, setBlockedNecImport, loadImportedModel, setConductor]
   );
 
   const handleExportJSON = useCallback(() => {

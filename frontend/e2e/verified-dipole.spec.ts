@@ -24,6 +24,7 @@ test("verified dipole executes the displayed NEC deck through local WASM", async
 
   const deckBeforeRun = await page.getByTestId("generated-nec").innerText();
   expect(deckBeforeRun).toContain("GW 1 21 -5.075 0 10 5.075 0 10 0.0005");
+  expect(deckBeforeRun).toContain("LD 5 0 0 0 58000000 0 0");
   expect(deckBeforeRun).toContain("EX 0 1 11 0 1 0");
   expect(deckBeforeRun.trimEnd().endsWith("EN")).toBe(true);
 
@@ -91,4 +92,67 @@ test("verified dipole unit and real-ground controls preserve SI model meaning", 
   await page.getByRole("button", { name: "75 Ω" }).click();
   await page.getByTestId("run-dipole").click();
   await expect(page.getByTestId("dipole-results")).toContainText("SWR (75 Ω)", { timeout: 30_000 });
+});
+
+test("global wire material changes the displayed and executed NEC conductivity", async ({ page }) => {
+  await page.goto("/verified-dipole");
+  await dismissChangelog(page);
+  const material = page.getByLabel("Global antenna wire material");
+  await expect(material).toHaveValue("copper");
+  await material.selectOption("aluminum");
+  await expect(page.getByTestId("generated-nec")).toContainText("LD 5 0 0 0 35400000 0 0");
+  await page.getByTestId("run-dipole").click();
+  await expect(page.getByTestId("dipole-results")).toBeVisible({ timeout: 30_000 });
+  await material.selectOption("perfect");
+  await expect(page.getByTestId("generated-nec")).not.toContainText("LD 5");
+  await expect(page.getByTestId("dipole-results")).toHaveCount(0);
+});
+
+test("reviewed dipole transfer opens an exact editable Wire Editor model with result parity", async ({ page }) => {
+  await page.goto("/verified-dipole");
+  await dismissChangelog(page);
+  await page.getByTestId("run-dipole").click();
+  await expect(page.getByTestId("dipole-results")).toBeVisible({ timeout: 30_000 });
+  const readNumber = async (testId: string) => Number((await page.getByTestId(testId).innerText()).replace("−", "-").match(/[+-]?\d+(?:\.\d+)?/)![0]);
+  const expected = {
+    resistance: await readNumber("result-resistance"),
+    reactance: await readNumber("result-reactance"),
+    swr: await readNumber("result-swr"),
+    gain: await readNumber("result-gain"),
+  };
+
+  await page.getByTestId("open-dipole-in-editor").click();
+  const review = page.getByTestId("model-transfer-review");
+  await expect(review).toBeVisible();
+  await expect(page.getByTestId("transfer-parity-status")).toContainText("NEC input parity passed");
+  await expect(review).toContainText("1 / 21");
+  await review.getByRole("button", { name: "Keep current editor model" }).click();
+  await expect(page).toHaveURL(/\/verified-dipole$/);
+
+  await page.getByTestId("open-dipole-in-editor").click();
+  await page.getByTestId("confirm-model-transfer").click();
+  await expect(page).toHaveURL(/\/editor$/);
+  await expect(page.getByTestId("model-transfer-status")).toContainText("Exact transferred model");
+  await expect(page.getByRole("heading", { name: /Antenna objects \(1 wire\)/i })).toBeVisible();
+  await expect(page.locator('[data-testid="antenna-source-tree"]:visible').first()).toContainText("wire 1, segment 11");
+
+  await page.getByRole("button", { name: "Run Simulation" }).click();
+  await expect(page.getByTestId("wire-editor-simulation-status")).toHaveText("1 frequency points calculated", { timeout: 30_000 });
+  const resultsText = await page.locator("#wire-editor-analysis").innerText();
+  const impedance = resultsText.match(/Impedance\s+([+-]?\d+(?:\.\d+)?)\s*([+-])\s*j([+-]?\d+(?:\.\d+)?)/i);
+  const swr = resultsText.match(/SWR\s+([+-]?\d+(?:\.\d+)?)/i);
+  const gain = resultsText.match(/Gain\s+([+-]?\d+(?:\.\d+)?)/i);
+  expect(impedance).not.toBeNull(); expect(swr).not.toBeNull(); expect(gain).not.toBeNull();
+  const actualReactance = Number(impedance![3]) * (impedance![2] === "-" ? -1 : 1);
+  expect(Number(impedance![1])).toBeCloseTo(expected.resistance, 1);
+  expect(actualReactance).toBeCloseTo(expected.reactance, 1);
+  expect(Number(swr![1])).toBeCloseTo(expected.swr, 1);
+  expect(Number(gain![1])).toBeCloseTo(expected.gain, 1);
+
+  await page.getByRole("button", { name: "Back to editor" }).click();
+  await page.locator("aside").getByRole("row", { name: "Wire 1" }).first().click();
+  await page.keyboard.press("Delete");
+  await expect(page.getByTestId("model-transfer-status")).toContainText("Transferred model modified");
+  await page.keyboard.press("Control+z");
+  await expect(page.getByTestId("model-transfer-status")).toContainText("Exact transferred model");
 });

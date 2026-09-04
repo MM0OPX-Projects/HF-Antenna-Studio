@@ -1,4 +1,6 @@
 import type { NecDeckRunRequest } from "../../engine/wasm/worker";
+import { applyConductorToDeck } from "../../engine/conductor";
+import { useUIStore } from "../../stores/uiStore";
 import { wavelengthM } from "./model";
 import type {
   GeneratedVerticalModel,
@@ -80,7 +82,7 @@ export function adaptVerticalToNec(generated: GeneratedVerticalModel): AdaptedVe
     `${model.radials.representation === "nec-ground-screen" ? "RP 4" : "RP 0"} 19 72 1000 0 0 5 5`,
     "EN",
   );
-  const deck = `${lines.join("\n")}\n`;
+  const deck = applyConductorToDeck(`${lines.join("\n")}\n`, useUIStore.getState().conductor);
   return {
     deck,
     segmentation,

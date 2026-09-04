@@ -1,4 +1,6 @@
 import type { NecDeckRunRequest } from "../../engine/wasm/worker";
+import { applyConductorToDeck } from "../../engine/conductor";
+import { useUIStore } from "../../stores/uiStore";
 import { loopBeamWavelengthM } from "./model";
 import type { GeneratedLoopBeamModel, LoopBeamIssue, LoopBeamSegmentation, SegmentedLoopBeamWire } from "./schema";
 
@@ -27,7 +29,7 @@ export function adaptLoopBeamToNec(generated: GeneratedLoopBeamModel): AdaptedLo
   const model = generated.model; const title = model.kind === "cubical-quad" ? "cubical quad" : model.kind === "hexbeam" ? "G3TXQ broadband Hexbeam" : model.kind.replace(/-/g, " "); const lines = [`CM HF Antenna Studio ${title}`, "CM SI units; every GW card is an actual solved conductor", `CM Feed-conductor orientation ${generated.feedConductorOrientation}; no polarisation claim is inferred`, "CM Dimensions are starting points, not resonance or performance guarantees", "CE"];
   for (const wire of segmentation.wires) lines.push(`GW ${wire.tag} ${wire.segments} ${fmt(wire.startM.x)} ${fmt(wire.startM.y)} ${fmt(wire.startM.z)} ${fmt(wire.endM.x)} ${fmt(wire.endM.y)} ${fmt(wire.endM.z)} ${fmt(wire.diameterM / 2)}`);
   lines.push("GE 1"); if (model.ground.kind === "perfect") lines.push("GN 1 0 0 0 0 0"); else lines.push(`GN 2 0 0 0 ${fmt(model.ground.relativePermittivity)} ${fmt(model.ground.conductivitySPerM)}`);
-  lines.push("PT 0 0 0 0", `EX 0 ${segmentation.feed.tag} 1 0 1 0`, `FR 0 1 0 0 ${fmt(model.frequencyHz / 1e6)} 0`, "RP 0 46 180 1000 0 0 2 2", "EN"); const deck = `${lines.join("\n")}\n`;
+  lines.push("PT 0 0 0 0", `EX 0 ${segmentation.feed.tag} 1 0 1 0`, `FR 0 1 0 0 ${fmt(model.frequencyHz / 1e6)} 0`, "RP 0 46 180 1000 0 0 2 2", "EN"); const deck = applyConductorToDeck(`${lines.join("\n")}\n`, useUIStore.getState().conductor);
   if (lines.some((line) => line.startsWith("GW ") && line.length > 80)) throw new RangeError("A generated GW card exceeds NEC's 80-column portability limit.");
   return { deck, segmentation, issues, runRequest: { deck, parse: { nTheta: 46, nPhi: 180, thetaStart: 0, thetaStep: 2, phiStart: 0, phiStep: 2, computeCurrents: true, totalSegments: segmentation.totalSegments } } };
 }

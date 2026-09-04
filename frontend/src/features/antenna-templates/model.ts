@@ -6,6 +6,7 @@ import type {
   TemplateValidationIssue,
   TemplateWire,
 } from "./schema";
+import { useUIStore } from "../../stores/uiStore";
 
 function finitePoint(wire: TemplateWire): boolean {
   return [wire.startM.x, wire.startM.y, wire.startM.z, wire.endM.x, wire.endM.y, wire.endM.z].every(Number.isFinite);
@@ -96,7 +97,7 @@ export function generateTemplateModel(
 }
 
 export function templateModelKey(model: TemplateAntennaModel): string {
-  return JSON.stringify(model);
+  return JSON.stringify({ model, conductor: useUIStore.getState().conductor });
 }
 
 export function feedPointCoordinates(model: TemplateAntennaModel) {

@@ -1,5 +1,6 @@
 import { HF_AMATEUR_BANDS } from "../antenna-templates/bands";
 import { SPEED_OF_LIGHT_M_PER_S } from "../verified-dipole/model";
+import { useUIStore } from "../../stores/uiStore";
 import type { GeneratedYagiModel, YagiAntennaModel, YagiDirector, YagiIssue, YagiWire } from "./schema";
 
 export { HF_AMATEUR_BANDS as YAGI_BAND_PRESETS };
@@ -122,5 +123,5 @@ export function generateYagiModel(model: YagiAntennaModel): GeneratedYagiModel {
   return { model, wires, issues: validateYagiModel(model, wires) };
 }
 
-export function yagiModelKey(model: YagiAntennaModel): string { return JSON.stringify(model); }
+export function yagiModelKey(model: YagiAntennaModel): string { return JSON.stringify({ model, conductor: useUIStore.getState().conductor }); }
 export function hasYagiErrors(generated: GeneratedYagiModel): boolean { return generated.issues.some((issue) => issue.severity === "error"); }

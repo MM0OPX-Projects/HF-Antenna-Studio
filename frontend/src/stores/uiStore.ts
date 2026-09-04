@@ -12,6 +12,7 @@ import type {
   MetricLengthUnit,
 } from "../utils/units";
 import { DEFAULT_MATCHING } from "../utils/units";
+import { DEFAULT_CONDUCTOR, type ConductorMaterial } from "../engine/conductor";
 
 export type Theme = "dark" | "light";
 export type ResultsTab = "swr" | "impedance" | "pattern" | "gain" | "smith" | "bands" | "match";
@@ -38,8 +39,9 @@ interface UIState {
   s1pFile: S1PFile | null;
   /** Impedance matching (balun/unun) configuration */
   matching: MatchingConfig;
-  /** Show feedpoint marker at exact NEC2 segment center (true) or snapped to wire edge (false) */
+  /** Show the 3D placement preview at the NEC segment centre rather than snapping endpoint segments to the wire edge. */
   accurateFeedpoint: boolean;
+  conductor: ConductorMaterial;
   /** Whether the global changelog dialog is visible */
   changelogOpen: boolean;
 
@@ -58,6 +60,7 @@ interface UIState {
   setS1PFile: (file: S1PFile | null) => void;
   setMatching: (matching: MatchingConfig) => void;
   setAccurateFeedpoint: (value: boolean) => void;
+  setConductor: (material: ConductorMaterial) => void;
   openChangelog: () => void;
   closeChangelog: () => void;
 }
@@ -85,7 +88,10 @@ export const useUIStore = create<UIState>((set) => ({
   mobileTab: "antenna",
   s1pFile: null,
   matching: { ...DEFAULT_MATCHING },
-  accurateFeedpoint: false,
+  // Placement previews identify the NEC segment being selected. Once placed,
+  // the orange connection marker uses the separately retained requested ratio.
+  accurateFeedpoint: true,
+  conductor: { ...DEFAULT_CONDUCTOR },
   changelogOpen: false,
 
   setTheme: (theme) => set({ theme }),
@@ -113,6 +119,7 @@ export const useUIStore = create<UIState>((set) => ({
   setS1PFile: (file) => set({ s1pFile: file }),
   setMatching: (matching) => set({ matching }),
   setAccurateFeedpoint: (value) => set({ accurateFeedpoint: value }),
+  setConductor: (conductor) => set({ conductor: { ...conductor } }),
   openChangelog: () => set({ changelogOpen: true }),
   closeChangelog: () => set({ changelogOpen: false }),
 }));

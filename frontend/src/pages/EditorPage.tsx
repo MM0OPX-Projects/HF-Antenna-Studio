@@ -8,7 +8,7 @@
  *   [3D Viewport (45%)] [Bottom Sheet: Wires | Properties | Results]
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useEditorStore } from "../stores/editorStore";
 import { useSimulationStore } from "../stores/simulationStore";
 import { useUIStore } from "../stores/uiStore";
@@ -25,6 +25,9 @@ import { EditorToolbar } from "../components/editors/EditorToolbar";
 import { EndpointConnectionControls } from "../components/editors/EndpointConnectionControls";
 import { WireTable } from "../components/editors/WireTable";
 import { WirePropertiesPanel } from "../components/editors/WirePropertiesPanel";
+import { DrawingControls } from "../components/editors/DrawingControls";
+import { WireEditor2D } from "../components/editors/WireEditor2D";
+import { ModelTransferStatus } from "../components/model-transfer/ModelTransferStatus";
 import { GroundEditor } from "../components/editors/GroundEditor";
 import { GeometryGroundEditor } from "../components/editors/GeometryGroundEditor";
 import { BalunEditor } from "../components/editors/BalunEditor";
@@ -84,10 +87,12 @@ const HEIGHT_UNIT_DECIMALS: Record<LengthUnit, number> = {
 };
 
 export function EditorPage() {
+  const viewportRef = useRef<HTMLElement>(null);
   // Editor store
   const wires = useEditorStore((s) => s.wires);
   const excitations = useEditorStore((s) => s.excitations);
   const junctions = useEditorStore((s) => s.junctions);
+  const radialSystems = useEditorStore((s) => s.radialSystems);
   const ground = useEditorStore((s) => s.ground);
   const setGround = useEditorStore((s) => s.setGround);
   const geometryGroundFlag = useEditorStore((s) => s.geometryGroundFlag);
@@ -110,6 +115,10 @@ export function EditorPage() {
   const toggleSelectedJunction = useEditorStore((s) => s.toggleSelectedJunction);
   const undo = useEditorStore((s) => s.undo);
   const redo = useEditorStore((s) => s.redo);
+  const canUndo = useEditorStore((s) => s.canUndo);
+  const canRedo = useEditorStore((s) => s.canRedo);
+  const undoCount = useEditorStore((s) => s.undoStack.length);
+  const redoCount = useEditorStore((s) => s.redoStack.length);
   const deselectAll = useEditorStore((s) => s.deselectAll);
   const deleteSelected = useEditorStore((s) => s.deleteSelected);
   const selectAll = useEditorStore((s) => s.selectAll);
@@ -125,6 +134,8 @@ export function EditorPage() {
   const addTransmissionLine = useEditorStore((s) => s.addTransmissionLine);
   const necImport = useEditorStore((s) => s.necImport);
   const setNecImport = useEditorStore((s) => s.setNecImport);
+  const modelTransfer = useEditorStore((s) => s.modelTransfer);
+  const setModelTransfer = useEditorStore((s) => s.setModelTransfer);
   const setPickingExcitationForTag = useEditorStore(
     (s) => s.setPickingExcitationForTag,
   );
@@ -164,8 +175,8 @@ export function EditorPage() {
     clear: clearWireMeasurement,
   } = useWireMeasurement();
 
-  // Right panel tab state: editor tools vs simulation results
-  const [rightPanelTab, setRightPanelTab] = useState<"editor" | "results">("editor");
+  const [viewportMode, setViewportMode] = useState<"2d" | "3d">("2d");
+  const [patternScaleMultiplier, setPatternScaleMultiplier] = useState(1);
 
   // Editor section dropdown: replaces 6 individual accordion toggles
   type EditorSection = "wires" | "templates" | "tools" | "settings";
@@ -192,10 +203,21 @@ export function EditorPage() {
   // Mobile tab state (local to editor)
   const [mobileTab, setMobileTab] = useState<MobileEditorTab>("wires");
 
-  // Auto-switch to results tab when simulation completes
+  // The editor canvas owns deliberate wheel gestures for zoom. Prevent the
+  // newly scrollable desktop page from moving at the same time; users can use
+  // its scrollbar or the Analysis/Back controls for page navigation.
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+    const keepWheelInsideViewport = (event: WheelEvent) => event.preventDefault();
+    viewport.addEventListener("wheel", keepWheelInsideViewport, { passive: false });
+    return () => viewport.removeEventListener("wheel", keepWheelInsideViewport);
+  }, []);
+
+  // Keep the compact mobile workflow focused on results after a calculation.
+  // Desktop results remain in the full-width analysis workspace below the editor.
   useEffect(() => {
     if (simStatus === "success") {
-      setRightPanelTab("results");
       setMobileTab("results");
     }
   }, [simStatus]);
@@ -237,7 +259,12 @@ export function EditorPage() {
         deselectAll();
         clearEndpointSelection();
         setMode("select");
-      } else if (e.key === "Delete" || e.key === "Backspace") deleteSelected();
+      } else if (e.key === "Delete" || e.key === "Backspace") {
+        if (selectedTags.size > 0) {
+          e.preventDefault();
+          deleteSelected();
+        }
+      }
       else if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
         e.preventDefault();
         undo();
@@ -265,7 +292,7 @@ export function EditorPage() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [setMode, deselectAll, clearEndpointSelection, snapSelectedEndpoints, toggleSelectedJunction, deleteSelected, undo, redo, selectAll, copySelected, paste, duplicateSelected, measurementActive, toggleWireMeasurement]);
+  }, [setMode, deselectAll, clearEndpointSelection, snapSelectedEndpoints, toggleSelectedJunction, deleteSelected, selectedTags.size, undo, redo, selectAll, copySelected, paste, duplicateSelected, measurementActive, toggleWireMeasurement]);
 
   // Clear stale results on page entry (prevents cross-page state leaks)
   // and whenever antenna geometry or config changes.
@@ -393,8 +420,10 @@ export function EditorPage() {
       necImport,
       frequencySegments,
       geometryGroundFlag,
+      radialSystems,
+      modelTransfer,
     );
-  }, [wires, excitations, loads, transmissionLines, ground, geometryGroundFlag, frequencyRange, frequencySegments, designFrequencyMhz, junctions, simResult, necImport]);
+  }, [wires, excitations, loads, transmissionLines, ground, geometryGroundFlag, frequencyRange, frequencySegments, designFrequencyMhz, junctions, radialSystems, simResult, necImport, modelTransfer]);
 
   const handleProjectLoad = useCallback(
     (project: ProjectFile) => {
@@ -415,6 +444,7 @@ export function EditorPage() {
         })),
         ed.excitations,
         ed.junctions,
+        ed.radialSystems,
       );
       ed.loads.forEach((load) => addLoad(load));
       ed.transmissionLines.forEach((line) => addTransmissionLine(line));
@@ -423,12 +453,22 @@ export function EditorPage() {
       setFrequencyRange(ed.frequencyRange);
       setFrequencySegments(ed.frequencySegments ?? []);
       setNecImport(ed.necImport ?? null);
+      setModelTransfer(ed.modelTransfer ?? null);
+      if (ed.modelTransfer) setMatching({ type: "none", ratio: 1, feedlineZ0: ed.modelTransfer.referenceImpedanceOhm });
     },
-    [clearAll, setWires, addLoad, addTransmissionLine, setGround, setGeometryGroundFlag, setFrequencyRange, setFrequencySegments, setDesignFrequency, setNecImport]
+    [clearAll, setWires, addLoad, addTransmissionLine, setGround, setGeometryGroundFlag, setFrequencyRange, setFrequencySegments, setDesignFrequency, setNecImport, setModelTransfer, setMatching]
   );
 
   const isLoading = simStatus === "loading";
   const canRun = wires.length > 0 && excitations.length > 0;
+
+  const scrollToAnalysis = useCallback(() => {
+    document.getElementById("wire-editor-analysis")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
+
+  const scrollToEditor = useCallback(() => {
+    document.getElementById("wire-editor-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
 
   // Pre-simulation validation
   // wires is intentionally used as the dep trigger — getWireGeometry() reads from the store
@@ -510,44 +550,111 @@ export function EditorPage() {
   }, [setLengthUnit]);
 
   return (
-    <div className="flex flex-col h-dvh bg-background">
+    <div data-testid="wire-editor-page" className="flex h-dvh flex-col overflow-hidden bg-background lg:overflow-y-auto">
       <Navbar />
 
       {/* Main content area */}
-      <div className="flex-1 flex overflow-hidden">
+      <div id="wire-editor-workspace" className="flex flex-1 overflow-hidden lg:h-[calc(100dvh-4.5rem)] lg:min-h-[640px] lg:flex-none">
         {/* === LEFT: TOOLBAR (desktop only) === */}
         <div className="hidden lg:block">
           <EditorToolbar />
         </div>
 
         {/* === CENTER: 3D VIEWPORT === */}
-        <main className="flex-1 relative min-w-0 min-h-0">
-          <ErrorBoundary label="3D Viewport">
-            <EditorScene
-              viewToggles={viewToggles}
-              patternData={patternData}
-              currents={currentData}
-              nearField={nearFieldData}
-              measurementActive={measurementActive}
-              measurementSelectedTags={measurementSelectedTags}
-              measurementPointMode={measurementPointMode}
-              onMeasurementWireSelect={selectMeasurementWire}
-            />
-          </ErrorBoundary>
+        <main ref={viewportRef} className="flex-1 relative min-w-0 min-h-0">
+          {viewportMode === "2d" ? (
+            <ErrorBoundary label="2D Wire Editor">
+              <WireEditor2D />
+            </ErrorBoundary>
+          ) : (
+            <ErrorBoundary label="3D Viewport">
+              <EditorScene
+                viewToggles={viewToggles}
+                patternData={patternData}
+                currents={currentData}
+                nearField={nearFieldData}
+                measurementActive={measurementActive}
+                measurementSelectedTags={measurementSelectedTags}
+                measurementPointMode={measurementPointMode}
+                onMeasurementWireSelect={selectMeasurementWire}
+                patternScaleMultiplier={patternScaleMultiplier}
+              />
+            </ErrorBoundary>
+          )}
+
+          <div className="absolute left-1/2 top-2 z-30 flex -translate-x-1/2 rounded-md border border-border bg-surface/95 p-0.5 shadow-lg backdrop-blur-sm" role="group" aria-label="Editor view">
+            {(["2d", "3d"] as const).map((view) => (
+              <button
+                key={view}
+                type="button"
+                data-testid={`editor-view-${view}`}
+                aria-pressed={viewportMode === view}
+                onClick={() => setViewportMode(view)}
+                className={`rounded px-3 py-1 text-[10px] font-semibold uppercase tracking-wide ${viewportMode === view ? "bg-accent text-white" : "text-text-secondary hover:bg-surface-hover hover:text-text-primary"}`}
+              >
+                {view}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={scrollToAnalysis}
+              className="ml-0.5 rounded border-l border-border px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-text-secondary hover:bg-surface-hover hover:text-accent"
+              aria-label="Show analysis and calculated results"
+            >
+              Analysis
+            </button>
+            <button
+              type="button"
+              onClick={undo}
+              disabled={!canUndo}
+              className="ml-0.5 rounded border-l border-border px-2.5 py-1 text-[10px] font-semibold tracking-wide text-text-secondary hover:bg-surface-hover hover:text-accent disabled:cursor-not-allowed disabled:opacity-35"
+              title={`Undo last edit (${undoCount} available) · Ctrl+Z`}
+              aria-label="Undo last Wire Editor action"
+            >
+              ↩ Undo
+            </button>
+            <button
+              type="button"
+              onClick={redo}
+              disabled={!canRedo}
+              className="rounded px-2.5 py-1 text-[10px] font-semibold tracking-wide text-text-secondary hover:bg-surface-hover hover:text-accent disabled:cursor-not-allowed disabled:opacity-35"
+              title={`Redo last undone edit (${redoCount} available) · Ctrl+Y`}
+              aria-label="Redo last Wire Editor action"
+            >
+              ↪ Redo
+            </button>
+            {viewportMode === "3d" && (
+              <button
+                type="button"
+                onClick={() => handleToggle("pattern")}
+                disabled={!patternData}
+                aria-pressed={viewToggles.pattern}
+                className={`ml-0.5 rounded border-l border-border px-2.5 py-1 text-[10px] font-semibold tracking-wide disabled:cursor-not-allowed disabled:opacity-35 ${viewToggles.pattern && patternData ? "bg-violet-500/20 text-violet-300" : "text-text-secondary hover:bg-surface-hover hover:text-accent"}`}
+                title={patternData ? "Show or hide the solved 3D radiation-pattern surface" : "Run a simulation to calculate the radiation pattern"}
+              >
+                Pattern {viewToggles.pattern && patternData ? "on" : "off"}
+              </button>
+            )}
+          </div>
 
           <EndpointConnectionControls />
+          {viewportMode === "3d" && <DrawingControls />}
 
           {/* Overlays */}
-          <ViewToggleToolbar toggles={viewToggles} onToggle={handleToggle} />
-          <WireMeasurementTool
-            wires={wireGeometry}
-            active={measurementActive}
-            selectedTags={measurementSelectedTags}
-            pointMode={measurementPointMode}
-            onToggle={handleMeasurementToggle}
-            onPointModeChange={setMeasurementPointMode}
-            onClear={clearWireMeasurement}
-          />
+          {viewportMode === "3d" && (
+            <>
+              <ViewToggleToolbar toggles={viewToggles} onToggle={handleToggle} />
+              <WireMeasurementTool
+                wires={wireGeometry}
+                active={measurementActive}
+                selectedTags={measurementSelectedTags}
+                pointMode={measurementPointMode}
+                onToggle={handleMeasurementToggle}
+                onPointModeChange={setMeasurementPointMode}
+                onClear={clearWireMeasurement}
+              />
+            </>
+          )}
 
           {/* Mode indicator */}
           <div className="absolute top-2 left-2 z-10">
@@ -571,19 +678,41 @@ export function EditorPage() {
             </div>
           </div>
 
-          <div className="pointer-events-none absolute bottom-2 left-2 z-10 rounded border border-border bg-surface/80 px-2 py-1 text-[9px] font-mono text-text-secondary backdrop-blur-sm" aria-label="NEC coordinate legend">
-            <span className="text-red-500">X</span> / <span className="text-emerald-500">Y</span> / <span className="text-blue-500">Z up</span> · grid {groundGridMetrics.cellSize} m · snap {snapSize > 0 ? `${snapSize} m` : "off"}
-          </div>
+          {viewportMode === "3d" && (
+            <div className="pointer-events-none absolute bottom-2 left-2 z-10 rounded border border-border bg-surface/80 px-2 py-1 text-[9px] font-mono text-text-secondary backdrop-blur-sm" aria-label="NEC coordinate legend">
+              <span className="text-red-500">X</span> / <span className="text-emerald-500">Y</span> / <span className="text-blue-500">Z up</span> · grid {groundGridMetrics.cellSize} m · snap {snapSize > 0 ? `${snapSize} m` : "off"}
+            </div>
+          )}
 
           {/* Color scale */}
-          {(viewToggles.pattern || viewToggles.volumetric) && patternData && (
+          {viewportMode === "3d" && (viewToggles.pattern || viewToggles.volumetric) && patternData && (
             <div className="absolute top-2 left-1/2 z-10 -translate-x-1/2">
               <ColorScale minLabel="Min" maxLabel="Max" unit="dBi" />
             </div>
           )}
 
+          {viewportMode === "3d" && (viewToggles.pattern || viewToggles.volumetric) && patternData && (
+            <label className="absolute bottom-12 right-2 z-20 w-40 rounded border border-border bg-surface/90 px-2 py-1.5 text-[9px] text-text-secondary shadow backdrop-blur-sm" data-testid="pattern-scale-control">
+              <span className="flex items-center justify-between">
+                <span>Pattern size</span>
+                <span className="font-mono text-text-primary">{patternScaleMultiplier.toFixed(2)}×</span>
+              </span>
+              <input
+                type="range"
+                min={0.25}
+                max={1.5}
+                step={0.05}
+                value={patternScaleMultiplier}
+                onChange={(event) => setPatternScaleMultiplier(Number(event.currentTarget.value))}
+                className="mt-1 w-full accent-violet-400"
+                aria-label="3D radiation pattern visual size"
+              />
+              <span className="block">Origin: {excitations.length > 1 ? `${excitations.length}-source feed centroid` : "feedpoint"}</span>
+            </label>
+          )}
+
           {/* Pattern frequency slider — bottom-right above dBi legend on mobile, centered on desktop */}
-          {simStatus === "success" && simResult && simResult.frequency_data.length > 1 && (
+          {viewportMode === "3d" && simStatus === "success" && simResult && simResult.frequency_data.length > 1 && (
             <>
               {!measurementActive && (
                 <div className="absolute bottom-14 left-1/2 z-10 w-36 -translate-x-1/2 lg:hidden">
@@ -597,9 +726,9 @@ export function EditorPage() {
           )}
 
           {/* Empty-state hint */}
-          {wires.length === 0 && (
-            <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-              <div className="bg-surface/90 backdrop-blur-sm border border-border rounded-lg px-4 py-3 max-w-[240px] text-center pointer-events-auto">
+          {viewportMode === "3d" && wires.length === 0 && (
+            <div className="pointer-events-none absolute left-2 top-20 z-10 lg:top-10">
+              <div className="max-w-[240px] rounded-lg border border-border bg-surface/90 px-4 py-3 text-left backdrop-blur-sm">
                 <p className="text-sm text-text-primary font-medium mb-1">No wires yet</p>
                 <p className="text-xs text-text-secondary leading-relaxed">
                   Switch to <span className="text-accent font-medium">Add</span> mode and click the viewport to place wires, or go to <span className="text-accent font-medium">Tools</span> to import a file or load a template.
@@ -643,24 +772,19 @@ export function EditorPage() {
 
         {/* === RIGHT PANEL (desktop only) === */}
         <aside className="hidden lg:flex flex-col w-80 xl:w-96 border-l border-border bg-surface overflow-hidden shrink-0">
-          {/* Tab switcher: Editor vs Results + project actions */}
+          {/* Editing controls stay beside the geometry; detailed results live below. */}
           <div className="p-2 border-b border-border shrink-0 space-y-1.5">
-            <SegmentedControl
-              segments={[
-                { key: "editor", label: "Editor" },
-                { key: "results", label: "Results" },
-              ]}
-              activeKey={rightPanelTab}
-              onChange={(key) => setRightPanelTab(key as "editor" | "results")}
-            />
+            <div className="px-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-text-secondary">
+              Wire and project controls
+            </div>
             <ProjectActions
               onSave={handleProjectSave}
               onLoad={handleProjectLoad}
             />
           </div>
 
-          {rightPanelTab === "editor" ? (
-            <>
+          <>
+              <ModelTransferStatus />
               {/* Section selector dropdown */}
               <div className="px-2 py-1.5 border-b border-border shrink-0">
                 <select
@@ -834,15 +958,7 @@ export function EditorPage() {
                   </div>
                 )}
               </div>
-            </>
-          ) : (
-            /* Results panel — same as the simulator's */
-            <div className="flex-1 overflow-hidden flex flex-col">
-              <ErrorBoundary label="Results">
-                <ResultsPanel />
-              </ErrorBoundary>
-            </div>
-          )}
+          </>
 
           {/* Bottom: Frequency, Sweep, Run button (always visible) */}
           <div className="p-2 space-y-2 shrink-0 border-t border-border">
@@ -922,6 +1038,44 @@ export function EditorPage() {
           </div>
         </aside>
       </div>
+
+      {/* === DESKTOP ANALYSIS WORKSPACE === */}
+      <section
+        id="wire-editor-analysis"
+        data-testid="wire-editor-analysis"
+        className="hidden min-h-[760px] flex-col border-t border-border bg-surface lg:flex"
+        aria-label="Wire Editor analysis and calculated results"
+      >
+        <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
+          <div>
+            <h2 className="text-sm font-semibold text-text-primary">Analysis and calculated results</h2>
+            <p className="mt-0.5 text-xs text-text-secondary">
+              SWR, impedance, Smith chart, radiation cuts, gain, band analysis and matching for the current Wire Editor model.
+            </p>
+          </div>
+          <span className="rounded border border-border bg-background px-2 py-1 text-[10px] font-mono text-text-secondary" aria-live="polite">
+            {simStatus === "success"
+              ? `${simResult?.frequency_data.length ?? 0} solved point${(simResult?.frequency_data.length ?? 0) === 1 ? "" : "s"}`
+              : simStatus === "loading"
+                ? "Calculating…"
+                : simStatus === "error"
+                  ? "Calculation failed"
+                  : "Awaiting calculation"}
+          </span>
+          <button
+            type="button"
+            onClick={scrollToEditor}
+            className="rounded border border-border bg-background px-3 py-1.5 text-xs font-medium text-text-secondary hover:border-accent/50 hover:text-accent"
+          >
+            Back to editor
+          </button>
+        </div>
+        <div className="min-h-0 flex-1">
+          <ErrorBoundary label="Wire Editor analysis results">
+            <ResultsPanel compactRadiationCuts />
+          </ErrorBoundary>
+        </div>
+      </section>
 
       {/* === MOBILE BOTTOM SHEET === */}
       <div className="lg:hidden border-t border-border bg-surface flex flex-col max-h-[50%]">

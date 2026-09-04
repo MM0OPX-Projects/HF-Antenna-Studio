@@ -9,6 +9,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { APP_NAV_LINKS, MODULE_NAV_LINKS, PRIMARY_NAV_LINKS } from "../../navigation";
 import { useUIStore } from "../../stores/uiStore";
+import { CONDUCTOR_PRESETS, type ConductorMaterialId } from "../../engine/conductor";
+import { useSimulationStore } from "../../stores/simulationStore";
 
 export function Navbar() {
   const theme = useUIStore((s) => s.theme);
@@ -16,6 +18,12 @@ export function Navbar() {
   const imperial = useUIStore((s) => s.imperial);
   const toggleUnits = useUIStore((s) => s.toggleUnits);
   const openChangelog = useUIStore((s) => s.openChangelog);
+  const conductor = useUIStore((s) => s.conductor);
+  const setConductor = useUIStore((s) => s.setConductor);
+  const changeConductor = useCallback((next: Parameters<typeof setConductor>[0]) => {
+    setConductor(next);
+    useSimulationStore.getState().reset();
+  }, [setConductor]);
 
   const handleThemeToggle = useCallback(() => {
     toggleTheme();
@@ -98,6 +106,30 @@ export function Navbar() {
         </div>
 
         <div className="flex items-center gap-2">
+          <label className="hidden items-center gap-1 text-[10px] text-text-secondary lg:flex" title="Antenna-wire material used by every NEC calculation. Ground conductivity is separate.">
+            <span>Wire</span>
+            <select
+              value={conductor.id}
+              onChange={(event) => {
+                const id = event.currentTarget.value as ConductorMaterialId;
+                const preset = CONDUCTOR_PRESETS.find((candidate) => candidate.id === id)!;
+                changeConductor({ id, conductivitySPerM: id === "custom" ? (conductor.conductivitySPerM ?? 5.8e7) : preset.conductivitySPerM });
+              }}
+              className="rounded border border-border bg-background px-1.5 py-1 text-[10px] text-text-primary"
+              aria-label="Global antenna wire material"
+            >
+              {CONDUCTOR_PRESETS.map((preset) => <option key={preset.id} value={preset.id}>{preset.label}</option>)}
+            </select>
+            {conductor.id === "custom" && <input
+              type="number"
+              min={1}
+              step={100000}
+              value={conductor.conductivitySPerM ?? 5.8e7}
+              onChange={(event) => changeConductor({ id: "custom", conductivitySPerM: event.currentTarget.valueAsNumber })}
+              className="w-24 rounded border border-border bg-background px-1.5 py-1 text-right font-mono text-[10px] text-text-primary"
+              aria-label="Custom antenna wire conductivity in siemens per metre"
+            />}
+          </label>
           <button
             type="button"
             onClick={openChangelog}
@@ -199,6 +231,30 @@ export function Navbar() {
           className="xl:hidden absolute top-full left-0 right-0 z-50 border-b border-border bg-surface shadow-lg"
         >
           <nav className="flex flex-col py-2">
+            <div className="border-b border-border px-6 py-3">
+              <label className="flex items-center justify-between gap-3 text-sm text-text-secondary">
+                <span>Antenna wire</span>
+                <select
+                  value={conductor.id}
+                  onChange={(event) => {
+                    const id = event.currentTarget.value as ConductorMaterialId;
+                    const preset = CONDUCTOR_PRESETS.find((candidate) => candidate.id === id)!;
+                    changeConductor({ id, conductivitySPerM: id === "custom" ? (conductor.conductivitySPerM ?? 5.8e7) : preset.conductivitySPerM });
+                  }}
+                  className="rounded border border-border bg-background px-2 py-1 text-text-primary"
+                  aria-label="Global antenna wire material (mobile)"
+                >
+                  {CONDUCTOR_PRESETS.map((preset) => <option key={preset.id} value={preset.id}>{preset.label}</option>)}
+                </select>
+              </label>
+              {conductor.id === "custom" && <label className="mt-2 flex items-center justify-between gap-3 text-xs text-text-secondary">
+                <span>Conductivity (S/m)</span>
+                <input type="number" min={1} step={100000} value={conductor.conductivitySPerM ?? 5.8e7}
+                  onChange={(event) => changeConductor({ id: "custom", conductivitySPerM: event.currentTarget.valueAsNumber })}
+                  className="w-32 rounded border border-border bg-background px-2 py-1 text-right font-mono text-text-primary"
+                  aria-label="Custom antenna wire conductivity in siemens per metre (mobile)" />
+              </label>}
+            </div>
             {APP_NAV_LINKS.map(({ to, label, featured }) => (
               <Link
                 key={to}

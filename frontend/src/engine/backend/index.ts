@@ -22,6 +22,8 @@ import {
   assertSupportedFrequencyMhz,
   assertSupportedFrequencyRange,
 } from "../limits";
+import { useUIStore } from "../../stores/uiStore";
+import { applyConductorToLoads } from "../conductor";
 
 export class BackendEngine implements SimulationEngine {
   async simulate(request: SimulateRequest): Promise<SimulationResult> {
@@ -67,6 +69,7 @@ export class BackendEngine implements SimulationEngine {
         resolution_m: 0.5,
       },
       comment: "AntennaSim simulation",
+      loads: applyConductorToLoads([], useUIStore.getState().conductor),
       ...(request.frequencySegments?.length
         ? {
             frequency_segments: request.frequencySegments.map((s) => ({
@@ -121,7 +124,7 @@ export class BackendEngine implements SimulationEngine {
         phi_stop: 360 - step,
         phi_step: step,
       },
-      loads: request.loads ?? [],
+      loads: applyConductorToLoads(request.loads, useUIStore.getState().conductor),
       transmission_lines: request.transmission_lines ?? [],
       arcs: request.arcs ?? [],
       transforms: request.transforms ?? [],

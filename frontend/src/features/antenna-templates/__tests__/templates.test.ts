@@ -1,10 +1,14 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
+import { useUIStore } from "../../../stores/uiStore";
+import { LEGACY_CONDUCTOR } from "../../../engine/conductor";
 import { readFileSync } from "node:fs";
 import { SPEED_OF_LIGHT_M_PER_S } from "../../verified-dipole/model";
 import { antennaTemplateDefinitions, getTemplateDefinition } from "../definitions";
 import { adaptTemplateToNec } from "../nec-adapter";
 import { feedPointCoordinates, generateTemplateModel, hasTemplateErrors, initialTemplateParameters } from "../model";
 import { segmentTemplateModel } from "../segmentation";
+
+beforeEach(() => useUIStore.getState().setConductor(LEGACY_CONDUCTOR));
 
 const perfectGround = { kind: "perfect" } as const;
 

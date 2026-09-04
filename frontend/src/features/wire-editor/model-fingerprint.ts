@@ -27,6 +27,13 @@ function sortedBy<T>(items: readonly T[], key: (item: T) => string): T[] {
  * document is still the model that the user sees. It is not a security hash.
  */
 export function editorModelFingerprint(model: FingerprintableEditorModel): string {
+  const ground = model.ground.type === "custom"
+    ? {
+        type: model.ground.type,
+        custom_permittivity: model.ground.custom_permittivity,
+        custom_conductivity: model.ground.custom_conductivity,
+      }
+    : { type: model.ground.type };
   return JSON.stringify({
     wires: sortedBy(model.wires, (wire) => String(wire.tag)).map((wire) => ({
       tag: wire.tag,
@@ -51,7 +58,7 @@ export function editorModelFingerprint(model: FingerprintableEditorModel): strin
       model.transmissionLines,
       (line) => `${line.wire_tag1}:${line.segment1}:${line.wire_tag2}:${line.segment2}`,
     ),
-    ground: model.ground,
+    ground,
     geometryGroundFlag: model.geometryGroundFlag ?? null,
     frequencyRange: model.frequencyRange,
     frequencySegments: model.frequencySegments ?? [],

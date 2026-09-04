@@ -17,6 +17,7 @@ test("reference geometries remain within recorded nec2c/WASM envelopes", async (
   await page.goto("/verified-dipole");
   const changelog = page.getByRole("button", { name: "Got it" });
   if (await changelog.isVisible().catch(() => false)) await changelog.click();
+  await page.getByLabel("Global antenna wire material").selectOption("perfect");
 
   await page.getByTestId("frequency-mhz").fill(String(VALIDATION_FREQUENCY_MHZ));
   await page.getByTestId("dipole-length").fill(String(VALIDATION_DIPOLE_LENGTH_M));
@@ -49,6 +50,7 @@ test("matches the published 38 MHz NEC-2 dipole reference within declared tolera
   await page.goto("/verified-dipole");
   const changelog = page.getByRole("button", { name: "Got it" });
   if (await changelog.isVisible().catch(() => false)) await changelog.click();
+  await page.getByLabel("Global antenna wire material").selectOption("perfect");
   await page.getByTestId("frequency-mhz").fill(String(reference.frequencyMhz));
   await page.getByTestId("dipole-length").fill(String(reference.totalLengthM));
   await page.getByTestId("wire-diameter").fill(String(reference.wireDiameterMm));

@@ -159,6 +159,29 @@ export function CameraControls({ enabled = true, wires = [], hasGround = true }:
     wires.length,
   ]);
 
+  useEffect(() => {
+    const selectView = (event: Event) => {
+      const controls = controlsRef.current;
+      if (!controls) return;
+      const view = (event as CustomEvent<{ view?: string }>).detail?.view;
+      if (view === "perspective") {
+        beginAutoFrame();
+        return;
+      }
+      const { center, distance } = computeCameraFrame(bbox, antennaSpan);
+      controls.target.copy(center);
+      if (view === "top") camera.position.set(center.x, center.y + distance, center.z);
+      else if (view === "front") camera.position.set(center.x, center.y, center.z + distance);
+      else if (view === "side") camera.position.set(center.x + distance, center.y, center.z);
+      else return;
+      camera.up.set(0, 1, 0);
+      camera.lookAt(center);
+      controls.update();
+    };
+    window.addEventListener("hf-editor-camera-view", selectView);
+    return () => window.removeEventListener("hf-editor-camera-view", selectView);
+  }, [antennaSpan, bbox, beginAutoFrame, camera]);
+
   // Animate camera each frame (auto-framing only)
   useFrame((_, delta) => {
     if (pendingAutoFrameRef.current && controlsRef.current) {

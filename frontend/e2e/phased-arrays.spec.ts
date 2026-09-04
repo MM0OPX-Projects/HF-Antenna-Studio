@@ -5,6 +5,7 @@ async function openLab(page: Page) {
   await page.goto("/phased-arrays");
   const changelog = page.getByRole("button", { name: "Got it" });
   if (await changelog.isVisible().catch(() => false)) await changelog.click();
+  await page.getByLabel("Global antenna wire material").selectOption("perfect");
 }
 
 async function waitForNewResult(page: Page) {

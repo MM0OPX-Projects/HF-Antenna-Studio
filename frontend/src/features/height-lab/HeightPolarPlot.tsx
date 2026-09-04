@@ -24,6 +24,7 @@ interface HeightPolarPlotProps {
   mode: PatternDisplayMode;
   series: PolarSeries[];
   svgRef?: RefObject<SVGSVGElement | null>;
+  compactControls?: boolean;
 }
 
 const CX = 230;
@@ -55,7 +56,7 @@ function elevationPath(points: NormalizedPatternPoint[], mode: PatternDisplayMod
   }).join(" ");
 }
 
-export function HeightPolarPlot({ plane, mode, series, svgRef }: HeightPolarPlotProps) {
+export function HeightPolarPlot({ plane, mode, series, svgRef, compactControls = false }: HeightPolarPlotProps) {
   const [selectedElevationDeg, setSelectedElevationDeg] = useState(5);
   const [selectedAzimuthBearingDeg, setSelectedAzimuthBearingDeg] = useState(0);
   const [selectedAzimuthCutElevationDeg, setSelectedAzimuthCutElevationDeg] = useState<number | null>(null);
@@ -220,6 +221,7 @@ export function HeightPolarPlot({ plane, mode, series, svgRef }: HeightPolarPlot
       </g>}
       {series.length === 0 && <text x={CX} y={CY - 25} textAnchor="middle" fill="var(--color-text-secondary)" fontSize="12">Waiting for the current NEC result</text>}
     </svg>
+    <div className={plane === "azimuth" && compactControls ? "grid gap-2 lg:grid-cols-2 lg:items-start" : undefined} data-testid={plane === "azimuth" && compactControls ? "compact-azimuth-controls" : undefined}>
     {plane === "azimuth" && primaryPatternSeries?.pattern && <section className="mt-2 rounded-md border border-border bg-background/60 p-2" data-testid="azimuth-cut-elevation-control" aria-label="Azimuth cut elevation above horizon">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <label className="flex items-center gap-2 text-xs font-semibold text-text-primary">
@@ -233,9 +235,9 @@ export function HeightPolarPlot({ plane, mode, series, svgRef }: HeightPolarPlot
           </span>
         </label>
         <span className="text-[10px] text-text-secondary">Height above the horizon used for this complete 360° horizontal slice. The nearest solved NEC row is used.</span>
-        <button type="button" onClick={() => setSelectedAzimuthCutElevationDeg(null)} className="rounded border border-border px-2 py-1 text-[10px] text-text-secondary hover:border-accent" data-testid="azimuth-cut-peak-row">Use strongest row</button>
+        <button type="button" onClick={() => setSelectedAzimuthCutElevationDeg(null)} className="rounded border border-border px-2 py-1 text-[10px] text-text-secondary hover:border-accent" data-testid="azimuth-cut-peak-row">Use elevation of maximum gain</button>
       </div>
-      <p className="mt-1 text-[10px] text-text-secondary" data-testid="azimuth-cut-actual-elevation">Requested {azimuthCutElevationDeg.toFixed(1)}° · NEC row {uniqueActualAzimuthElevations.join(" / ") || "unavailable"}°{uniqueActualAzimuthElevations.some((value) => Math.abs(Number(value) - azimuthCutElevationDeg) > 0.05) ? " (nearest grid sample)" : " (exact grid sample)"}</p>
+      <p className="mt-1 text-[10px] text-text-secondary" data-testid="azimuth-cut-actual-elevation">{selectedAzimuthCutElevationDeg === null ? "Automatic" : `Requested ${azimuthCutElevationDeg.toFixed(1)}°`} · NEC row {uniqueActualAzimuthElevations.join(" / ") || "unavailable"}°{selectedAzimuthCutElevationDeg !== null && uniqueActualAzimuthElevations.some((value) => Math.abs(Number(value) - azimuthCutElevationDeg) > 0.05) ? " (nearest grid sample)" : selectedAzimuthCutElevationDeg !== null ? " (exact grid sample)" : ""}{selectedAzimuthCutElevationDeg === null && automaticAzimuthCut?.peakBearingDeg != null ? ` · strongest bearing ${automaticAzimuthCut.peakBearingDeg.toFixed(1)}°` : ""}</p>
     </section>}
     <PatternAngleInspector
       angleDeg={selectedInspectorAngle}
@@ -243,7 +245,9 @@ export function HeightPolarPlot({ plane, mode, series, svgRef }: HeightPolarPlot
       readings={inspectorReadings}
       displayMode={mode}
       kind={plane}
+      compact={plane === "azimuth" && compactControls}
     />
+    </div>
     </div>
   );
 }

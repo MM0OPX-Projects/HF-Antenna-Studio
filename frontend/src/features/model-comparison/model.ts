@@ -1,6 +1,7 @@
 import type { ComparisonConditions, ComparisonFamily, ComparisonSlotDefinition } from "./types";
 import type { SweepConfig } from "../frequency-analyser/types";
 import { createDefaultRadialWorkflowSettings } from "../ground-radials/workflow";
+import { useUIStore } from "../../stores/uiStore";
 
 export const COMPARISON_COLORS = ["#3b82f6", "#f59e0b", "#10b981", "#a855f7"] as const;
 
@@ -47,7 +48,7 @@ export function comparisonDefinitionKey(definition: ComparisonSlotDefinition): s
 }
 
 export function comparisonConditionKey(conditions: ComparisonConditions, sweep?: SweepConfig): string {
-  return JSON.stringify(sweep ? { conditions, sweep } : conditions);
+  return JSON.stringify({ conditions, ...(sweep ? { sweep } : {}), conductor: useUIStore.getState().conductor });
 }
 
 export function comparisonLabel(definition: ComparisonSlotDefinition): string {

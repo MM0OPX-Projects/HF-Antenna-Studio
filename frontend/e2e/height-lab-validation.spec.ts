@@ -24,6 +24,7 @@ for (const reference of HEIGHT_REFERENCES) {
     await page.goto("/dipole-height-lab");
     const changelog = page.getByRole("button", { name: "Got it" });
     if (await changelog.isVisible().catch(() => false)) await changelog.click();
+    await page.getByLabel("Global antenna wire material").selectOption("perfect");
 
     await page.getByTestId(`height-preset-${reference.height}`).click();
     await expect(page.getByTestId("height-results"), `${reference.height}λ result`).toBeVisible({ timeout: heightResultTimeoutMs });

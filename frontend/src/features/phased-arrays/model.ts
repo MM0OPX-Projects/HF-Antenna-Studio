@@ -1,5 +1,6 @@
 import { defaultNearSurfaceClearanceM, validateNearSurfaceRadialPlane } from "../ground-radials/model";
 import { SPEED_OF_LIGHT_M_PER_S } from "../verified-dipole/model";
+import { useUIStore } from "../../stores/uiStore";
 import type {
   GeneratedPhasedArray,
   LineMetrics,
@@ -320,7 +321,7 @@ export function generatePhasedArray(model: PhasedArrayModel): GeneratedPhasedArr
 }
 
 export function phasedArrayModelKey(model: PhasedArrayModel): string {
-  return JSON.stringify(model);
+  return JSON.stringify({ model, conductor: useUIStore.getState().conductor });
 }
 
 export function idealCalibrationKey(model: PhasedArrayModel): string {

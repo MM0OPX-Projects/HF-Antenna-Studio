@@ -34,7 +34,7 @@ The current schema accepts:
 - real-ground conductivity in S/m and relative permittivity;
 - 50- or 75-ohm real reference impedance.
 
-The conductor is currently perfect and the wire is oriented along the NEC X axis. Display units convert only at the UI boundary. Changing a display unit preserves the SI value.
+The wire is oriented along the NEC X axis. Its material comes from the application-wide Wire setting; finite conductivity is represented by NEC `LD 5`, while Perfect conductor remains available for lossless reference work. Display units convert only at the UI boundary. Changing a display unit preserves the SI value.
 
 ## NEC representation
 
@@ -118,7 +118,7 @@ Tests cover:
 
 ## Known limitations and verification still required
 
-- Only a single frequency and one straight, centre-fed, perfect-conductor dipole are in this slice.
+- Only a single frequency and one straight, centre-fed dipole with one uniform selected conductor material are in this slice.
 - The five-degree maximum/take-off angle is a sampled grid value, not an interpolated peak.
 - Azimuth is the phi cut through the sampled global maximum; elevation is the corresponding theta cut.
 - Current magnitude is the absolute NEC source-current convention and normalized only for the plot; phase is displayed per segment.

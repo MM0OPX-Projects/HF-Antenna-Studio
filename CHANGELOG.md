@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Added one application-wide antenna-wire material setting for Copper (default for new work), Aluminium, Steel, Stainless steel, Perfect conductor and custom conductivity; every NEC calculation/export applies the selected finite conductivity with a global `LD 5` card, while explicit imported `LD 5` cards retain precedence
+- Added Select-mode double-click precision editing for existing wires, with draft-before-apply length, active-plane angle, X/Y/Z endpoints, units, start/end/centre anchoring, safe cancellation and a single undo step
+- Added CAD-style exact wire creation with a draggable non-obscuring precision panel, synchronized Length/Angle/endpoint fields, metre/millimetre/foot/inch entry, `L` focus, Enter placement and stable previews across Front, Side and Top drawing planes
+- Added direct 2D wire-body dragging for isolated wires and bonded polyline legs, with grid-aware movement, connected-junction deformation, live delta feedback, cancellation and one-step undo/redo
+- Added direct 2D endpoint-handle dragging in normal Select and Move modes: the chosen end follows the cursor, the opposite end remains anchored, bonded junction members remain connected, and Escape/right-click/Undo restore the prior geometry
+- Added explicit Wire Editor radial visualisation: every generated NEC radial is projected in 2D, consistently identified in cyan in 3D, auto-framed with the antenna, and accompanied by a count/length/rotation/droop-or-clearance legend backed by exact geometry regressions
+- Added prominent 100-step Wire Editor Undo/Redo controls and an explicit solved-pattern on/off button beside the 2D/3D view switch
+- Added the first reviewed Module-to-Wire-Editor transfer contract and Verified Dipole transfer, with a pre-replacement review, strict semantic NEC-input parity gate, exact/manual segmentation preservation, durable schema-v7 provenance, modified-model fingerprint status, 50/75-ohm reference restoration, project round trips and solver-result parity regression
 - Added a shared **Azimuth cut elevation** selector from 0° to 90° above the horizon and a keyboard-, number-, click-and-drag 360° bearing inspector to antenna radiation views; cut selection uses the nearest retained NEC theta row and bearing interpolation is explicitly labelled
 - Added one shared, always-visible azimuth/elevation radiation-cut presentation across Design, Wire Editor, Frequency Analyser, Model Comparison, Parameter Sweeps, Antenna Optimiser, Measurement Comparison, and antenna laboratories; analyser-style tools keep efficient impedance batches and run a separate cancellable pattern solve only for the selected model frequency
 - Added a professional acknowledgements and source record crediting Colin Summers MM0OPX's product vision and direction, ChatGPT Codex's coding/documentation role, the inherited open-source foundations, and attributed antenna and validation references
@@ -25,6 +33,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- Preserved historical project and NEC-import behaviour during the conductor-material migration: schema-v8 upgrades older projects to lossless Perfect conductor, and NEC/MAA imports without a conductivity card remain lossless instead of being silently changed to Copper
+- Made all new-wire and existing-wire precision numbers normally editable with Backspace/Delete, temporary blank and partial input states, and safe restoration of the last valid value on blur
+- Kept Tab and Shift+Tab cycling inside Wire Editor precision fields so Length is easy to revisit without relying on the `L` shortcut
+- Compacted full-width numerical result summaries into left-aligned label/value blocks so Gain, quick results and matching values remain visually grouped instead of stretching to opposite edges of the analysis workspace
+- Aligned the Wire Editor's orange 3D feed marker with the requested physical connection shown in 2D, including radial hubs, while continuing to report and use the distinct NEC excitation-segment centre without changing solver input
+- Made the Wire Editor Add-mode cursor a consistent crosshair over empty 2D/3D space, existing conductors and endpoint handles; Select and Move cursor behaviour is unchanged
+- Cleaned up the Wire Editor 3D presentation by hiding endpoint spheres in normal viewing, shrinking edit-mode handles, labelling the retained orange NEC feedpoint, and increasing conductor thickness/contrast only at render time without changing physical or NEC wire radius
+- Moved the Wire Editor's detailed SWR, impedance, Smith, radiation-cut, gain, band and matching results from the narrow right inspector into a full-width analysis workspace below the antenna drawing; geometry and calculation controls remain beside the editor
+- Kept the Wire Editor's full-width azimuth and elevation cards evenly paired while capping their polar plots so the interactive cursor and live solved-model gain readout remain visible together on smaller desktop screens
+- Reflowed the compact Wire Editor azimuth controls into adjacent **Azimuth cut elevation** and **Azimuth bearing** panels so the plot, slice setting and live bearing gain can remain in one viewport
 - Renamed the radiation scales to **Absolute gain (dBi)** and **Relative pattern (dB)** and made their inspector readouts exclusive: absolute mode now contains only dBi values, while relative mode contains only negative dB values with the cut peak defined as 0 dB; dBd is not used
 - Changed the default conductor diameter for new general wire-antenna models from 2 mm to 1 mm across specialist laboratories, reusable and legacy templates, downstream comparison/sweep/optimiser models, radial workflows, and newly drawn wire-editor geometry; explicit tube-family defaults and saved/imported dimensions remain unchanged
 - Replaced the ambiguous **Normalised dB** wording with explicit absolute-gain and relative-pattern modes, and made every elevation inspector follow the selected reference consistently

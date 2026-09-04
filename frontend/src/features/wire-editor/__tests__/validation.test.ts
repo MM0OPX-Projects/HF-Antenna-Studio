@@ -54,6 +54,24 @@ describe("wire-editor geometry validation", () => {
     expect(result.valid).toBe(true);
   });
 
+  it("warns about an isolated end source but accepts a connected return conductor", () => {
+    const isolated = validateSimulationRequest(
+      [wire(1, 0, 10)],
+      [{ wire_tag: 1, segment: 1, voltage_real: 1, voltage_imag: 0 }],
+      { type: "free_space" },
+      frequency,
+    );
+    expect(isolated.issues.find((issue) => issue.code === "end_feed_return_path")?.severity).toBe("warning");
+
+    const connected = validateSimulationRequest(
+      [wire(1, 0, 10), wire(2, -5, 0)],
+      [{ wire_tag: 1, segment: 1, voltage_real: 1, voltage_imag: 0 }],
+      { type: "free_space" },
+      frequency,
+    );
+    expect(connected.issues.some((issue) => issue.code === "end_feed_return_path")).toBe(false);
+  });
+
   it("rejects duplicate tags and exact or partial collinear overlap", () => {
     const result = validateSimulationRequest(
       [wire(1, 0, 10), wire(1, 0, 10), wire(3, 5, 12)],

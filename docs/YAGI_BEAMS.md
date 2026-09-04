@@ -55,7 +55,7 @@ The comparator gate allows 0.02 ohm per impedance component, 0.02 dB forward/rea
 
 [NBS Technical Note 688, *Yagi Antenna Design*](https://nvlpubs.nist.gov/nistpubs/Legacy/TN/nbstechnicalnote688.pdf) reports measured/modelled 400 MHz arrays at three wavelengths above ground. Its 0.4-wavelength-boom three-element case uses a `0.482 wavelength` reflector, `0.424 wavelength` director, `0.20 wavelength` spacings, a folded driven element, and measured half-power beamwidths of approximately 57 and 72 degrees with the rear response about 8 dB down. The application test scales those ratios to 14.175 MHz and obtains a 64.6-degree azimuth beamwidth and 12.1 dB axial front-to-back ratio.
 
-This is an RF sanity envelope, not an exact oracle: the publication's folded/matched driven element, tube construction, measurement reference, and plane definitions are not identical to this straight perfect-conductor delta-gap model. The test deliberately does not tune dimensions to reproduce the publication.
+This is an RF sanity envelope, not an exact oracle: the publication's folded/matched driven element, tube construction, measurement reference, and plane definitions are not identical to this straight delta-gap model. Committed historical comparator fixtures remain explicit Perfect-conductor cases; interactive new work uses the selected application-wide material. The test deliberately does not tune dimensions to reproduce the publication.
 
 The repository also records the official [NEC-2 GE](https://www.nec2.org/part_3/cards/ge.html) and [GN](https://www.nec2.org/part_3/cards/gn.html) definitions used in the adapter review. For strictly elevated elements, `GE 1` has no touching-ground current interpolation to perform and is compatible with the independent comparator.
 
@@ -65,7 +65,7 @@ The code review separated the Yagi domain schema, geometry generator, NEC adapte
 
 ## Known limitations and required next evidence
 
-- Elements are straight, parallel, uniform perfect conductors. Tube taper, conductivity loss, folded/split driven geometry, gamma/beta/hairpin matching, traps, loading, insulated wire, and element correction are not represented.
+- Elements are straight, parallel and use one uniform selected conductivity. Tube taper, plating, surface finish, folded/split driven geometry, gamma/beta/hairpin matching, traps, loading, insulated wire, and element correction are not represented.
 - The boom, mast, clamps, feed line, balun/common-mode current, nearby structures, and terrain are absent.
 - A continuous driven wire with a delta-gap source is an NEC abstraction, not a model of the physical feed gap and hardware.
 - The same diameter applies to every element.

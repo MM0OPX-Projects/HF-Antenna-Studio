@@ -9,6 +9,8 @@
 import { useCallback, useState, useRef, useEffect } from "react";
 import { useEditorStore } from "../../stores/editorStore";
 import type { EditorWire } from "../../stores/editorStore";
+import { SourceTree } from "./SourceTree";
+import { RadialSystemTree } from "./RadialSystemTree";
 
 /** Column definitions (used by desktop table) */
 const COLUMNS = [
@@ -34,6 +36,7 @@ export function WireTable() {
   const wires = useEditorStore((s) => s.wires);
   const selectedTags = useEditorStore((s) => s.selectedTags);
   const selectWire = useEditorStore((s) => s.selectWire);
+  const toggleSelection = useEditorStore((s) => s.toggleSelection);
   const updateWire = useEditorStore((s) => s.updateWire);
   const deleteWires = useEditorStore((s) => s.deleteWires);
   const addWire = useEditorStore((s) => s.addWire);
@@ -55,9 +58,10 @@ export function WireTable() {
 
   const handleRowClick = useCallback(
     (tag: number, e: React.MouseEvent) => {
-      selectWire(tag, e.shiftKey || e.ctrlKey || e.metaKey);
+      if (e.shiftKey || e.ctrlKey || e.metaKey) toggleSelection(tag);
+      else selectWire(tag);
     },
-    [selectWire]
+    [selectWire, toggleSelection]
   );
 
   const handleCellDoubleClick = useCallback(
@@ -133,9 +137,9 @@ export function WireTable() {
   // Shared header bar
   const headerBar = (
     <div className="flex items-center justify-between px-2 py-1.5 border-b border-border">
-      <h3 className="text-xs font-medium text-text-secondary uppercase tracking-wider">
-        Antenna objects ({wires.length} wires)
-      </h3>
+      <div><h3 className="text-xs font-medium text-text-secondary uppercase tracking-wider">
+        Antenna objects ({wires.length} {wires.length === 1 ? "wire" : "wires"})
+      </h3><p className="text-[9px] normal-case tracking-normal text-text-secondary/70">Click selects · Ctrl+click adds/removes · Delete or Backspace removes</p></div>
       <div className="flex items-center gap-1.5">
         {selectedTags.size > 0 && (
           <button
@@ -231,7 +235,8 @@ export function WireTable() {
                   onKeyDown={(event) => {
                     if (event.key === "Enter" || event.key === " ") {
                       event.preventDefault();
-                      selectWire(wire.tag, event.shiftKey || event.ctrlKey || event.metaKey);
+                      if (event.shiftKey || event.ctrlKey || event.metaKey) toggleSelection(wire.tag);
+                      else selectWire(wire.tag);
                     }
                   }}
                   className={`cursor-pointer transition-colors ${
@@ -355,6 +360,8 @@ export function WireTable() {
         })}
         {wires.length === 0 && emptyState}
       </div>
+      <SourceTree />
+      <RadialSystemTree />
     </div>
   );
 }

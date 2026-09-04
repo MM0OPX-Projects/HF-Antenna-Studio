@@ -71,6 +71,12 @@ export interface Excitation {
   segment: number;
   voltage_real: number;
   voltage_imag: number;
+  /**
+   * Editor-only requested position measured from the wire start (0..1).
+   * NEC still excites a segment centre; retaining the requested position lets
+   * the editor remap the source predictably when segmentation changes.
+   */
+  position_ratio?: number;
 }
 
 /** Frequency range for default sweep */

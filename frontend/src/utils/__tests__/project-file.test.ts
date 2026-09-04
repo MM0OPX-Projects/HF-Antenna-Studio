@@ -25,6 +25,8 @@ import type { ProjectFile } from "../project-file";
 import { clonePreset, createDefaultComparisonConditions, createDefaultComparisonSweep } from "../../features/model-comparison/model";
 import { createDefaultSweepDefinition } from "../../features/parameter-sweeps/model";
 import { createDefaultOptimisationDefinition } from "../../features/antenna-optimiser/model";
+import { createDefaultDipoleModel } from "../../features/verified-dipole/model";
+import { createVerifiedDipoleTransfer } from "../../features/verified-dipole/transfer";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -41,7 +43,7 @@ function makeSimProject(): ProjectFile {
 function makeEditorProject(): ProjectFile {
   return createEditorProject(
     [{ tag: 1, segments: 21, x1: -5, y1: 0, z1: 10, x2: 5, y2: 0, z2: 10, radius: 0.001 }],
-    [{ wire_tag: 1, segment: 11, voltage_real: 1, voltage_imag: 0 }],
+    [{ wire_tag: 1, segment: 11, voltage_real: 1, voltage_imag: 0, position_ratio: 0.5 }],
     [],
     [],
     { type: "average" },
@@ -61,6 +63,7 @@ describe("createSimulatorProject", () => {
     expect(project.mode).toBe("simulator");
     expect(project.simulator).toBeDefined();
     expect(project.simulator!.templateId).toBe("dipole");
+    expect(project.conductor).toEqual({ id: "copper", conductivitySPerM: 5.8e7 });
     expect(project.created_at).toMatch(/^\d{4}-\d{2}-\d{2}T/); // ISO 8601
   });
 
@@ -116,6 +119,37 @@ describe("createEditorProject", () => {
 
     junctions[0]!.endpoints[0]!.wireTag = 99;
     expect(project.editor!.junctions[0]!.endpoints[0]!.wireTag).toBe(1);
+  });
+
+  it("round-trips managed editor radial-system identity", () => {
+    const wires = [
+      { tag: 1, segments: 11, x1: 0, y1: 0, z1: 2, x2: 0, y2: 0, z2: 7, radius: 0.0005 },
+      { tag: 2, segments: 11, x1: 0, y1: 0, z1: 2, x2: 5, y2: 0, z2: 2, radius: 0.0005 },
+    ];
+    const radialSystems = [{ id: 1, name: "Radial system 1", hub: { wireTag: 1, endpoint: "start" as const }, drivenWireTag: 1, generatedWireTags: [2], representation: "elevated-explicit" as const, count: 1, lengthM: 5, diameterM: 0.001, rotationDeg: 0, droopAngleDeg: 0, clearanceM: 0.002 }];
+    const project = createEditorProject(wires, [], [], [], { type: "perfect" }, { start_mhz: 14, stop_mhz: 14.2, steps: 3 }, 14.1, [], null, null, [], -1, radialSystems);
+    radialSystems[0]!.generatedWireTags[0] = 99;
+    const parsed = validateProjectFile(JSON.parse(JSON.stringify(project)));
+    expect(parsed.editor?.radialSystems[0]).toMatchObject({ drivenWireTag: 1, generatedWireTags: [2], representation: "elevated-explicit" });
+  });
+
+  it("round-trips exact specialist-module provenance without sharing references", () => {
+    const transfer = createVerifiedDipoleTransfer(createDefaultDipoleModel(), "2026-09-04T12:00:00.000Z");
+    const project = createEditorProject(
+      transfer.wires, transfer.excitations, transfer.loads, transfer.transmissionLines,
+      transfer.ground, transfer.frequencyRange, transfer.designFrequencyMhz,
+      transfer.junctions, null, null, transfer.frequencySegments,
+      transfer.geometryGroundFlag, transfer.radialSystems, transfer.provenance,
+    );
+    transfer.provenance.losses[0] = "mutated after save";
+    const parsed = validateProjectFile(JSON.parse(JSON.stringify(project)));
+    expect(parsed.version).toBe(PROJECT_SCHEMA_VERSION);
+    expect(parsed.editor?.modelTransfer).toMatchObject({
+      sourceModuleId: "verified-dipole",
+      fidelity: "exact-editable",
+      referenceImpedanceOhm: 50,
+    });
+    expect(parsed.editor?.modelTransfer?.losses[0]).not.toBe("mutated after save");
   });
 
   it("records the explicit simulator frequency range and multi-band sweep intent", () => {
@@ -184,6 +218,7 @@ describe("Round-trip serialization", () => {
     expect(parsed.editor!.wires).toHaveLength(1);
     expect(parsed.editor!.wires[0]!.tag).toBe(1);
     expect(parsed.editor!.excitations[0]!.segment).toBe(11);
+    expect(parsed.editor!.excitations[0]!.position_ratio).toBe(0.5);
     expect(parsed.editor!.frequencyRange.start_mhz).toBe(14.0);
   });
 });
@@ -263,8 +298,9 @@ describe("validateProjectFile — error cases", () => {
     expect(migrated.sourceVersion).toBe(1);
     expect(migrated.project.version).toBe(PROJECT_SCHEMA_VERSION);
     expect(migrated.project.editor?.junctions).toEqual([]);
-    expect(migrated.migrations).toHaveLength(4);
-    expect(migrated.migrations[migrated.migrations.length - 1]).toContain("v4 to v5");
+    expect(migrated.project.conductor).toEqual({ id: "perfect", conductivitySPerM: null });
+    expect(migrated.migrations).toHaveLength(7);
+    expect(migrated.migrations[migrated.migrations.length - 1]).toContain("v7 to v8");
     expect(JSON.stringify(source)).toBe(sourceText);
   });
 
@@ -276,7 +312,7 @@ describe("validateProjectFile — error cases", () => {
 
     expect(parsed.originalText).toBe(text);
     expect(parsed.project.version).toBe(PROJECT_SCHEMA_VERSION);
-    expect(parsed.migrations).toHaveLength(2);
+    expect(parsed.migrations).toHaveLength(3);
   });
 
   it("accepts current and legacy project filenames case-insensitively", () => {

@@ -50,4 +50,33 @@ describe("shared radiation-cut extraction", () => {
     expect(cut?.points.map((point) => point.angleDeg)).toEqual([0, 90, 180, 270]);
     expect(cut?.points.map((point) => point.gainDbi)).toEqual([18, 17, 20, 19]);
   });
+
+  it("uses the canonical positive-theta row when the duplicated negative row contains the first grid maximum", () => {
+    const pattern: PatternData = {
+      theta_start: -10, theta_step: 10, theta_count: 3,
+      phi_start: 0, phi_step: 90, phi_count: 4,
+      gain_dbi: [
+        [9, 1, 2, 3],
+        [0, 0, 0, 0],
+        [2, 3, 9, 1],
+      ],
+    };
+    const cut = azimuthCutFromPattern(pattern);
+    expect(cut?.thetaIndex).toBe(2);
+    expect(cut?.actualElevationDeg).toBe(80);
+    expect(cut?.peakBearingDeg).toBe(180);
+    expect(cut?.points.map((point) => point.gainDbi)).toEqual([2, 3, 9, 1]);
+  });
+
+  it("rotates bearings for a signed-theta-only imported grid", () => {
+    const pattern: PatternData = {
+      theta_start: -30, theta_step: 10, theta_count: 3,
+      phi_start: 0, phi_step: 90, phi_count: 4,
+      gain_dbi: [[8, 1, 2, 3], [7, 1, 2, 3], [6, 1, 2, 3]],
+    };
+    const cut = azimuthCutFromPattern(pattern, 60);
+    expect(cut?.thetaIndex).toBe(0);
+    expect(cut?.peakBearingDeg).toBe(180);
+    expect(cut?.points.map((point) => point.gainDbi)).toEqual([2, 3, 8, 1]);
+  });
 });

@@ -15,13 +15,17 @@ import type { ComparisonConditions, ComparisonSlotDefinition } from "../features
 import type { SweepConfig } from "../features/frequency-analyser/types";
 import type { ParameterSweepDefinition } from "../features/parameter-sweeps/types";
 import type { OptimisationDefinition } from "../features/antenna-optimiser/types";
+import type { EditorRadialSystem } from "../features/wire-editor/radial-system";
+import type { ModelTransferProvenance } from "../features/model-transfer/types";
+import { cloneModelTransferProvenance } from "../features/model-transfer/types";
+import { DEFAULT_CONDUCTOR, LEGACY_CONDUCTOR, validateConductor, type ConductorMaterial } from "../engine/conductor";
 
 // ---------------------------------------------------------------------------
 // Schema
 // ---------------------------------------------------------------------------
 
 /** Current schema version. Increment when the format changes. */
-export const PROJECT_SCHEMA_VERSION = 5;
+export const PROJECT_SCHEMA_VERSION = 8;
 
 /** File extension (without dot) */
 export const PROJECT_FILE_EXTENSION = "hfas";
@@ -49,6 +53,8 @@ export interface ProjectFile {
   created_at: string;
   /** Which mode the project was saved from */
   mode: "simulator" | "editor" | "model-comparison" | "parameter-sweep" | "antenna-optimiser";
+  /** Global antenna-wire material used for NEC conductor loss. */
+  conductor: ConductorMaterial;
 
   /** Simulator mode state */
   simulator?: {
@@ -69,6 +75,8 @@ export interface ProjectFile {
     transmissionLines: TransmissionLine[];
     /** Editor-only endpoint groups that move as one connection */
     junctions: EditorJunction[];
+    /** Parametric groups that own generated explicit radial wires. */
+    radialSystems: EditorRadialSystem[];
     ground: GroundConfig;
     /** Explicit NEC GE behavior, or null for automatic editor selection. */
     geometryGroundFlag?: GeometryGroundFlag | null;
@@ -77,6 +85,8 @@ export interface ProjectFile {
     designFrequencyMhz: number;
     /** Optional browser-decoded imported NEC source plus its conversion report. */
     necImport?: NecImportState | null;
+    /** Optional specialist-module origin and exact-transfer fingerprint. */
+    modelTransfer?: ModelTransferProvenance | null;
   };
 
   /** Reproducibility inputs only; calculated comparison results are cache data. */
@@ -113,6 +123,9 @@ function validateCurrentProjectFile(data: unknown): ProjectFile {
   const finiteNumber = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value);
   const allowedFamilies = new Set(["dipole", "vertical", "yagi", "phased-array"]);
   const allowedParameterIds = new Set(["dipole-height", "dipole-length", "vertical-length", "radial-count", "yagi-director-spacing", "yagi-height", "array-spacing", "array-phase"]);
+  if (!isRecord(obj.conductor) || typeof obj.conductor.id !== "string" || !validateConductor(obj.conductor as unknown as ConductorMaterial)) {
+    throw new Error("Invalid project file: conductor material is missing or invalid");
+  }
   const validGround = (value: unknown): boolean => isRecord(value) && (value.kind === "perfect" || (value.kind === "sommerfeld-norton" && finiteNumber(value.conductivitySPerM) && finiteNumber(value.relativePermittivity)));
   const hasRadialSchema = (value: unknown): boolean => {
     if (!isRecord(value) || value.schemaVersion !== 1) return false;
@@ -154,6 +167,9 @@ function validateCurrentProjectFile(data: unknown): ProjectFile {
 
     if (!Array.isArray(ed.junctions)) {
       throw new Error("Invalid project file: editor mode requires 'editor.junctions' array");
+    }
+    if (!Array.isArray(ed.radialSystems)) {
+      throw new Error("Invalid project file: editor mode requires 'editor.radialSystems' array");
     }
     for (const collection of ["excitations", "loads", "transmissionLines"] as const) {
       if (!Array.isArray(ed[collection])) {
@@ -229,6 +245,27 @@ function validateCurrentProjectFile(data: unknown): ProjectFile {
         }
         connectedEndpoints.add(key);
       }
+    }
+
+    if (ed.modelTransfer !== undefined && ed.modelTransfer !== null) {
+      if (!isRecord(ed.modelTransfer)) throw new Error("Invalid project file: editor.modelTransfer must be an object");
+      const transfer = ed.modelTransfer;
+      const fidelity = ["exact-editable", "editable-with-losses", "frozen-solved", "blocked"];
+      if (transfer.schemaVersion !== 1 || !fidelity.includes(String(transfer.fidelity)) || (transfer.referenceImpedanceOhm !== 50 && transfer.referenceImpedanceOhm !== 75)) throw new Error("Invalid project file: editor.modelTransfer has unsupported fidelity metadata");
+      for (const field of ["sourceModuleId", "sourceModuleName", "sourceModelKind", "transferredAt", "sourceNecDeck", "sourceModelFingerprint", "editorModelFingerprint"] as const) {
+        if (typeof transfer[field] !== "string") throw new Error(`Invalid project file: editor.modelTransfer.${field} must be a string`);
+      }
+      if (!finiteNumber(transfer.sourceModelSchemaVersion) || !isRecord(transfer.sourceParameters) || !Array.isArray(transfer.warnings) || !Array.isArray(transfer.losses)) throw new Error("Invalid project file: editor.modelTransfer is incomplete");
+    }
+    const radialIds = new Set<number>();
+    for (const rawSystem of ed.radialSystems) {
+      if (!isRecord(rawSystem) || !Number.isInteger(rawSystem.id) || radialIds.has(rawSystem.id as number)) throw new Error("Invalid project file: radial systems require unique integer IDs");
+      radialIds.add(rawSystem.id as number);
+      const hub = rawSystem.hub;
+      if (!isRecord(hub) || !wireTags.has(hub.wireTag as number) || (hub.endpoint !== "start" && hub.endpoint !== "end")) throw new Error("Invalid project file: radial system hub references a missing wire endpoint");
+      if (!wireTags.has(rawSystem.drivenWireTag as number) || !Array.isArray(rawSystem.generatedWireTags) || !rawSystem.generatedWireTags.every((tag) => wireTags.has(tag as number))) throw new Error("Invalid project file: radial system references missing generated or driven wires");
+      if (rawSystem.representation !== "elevated-explicit" && rawSystem.representation !== "near-surface-explicit") throw new Error("Invalid project file: unsupported radial representation");
+      for (const field of ["count", "lengthM", "diameterM", "rotationDeg", "droopAngleDeg", "clearanceM"] as const) if (!finiteNumber(rawSystem[field])) throw new Error(`Invalid project file: radial system ${field} must be finite`);
     }
   }
 
@@ -315,6 +352,20 @@ export function migrateProjectFile(data: unknown): ProjectMigrationResult {
   if (sourceVersion < 5) {
     migrations.push("v4 to v5: added project modes for comparison, parameter sweeps, and optimisation; legacy project inputs were retained unchanged");
   }
+  if (sourceVersion < 6 && copy.mode === "editor") {
+    const editor = copy.editor as Record<string, unknown> | undefined;
+    if (editor && editor.radialSystems === undefined) editor.radialSystems = [];
+    migrations.push("v5 to v6: added managed wire-editor radial systems; existing loose wires were retained unchanged");
+  }
+  if (sourceVersion < 7 && copy.mode === "editor") {
+    const editor = copy.editor as Record<string, unknown> | undefined;
+    if (editor && editor.modelTransfer === undefined) editor.modelTransfer = null;
+    migrations.push("v6 to v7: added optional specialist-module transfer provenance; existing editor geometry was retained unchanged");
+  }
+  if (sourceVersion < 8) {
+    copy.conductor = { ...LEGACY_CONDUCTOR };
+    migrations.push("v7 to v8: preserved legacy lossless-wire behaviour by setting the conductor to perfect");
+  }
 
   copy.version = PROJECT_SCHEMA_VERSION;
   return {
@@ -349,6 +400,7 @@ export function createSimulatorProject(
     app_version: typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "unknown",
     created_at: new Date().toISOString(),
     mode: "simulator",
+    conductor: { ...DEFAULT_CONDUCTOR },
     simulator: {
       templateId,
       params: { ...params },
@@ -376,12 +428,15 @@ export function createEditorProject(
   necImport?: NecImportState | null,
   frequencySegments: FrequencySegment[] = [],
   geometryGroundFlag: GeometryGroundFlag | null = null,
+  radialSystems: EditorRadialSystem[] = [],
+  modelTransfer: ModelTransferProvenance | null = null,
 ): ProjectFile {
   return {
     version: PROJECT_SCHEMA_VERSION,
     app_version: typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "unknown",
     created_at: new Date().toISOString(),
     mode: "editor",
+    conductor: { ...DEFAULT_CONDUCTOR },
     editor: {
       wires: wires.map((wire) => ({
         tag: wire.tag,
@@ -403,6 +458,7 @@ export function createEditorProject(
         ...junction,
         endpoints: junction.endpoints.map((endpoint) => ({ ...endpoint })),
       })),
+      radialSystems: radialSystems.map((system) => ({ ...system, hub: { ...system.hub }, generatedWireTags: [...system.generatedWireTags] })),
       ground: { ...ground },
       geometryGroundFlag,
       frequencyRange: { ...frequencyRange },
@@ -416,17 +472,19 @@ export function createEditorProject(
           diagnostics: necImport.document.diagnostics.map((diagnostic) => ({ ...diagnostic })),
         },
       } : null,
+      modelTransfer: cloneModelTransferProvenance(modelTransfer),
     },
     result: result ?? null,
   };
 }
 
-function projectEnvelope(mode: ProjectFile["mode"]): Pick<ProjectFile, "version" | "app_version" | "created_at" | "mode"> {
+function projectEnvelope(mode: ProjectFile["mode"]): Pick<ProjectFile, "version" | "app_version" | "created_at" | "mode" | "conductor"> {
   return {
     version: PROJECT_SCHEMA_VERSION,
     app_version: typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "unknown",
     created_at: new Date().toISOString(),
     mode,
+    conductor: { ...DEFAULT_CONDUCTOR },
   };
 }
 
