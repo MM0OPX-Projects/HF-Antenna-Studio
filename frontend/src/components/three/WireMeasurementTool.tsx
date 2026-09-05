@@ -107,7 +107,7 @@ export function WireMeasurementTool({
           : "Tap another wire to start a new measurement.";
 
   return (
-    <div className="absolute bottom-16 right-2 z-20 flex max-w-[calc(100%-1rem)] flex-col items-end gap-2 pointer-events-none">
+    <div className="absolute bottom-36 right-2 z-20 flex max-w-[calc(100%-1rem)] flex-col items-end gap-2 pointer-events-none">
       {active && (
         <section
           className="pointer-events-auto max-h-[55vh] w-[min(18rem,calc(100vw-1rem))] overflow-y-auto rounded-lg border border-border bg-surface/95 p-3 shadow-xl backdrop-blur-md"
