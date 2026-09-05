@@ -4,6 +4,12 @@ HF Antenna Studio is a local, open-source antenna-modelling application for Wind
 
 Version 1.0.0 is the first validation-bounded public release. It is engineering software, not a substitute for construction measurements or professional safety analysis.
 
+## Install HF Antenna Studio on Windows 11
+
+**Download the latest unsigned Windows installer:** [open the Windows package workflow](https://github.com/MM0OPX-Projects/HF-Antenna-Studio/actions?query=workflow%3A%22Windows+package%22+branch%3Afeature%2Fground-radial-integration), open the newest successful run, scroll to **Artifacts**, and download the `*-windows-x64-test` ZIP. Extract it, run the `*-setup.exe`, and launch **HF Antenna Studio** from the Start menu. The installer and bundled NEC solver are produced together; you do not need Node.js, Python, a compiler, Docker, or a separate NEC download.
+
+The installer is an Actions artifact rather than a file in the repository, so it will not appear in the **Code** file list. It is unsigned and may show a Windows SmartScreen warning. Verify the SHA-256 in the included `package-manifest.json` before installing. For the detailed install, offline, uninstall, log, and troubleshooting procedure, see [Installation and troubleshooting](docs/INSTALLATION.md).
+
 ## What v1.0.0 provides
 
 - Parametric dipole, vertical, loop/quad/hexbeam, Yagi, and two-element phased-array laboratories.
@@ -40,7 +46,7 @@ Not validated for v1.0.0 include finite Sommerfeld/Norton ground as an independe
 
 ## Install on Windows 11
 
-1. Download the x64 setup executable and `package-manifest.json` from the v1.0.0 release. The named corresponding-source ZIP is provided separately for source/licence compliance.
+1. Open the [Windows package workflow](https://github.com/MM0OPX-Projects/HF-Antenna-Studio/actions?query=workflow%3A%22Windows+package%22+branch%3Afeature%2Fground-radial-integration), open the newest successful run, and download its `*-windows-x64-test` artifact. Extract the x64 setup executable, `package-manifest.json`, and corresponding-source ZIP.
 2. Verify the installer's SHA-256 against the manifest.
 3. Run the per-user installer and launch **HF Antenna Studio** from the Start menu.
 4. Open **About** and confirm version `1.0.0`.
