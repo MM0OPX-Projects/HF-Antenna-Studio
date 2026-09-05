@@ -7,8 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-09-05
+
+### Fixed
+
+- Added the complete NEC-2 engine audit matrices and corrected stale responsive/UI regression expectations exposed by the audit.
+
 ### Added
 
+- Added a systematic NEC-2 engine audit and permanent browser-local real-solver matrices covering all 17 registered templates, the complete 0.1–2000 MHz declared range, all ground presets/custom ground, all conductor presets/custom conductivity, 1°–10° patterns, current extraction and a 101-point impedance sweep; the complete 186-scenario integration suite and 759 unit regressions pass.
 - Expanded the shared End-Fed Half-Wave template for Design and Wire Editor with horizontal, sloper, inverted-V and vertical arrangements, switchable End A/End B excitation, manual or frequency-derived length, bearing/height/apex controls, and explicit counterpoise attachment.
 - Added shared EFHW cross-parameter diagnostics plus real browser-local NEC regression coverage for every orientation/feed-end combination and an End-B Wire Editor transfer solve.
 - Corrected EFHW inverted-V construction to use a true coplanar physical included angle, symmetric classic defaults, an explicitly derived advanced asymmetric mode, conditional controls, and visible derived geometry values.

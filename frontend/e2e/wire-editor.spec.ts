@@ -76,10 +76,8 @@ test("supported NEC import reaches the real solver, results, and 3D editor witho
 
   await page.getByRole("button", { name: "Run Simulation" }).click();
   await expect(page.locator("aside").getByTestId("wire-editor-simulation-status")).toHaveText("3 frequency points calculated", { timeout: 120_000 });
-  const patternScale = page.getByTestId("pattern-scale-control");
-  await expect(patternScale).toContainText("Origin: feedpoint");
-  await patternScale.getByLabel("3D radiation pattern visual size").fill("0.75");
-  await expect(patternScale).toContainText("0.75×");
+  await expect(page.getByTestId("pattern-scale-control")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Pattern on" })).toBeVisible();
   const analysis = page.getByTestId("wire-editor-analysis");
   await analysis.scrollIntoViewIfNeeded();
   const azimuthCard = analysis.getByTestId("results-radiation-cuts-azimuth");
@@ -534,8 +532,9 @@ test("wire editor adds and regenerates a bonded radial system at an exact endpoi
   await expect(page.getByTestId("wire-editor-3d").locator("canvas")).toBeVisible();
   const radialLegend = page.getByTestId("editor-radial-legend");
   const feedpointLegend = page.getByTestId("editor-feedpoint-legend");
-  await expect(feedpointLegend).toContainText("Orange sphere: requested feed connection");
-  await expect(feedpointLegend).toContainText("requested 0.0%; NEC segment 1 centre");
+  await expect(feedpointLegend).toContainText("Feedpoint source");
+  await expect(feedpointLegend).toContainText("0.0% requested");
+  await expect(feedpointLegend).toContainText("NEC segment 1");
   await expect(radialLegend).toContainText("Explicit NEC radial wires");
   await expect(radialLegend.getByTestId("editor-radial-legend-1")).toContainText("6 × 5.000 m");
   await expect(radialLegend.getByTestId("editor-radial-legend-1")).toContainText("25.0° droop");

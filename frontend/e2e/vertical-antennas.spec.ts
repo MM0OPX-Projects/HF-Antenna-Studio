@@ -5,7 +5,9 @@ async function openVerticals(page: Page) {
   await page.goto("/vertical-antennas");
   const changelog = page.getByRole("button", { name: "Got it" });
   if (await changelog.isVisible().catch(() => false)) await changelog.click();
-  await page.getByLabel("Global antenna wire material").selectOption("perfect");
+  if ((page.viewportSize()?.width ?? 1280) >= 768) {
+    await page.getByLabel("Global antenna wire material").selectOption("perfect");
+  }
 }
 
 async function runAndWait(page: Page) {
