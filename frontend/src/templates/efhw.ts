@@ -28,7 +28,8 @@ export const efhwTemplate: AntennaTemplate = {
     "The half-wave dimension is a starting value; nearby ground, supports and the return path change resonance.",
     "Feed end A or B may be selected. The marker and NEC source follow the selected terminal.",
     "The transformer is an ideal impedance transformation; transformer losses and common-mode current are not solved.",
-    "An end-fed model needs a physically meaningful counterpoise, feed line or other return path.",
+    "No counterpoise wire is drawn by default. Enable one only when it represents the intended physical return path.",
+    "An end-fed model still needs a physically meaningful counterpoise, feed line or other return path.",
     "For an inverted-V, the apex is an electrical junction and the feed remains at a terminal end."
   ],
   relatedTemplates: ["dipole","inverted-v","vertical"],
@@ -53,8 +54,8 @@ export const efhwTemplate: AntennaTemplate = {
       }
     }
     if (orientation===ORIENTATION.vertical && value(params,"feed_end",0)>=0.5) issues.push({severity:"warning",code:"efhw-top-feed-return",message:"Top-feeding the vertical places the explicit return path at the upper terminal. Confirm this represents the intended physical feed system."});
-    if (value(params,"counterpoise_enabled",1)<0.5) issues.push({severity:"warning",code:"efhw-no-return-path",message:"No explicit counterpoise is present. An EFHW still requires a feed line, counterpoise, ground or another physically meaningful return path."});
-    if (value(params,"counterpoise_enabled",1)>=0.5 && value(params,"counterpoise_length",2.1)<lambda*0.005) issues.push({severity:"warning",code:"efhw-short-counterpoise",message:"The counterpoise is shorter than 0.005λ; feed impedance may be dominated by the omitted feed system and environment."});
+    if (value(params,"counterpoise_enabled",0)<0.5) issues.push({severity:"warning",code:"efhw-no-return-path",message:"No explicit counterpoise is present. An EFHW still requires a feed line, counterpoise, ground or another physically meaningful return path."});
+    if (value(params,"counterpoise_enabled",0)>=0.5 && value(params,"counterpoise_length",2.1)<lambda*0.005) issues.push({severity:"warning",code:"efhw-short-counterpoise",message:"The counterpoise is shorter than 0.005λ; feed impedance may be dominated by the omitted feed system and environment."});
     return issues;
   },
   summarizeParameters(params) {
@@ -87,9 +88,9 @@ export const efhwTemplate: AntennaTemplate = {
     {key:"included_angle",label:"True Included Angle",description:"Physical angle between equal legs in the vertical antenna plane",unit:"deg",min:60,max:180,step:1,defaultValue:120,decimals:0,visibleWhen:p=>Math.round(value(p,"orientation",1))===ORIENTATION.invertedV&&Math.round(value(p,"inverted_v_mode",0))===INVERTED_V_MODE.classic},
     {key:"bearing",label:"Bearing",description:"Bearing from the apex toward End B (or from End A toward End B for straight arrangements)",unit:"deg",min:0,max:359,step:1,defaultValue:90,decimals:0,visibleWhen:p=>Math.round(value(p,"orientation",1))!==ORIENTATION.vertical},
     {key:"wire_diameter",label:"Wire Diameter",description:"Conductor diameter",unit:"mm",min:0.5,max:20,step:0.1,defaultValue:1,decimals:1},
-    {key:"counterpoise_enabled",label:"Counterpoise",description:"Add an explicit return wire at the selected feed terminal",unit:"",min:0,max:1,step:1,defaultValue:1,decimals:0,options:[{value:1,label:"Enabled"},{value:0,label:"Disabled"}]},
-    {key:"counterpoise_length",label:"Counterpoise Length",description:"Length of the explicit return wire",unit:"m",min:0.01,max:50,step:0.01,defaultValue:2.1,decimals:2,visibleWhen:p=>value(p,"counterpoise_enabled",1)>=0.5},
-    {key:"counterpoise_bearing",label:"Counterpoise Bearing",description:"Horizontal direction of the return wire",unit:"deg",min:0,max:359,step:1,defaultValue:0,decimals:0,visibleWhen:p=>value(p,"counterpoise_enabled",1)>=0.5}
+    {key:"counterpoise_enabled",label:"Explicit Counterpoise Wire",description:"Optionally draw and solve a real return wire at the selected feed terminal",unit:"",min:0,max:1,step:1,defaultValue:0,decimals:0,options:[{value:0,label:"None (not modelled)"},{value:1,label:"Enabled"}]},
+    {key:"counterpoise_length",label:"Counterpoise Length",description:"Length of the explicit return wire",unit:"m",min:0.01,max:50,step:0.01,defaultValue:2.1,decimals:2,visibleWhen:p=>value(p,"counterpoise_enabled",0)>=0.5},
+    {key:"counterpoise_bearing",label:"Counterpoise Bearing",description:"Horizontal direction of the return wire",unit:"deg",min:0,max:359,step:1,defaultValue:0,decimals:0,visibleWhen:p=>value(p,"counterpoise_enabled",0)>=0.5}
   ],
   generateGeometry(params) {
     const frequency=value(params,"frequency",7.1), lambda=C_MHZ_M/frequency;
@@ -127,7 +128,7 @@ export const efhwTemplate: AntennaTemplate = {
       const endB=pointAt(endA,length,bearing,Math.atan2(dz,Math.max(0.01,horizontal))*180/Math.PI);
       wires=[makeWire(1,endA,endB,length,radius,maxFreq)]; feedPoint=value(params,"feed_end",0)<0.5?endA:endB;
     }
-    if (value(params,"counterpoise_enabled",1)>=0.5) {
+    if (value(params,"counterpoise_enabled",0)>=0.5) {
       const cpLength=Math.max(0.01,value(params,"counterpoise_length",lambda*0.05)), end=pointAt(feedPoint,cpLength,value(params,"counterpoise_bearing",bearing+180),0);
       wires.push(makeWire(99,feedPoint,end,cpLength,radius,maxFreq));
     }

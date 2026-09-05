@@ -11,6 +11,11 @@ function lengthOf(w: { x1:number; y1:number; z1:number; x2:number; y2:number; z2
 }
 
 describe("EFHW parametric orientations", () => {
+  it("does not draw an unexplained counterpoise leg by default", () => {
+    expect(efhwTemplate.generateGeometry(params()).some((wire) => wire.tag === 99)).toBe(false);
+    expect(efhwTemplate.validateParameters?.(params())).toEqual(expect.arrayContaining([expect.objectContaining({ code: "efhw-no-return-path", severity: "warning" })]));
+  });
+
   it.each([
     ["horizontal", 0], ["sloper", 1], ["inverted-v", 2], ["vertical", 3],
   ])("generates a connected %s model with both feed ends", (_name, orientation) => {
