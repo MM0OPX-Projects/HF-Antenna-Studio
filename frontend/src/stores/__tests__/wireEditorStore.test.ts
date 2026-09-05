@@ -317,6 +317,29 @@ describe("atomic NEC model loading", () => {
     expect(useEditorStore.getState().wires).toHaveLength(13);
   });
 
+  it("supports the 128-radial upper limit without changing the driven model", () => {
+    const result = useEditorStore.getState().addRadialSystem(
+      { wireTag: 1, endpoint: "start" }, 1,
+      { representation: "elevated-explicit", count: 128, lengthM: 2, diameterM: 0.001, rotationDeg: 0, droopAngleDeg: 0, clearanceM: 0.002 },
+    );
+    expect(result.ok).toBe(true);
+    const state = useEditorStore.getState();
+    expect(state.radialSystems[0]).toMatchObject({ count: 128, drivenWireTag: 1 });
+    expect(state.wires).toHaveLength(129);
+    expect(state.wires[0]).toMatchObject(base);
+  });
+
+  it("surfaces a clear error when drooping radials would intersect ground", () => {
+    useEditorStore.setState({ wires: [{ ...base, z1: 1, z2: 3 }] });
+    const result = useEditorStore.getState().addRadialSystem(
+      { wireTag: 1, endpoint: "start" }, 1,
+      { representation: "elevated-explicit", count: 4, lengthM: 5, diameterM: 0.001, rotationDeg: 0, droopAngleDeg: 60, clearanceM: 0.002 },
+    );
+    expect(result.ok).toBe(false);
+    expect(useEditorStore.getState().lastEditorMessage).toMatch(/touch or cross the ground plane/i);
+    expect(useEditorStore.getState().wires).toHaveLength(1);
+  });
+
   it("resizes around the centre and rotates by compass bearing", () => {
     useEditorStore.getState().setWireLength(1, 4, "center");
     expect(useEditorStore.getState().wires[0]).toMatchObject({ x1: -1, x2: 3 });

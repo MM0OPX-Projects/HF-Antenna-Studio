@@ -7,7 +7,7 @@ export const COMPARISON_COLORS = ["#3b82f6", "#f59e0b", "#10b981", "#a855f7"] as
 
 export const FAMILY_PARAMETERS: Record<ComparisonFamily, { familyLabel: string; parameterLabel: string; unit: string; min: number; max: number; step: number }> = {
   dipole: { familyLabel: "Horizontal dipole", parameterLabel: "Height", unit: "m", min: 0.5, max: 80, step: 0.5 },
-  vertical: { familyLabel: "Quarter-wave vertical", parameterLabel: "Radial count", unit: "", min: 2, max: 32, step: 1 },
+  vertical: { familyLabel: "Quarter-wave vertical", parameterLabel: "Radial count", unit: "", min: 2, max: 128, step: 1 },
   "phased-array": { familyLabel: "Two-element phased array", parameterLabel: "Element 2 phase", unit: "°", min: -360, max: 360, step: 5 },
   yagi: { familyLabel: "Three-element Yagi", parameterLabel: "Boom height", unit: "m", min: 0.5, max: 80, step: 0.5 },
 };

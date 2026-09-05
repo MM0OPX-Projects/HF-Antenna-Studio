@@ -26,7 +26,7 @@ function RadialFields({ value, onChange }: { value: RadialSystemSettings; onChan
       </select>
     </label>
     <div className="grid grid-cols-2 gap-2">
-      <NumberInput label="Count" value={value.count} onChange={(count) => patch({ count: Math.round(count) })} min={nearSurface ? 4 : 2} max={64} decimals={0} />
+      <NumberInput label="Count" value={value.count} onChange={(count) => patch({ count: Math.round(count) })} min={nearSurface ? 4 : 2} max={128} decimals={0} />
       <NumberInput label="Length" value={value.lengthM} onChange={(lengthM) => patch({ lengthM })} min={0.2} max={100} decimals={3} unit="m" />
       <NumberInput label="Diameter" value={value.diameterM * 1000} onChange={(diameterMm) => patch({ diameterM: diameterMm / 1000 })} min={0.2} max={100} decimals={2} unit="mm" />
       <NumberInput label="Rotation" value={value.rotationDeg} onChange={(rotationDeg) => patch({ rotationDeg })} min={0} max={360} decimals={1} unit="deg" />
@@ -34,7 +34,7 @@ function RadialFields({ value, onChange }: { value: RadialSystemSettings; onChan
       {nearSurface && <NumberInput label="Clearance" value={value.clearanceM * 1000} onChange={(clearanceMm) => patch({ clearanceM: clearanceMm / 1000 })} min={0.6} max={100} decimals={2} unit="mm" />}
     </div>
     <label className="block text-[10px] text-text-secondary">Radial count: {value.count}
-      <input data-testid="radial-count-slider" type="range" min={nearSurface ? 4 : 2} max={64} step={1} value={value.count} onChange={(event) => patch({ count: Number(event.currentTarget.value) })} className="mt-1 w-full accent-cyan-400" />
+      <input data-testid="radial-count-slider" type="range" min={nearSurface ? 4 : 2} max={128} step={1} value={value.count} onChange={(event) => patch({ count: Number(event.currentTarget.value) })} className="mt-1 w-full accent-cyan-400" />
     </label>
     <label className="block text-[10px] text-text-secondary">Radial rotation: {value.rotationDeg.toFixed(1)}°
       <input data-testid="radial-rotation-slider" type="range" min={0} max={360} step={1} value={value.rotationDeg} onChange={(event) => patch({ rotationDeg: Number(event.currentTarget.value) })} className="mt-1 w-full accent-cyan-400" />

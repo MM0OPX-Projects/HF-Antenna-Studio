@@ -43,7 +43,7 @@ export function normalizeRadialSettings(settings: RadialSystemSettings): RadialS
   const representation = settings.representation;
   return {
     representation,
-    count: Math.max(representation === "near-surface-explicit" ? 4 : 2, Math.min(64, Math.round(settings.count))),
+    count: Math.max(representation === "near-surface-explicit" ? 4 : 2, Math.min(128, Math.round(settings.count))),
     lengthM: Math.max(0.2, Math.min(100, settings.lengthM)),
     diameterM: Math.max(0.0002, Math.min(0.1, settings.diameterM)),
     rotationDeg: ((settings.rotationDeg % 360) + 360) % 360,
@@ -75,8 +75,10 @@ export function radialSystemIssues(hub: Point3, settings: RadialSystemSettings):
     if (normalized.droopAngleDeg !== 0) issues.push("Near-surface radial wires must remain horizontal.");
   } else {
     const lowestZ = radialEndpoint(hub, normalized, 0).z;
-    if (lowestZ <= normalized.diameterM / 2) issues.push("Drooping elevated radials would touch or cross the ground plane.");
+    if (lowestZ <= normalized.diameterM / 2) {
+      const clearance = lowestZ - normalized.diameterM / 2;
+      issues.push(`Drooping elevated radials would touch or cross the ground plane (minimum surface clearance ${clearance.toFixed(4)} m). Raise the hub, shorten the radials, or reduce droop.`);
+    }
   }
   return issues;
 }
-

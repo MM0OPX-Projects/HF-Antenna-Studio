@@ -239,8 +239,8 @@ function validateRadials(model: PhasedArrayModel, wires: PhasedWire[], lambda: n
     ...range(model.radials.droopAngleRad, 0, Math.PI / 3, "radial-droop", "Radial droop (radians)"),
   );
   const minimumCount = model.radials.topology === "shared-bonded-network" ? 4 : 2;
-  if (!Number.isInteger(model.radials.count) || model.radials.count < minimumCount || model.radials.count > 64) {
-    issues.push({ severity: "error", code: "radial-count", message: `The selected radial topology requires an integer radial count from ${minimumCount} to 64.` });
+  if (!Number.isInteger(model.radials.count) || model.radials.count < minimumCount || model.radials.count > 128) {
+    issues.push({ severity: "error", code: "radial-count", message: `The selected radial topology requires an integer radial count from ${minimumCount} to 128.` });
   }
   const minimumZ = Math.min(...wires.flatMap((wire) => [wire.startM.z, wire.endM.z]));
   if (minimumZ <= 0) issues.push({ severity: "error", code: "radial-clearance", message: "Every explicit radial must remain strictly above z = 0." });

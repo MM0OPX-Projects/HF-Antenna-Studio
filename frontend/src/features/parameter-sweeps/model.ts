@@ -27,7 +27,7 @@ export const PARAMETER_DEFINITIONS: Record<ParameterId, ParameterDefinition> = {
   "dipole-height": { id: "dipole-height", family: "dipole", label: "Dipole height", unit: "m", min: 0.5, max: 80, step: 0.5, integer: false },
   "dipole-length": { id: "dipole-length", family: "dipole", label: "Dipole total length", unit: "m", min: 0.5, max: 100, step: 0.1, integer: false },
   "vertical-length": { id: "vertical-length", family: "vertical", label: "Vertical radiator length", unit: "m", min: 0.2, max: 60, step: 0.1, integer: false },
-  "radial-count": { id: "radial-count", family: "vertical", label: "Explicit radial count", unit: "", min: 2, max: 32, step: 1, integer: true },
+  "radial-count": { id: "radial-count", family: "vertical", label: "Explicit radial count", unit: "", min: 2, max: 128, step: 1, integer: true },
   "yagi-director-spacing": { id: "yagi-director-spacing", family: "yagi", label: "First-director spacing", unit: "m", min: 0.1, max: 30, step: 0.1, integer: false },
   "yagi-height": { id: "yagi-height", family: "yagi", label: "Yagi boom height", unit: "m", min: 0.2, max: 80, step: 0.5, integer: false },
   "array-spacing": { id: "array-spacing", family: "phased-array", label: "Array element spacing", unit: "m", min: 0.05, max: 100, step: 0.1, integer: false },

@@ -76,8 +76,8 @@ export function validateRadialWorkflowSettings(
     ...finiteRange(settings.elevatedHeightWavelengths, 0.005, 2, "Elevated radial height (wavelengths)"),
     ...finiteRange(settings.elevatedDroopAngleDeg, 0, 60, "Elevated radial droop (degrees)"),
   ];
-  if (!Number.isInteger(settings.phasedRadialCount) || settings.phasedRadialCount < 4 || settings.phasedRadialCount > 64) {
-    errors.push("Phased radial count must be a whole number from 4 to 64.");
+  if (!Number.isInteger(settings.phasedRadialCount) || settings.phasedRadialCount < 4 || settings.phasedRadialCount > 128) {
+    errors.push("Phased radial count must be a whole number from 4 to 128.");
   }
   if (families.has("vertical") && settings.verticalMode === "near-surface" && ground.kind !== "sommerfeld-norton") {
     errors.push("Near-surface vertical radials require Sommerfeld/Norton real ground.");

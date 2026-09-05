@@ -67,6 +67,10 @@ Warnings identify the NEC-2 raised-wire approximation, wire-axis clearance below
 
 The single-vertical browser tests reproduce the comparator R/X, gain, take-off, current, and pattern results through the bundled nec2c/Wasm engine. The phased browser test separately verifies the application's calibrated equal-current mode, final feed-current equality, bidirectional symmetry, explicit current results, and stale-result safety. The external phased fixture is a fixed equal-voltage deck; it validates the shared geometry and NEC path, not the complete application calibration algorithm against an external two-port recalculation.
 
+All radial-count controls accept up to 128 wires (subject to each topology's minimum). Counts above 64 can create a large shared junction and segment workload; the application keeps these values available but raises a convergence/workload warning where appropriate. This is a modelling limit, not a claim that every 128-radial model is numerically converged.
+
+For elevated radials with droop, the editor rejects any geometry whose lowest wire surface would touch or cross the ground plane. The rejection is shown in the editor status message and leaves the prior model unchanged; raise the hub, shorten the radials, or reduce droop to proceed.
+
 ## Remaining limitations
 
 - Buried wires, exact soil contact, ground rods/stakes, soil stratification, corrosion, and conductor/soil contact impedance are not modelled.

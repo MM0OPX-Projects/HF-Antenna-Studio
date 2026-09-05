@@ -1749,15 +1749,23 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const state = get();
     const drivenWire = state.wires.find((wire) => wire.tag === drivenWireTag);
     if (!drivenWire || hub.wireTag !== drivenWireTag) {
-      return actionResult(false, "Choose the start or end of the driven wire as the radial hub.");
+      const message = "Choose the start or end of the driven wire as the radial hub.";
+      set({ lastEditorMessage: message });
+      return actionResult(false, message);
     }
     if (state.radialSystems.some((system) => sameEndpoint(system.hub, hub))) {
-      return actionResult(false, "A managed radial system is already attached to this endpoint.");
+      const message = "A managed radial system is already attached to this endpoint.";
+      set({ lastEditorMessage: message });
+      return actionResult(false, message);
     }
     let wires = state.wires.map((wire) => ({ ...wire }));
     const settings = normalizeRadialSettings(requestedSettings);
     let hubPoint = getEndpointPosition(wires, hub);
-    if (!hubPoint) return actionResult(false, "The selected radial hub no longer exists.");
+    if (!hubPoint) {
+      const message = "The selected radial hub no longer exists.";
+      set({ lastEditorMessage: message });
+      return actionResult(false, message);
+    }
 
     // NEC-2 cannot use explicit wires exactly on or below real ground. Raising
     // the selected hub is an explicit consequence of choosing near-surface mode.
@@ -1769,7 +1777,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       hubPoint = raised;
     }
     const issues = radialSystemIssues(hubPoint, settings);
-    if (issues.length > 0) return actionResult(false, issues[0]!);
+    if (issues.length > 0) {
+      set({ lastEditorMessage: issues[0]! });
+      return actionResult(false, issues[0]!);
+    }
 
     const generated: EditorWire[] = [];
     let nextTag = state.nextTag;
@@ -1839,11 +1850,19 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   updateRadialSystem: (id, requestedSettings) => {
     const state = get();
     const current = state.radialSystems.find((system) => system.id === id);
-    if (!current) return actionResult(false, "The radial system no longer exists.");
+    if (!current) {
+      const message = "The radial system no longer exists.";
+      set({ lastEditorMessage: message });
+      return actionResult(false, message);
+    }
     const settings = normalizeRadialSettings(requestedSettings);
     let wires = state.wires.filter((wire) => !current.generatedWireTags.includes(wire.tag));
     let hubPoint = getEndpointPosition(wires, current.hub);
-    if (!hubPoint) return actionResult(false, "The radial hub no longer exists.");
+    if (!hubPoint) {
+      const message = "The radial hub no longer exists.";
+      set({ lastEditorMessage: message });
+      return actionResult(false, message);
+    }
     if (settings.representation === "near-surface-explicit") {
       const raised = { ...hubPoint, z: settings.clearanceM };
       for (const member of expandJunctionEndpoints([current.hub], state.junctions)) {
@@ -1852,7 +1871,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       hubPoint = raised;
     }
     const issues = radialSystemIssues(hubPoint, settings);
-    if (issues.length > 0) return actionResult(false, issues[0]!);
+    if (issues.length > 0) {
+      set({ lastEditorMessage: issues[0]! });
+      return actionResult(false, issues[0]!);
+    }
     const generated: EditorWire[] = [];
     let nextTag = state.nextTag;
     for (let index = 0; index < settings.count; index += 1) {
