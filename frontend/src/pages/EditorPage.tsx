@@ -818,6 +818,7 @@ export function EditorPage() {
                       parameters={selectedTemplate.parameters}
                       values={templateParams}
                       onParamChange={handleTemplateParamChange}
+                      summary={selectedTemplate.summarizeParameters?.(templateParams)}
                     />
                     <ValidationWarnings validation={templateValidation} />
                     {wires.length > 0 && (
@@ -1206,7 +1207,7 @@ export function EditorPage() {
                 <h4 className="text-[11px] font-semibold text-text-secondary uppercase tracking-wider mb-1.5">Load Template</h4>
                 <TemplatePicker selectedId={selectedTemplate.id} onSelect={handleTemplateSelect} />
                 <div className="mt-2">
-                  <ParameterPanel parameters={selectedTemplate.parameters} values={templateParams} onParamChange={handleTemplateParamChange} />
+                  <ParameterPanel parameters={selectedTemplate.parameters} values={templateParams} onParamChange={handleTemplateParamChange} summary={selectedTemplate.summarizeParameters?.(templateParams)} />
                 </div>
                 <ValidationWarnings validation={templateValidation} />
                 {wires.length > 0 && (

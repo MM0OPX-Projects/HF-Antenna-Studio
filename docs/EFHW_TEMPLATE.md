@@ -10,7 +10,9 @@ NEC-2 excites a segment centre, not a mathematical endpoint. The UI therefore re
 
 ## Dimensions and orientation
 
-Frequency-derived length is `0.5λ × 0.97` and is a starting dimension only. Selecting Manual length uses the entered total radiator length. Horizontal models hold both ends at the feed height. Slopers use End A and End B heights. Inverted-V models split the length at the configured apex percentage and use the apex height, end heights, bearing, and included angle. Vertical models run from the configured End A height upward.
+Frequency-derived length is `0.5λ × 0.97` and is a starting dimension only. Selecting Manual length uses the entered total radiator length. Horizontal models hold both ends at the feed height. Slopers use End A and End B heights. Vertical models run from the configured End A height upward.
+
+The inverted-V has two explicit modes. **Classic symmetric** uses equal legs in one vertical plane and derives equal terminal heights from the apex height and true physical included angle. **Advanced asymmetric** accepts the apex position and two terminal heights, preserves the two resulting leg lengths in one vertical plane, and reports the actual derived included angle. It does not allow angle and independent endpoint heights to over-constrain the same geometry.
 
 ## Matching and limitations
 

@@ -53,6 +53,8 @@ export interface ParameterDef {
   /** Optional finite choices for enum-like template controls. Values remain numeric
    * so existing project files and template APIs remain backwards compatible. */
   options?: ReadonlyArray<{ value: number; label: string }>;
+  /** Hide controls that do not apply to the current template configuration. */
+  visibleWhen?: (values: Record<string, number>) => boolean;
 }
 
 export interface TemplateParameterIssue {
@@ -139,6 +141,8 @@ export interface AntennaTemplate {
   parameters: ParameterDef[];
   /** Cross-parameter checks that cannot be inferred from generated wires alone. */
   validateParameters?: (params: Record<string, number>) => TemplateParameterIssue[];
+  /** Read-only values derived from dependent parameters, displayed below controls. */
+  summarizeParameters?: (params: Record<string, number>) => string[];
   /** Default ground configuration */
   defaultGround: GroundConfig;
   /** Default matching/transformer for this antenna type (optional) */

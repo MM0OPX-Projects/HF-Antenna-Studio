@@ -21,6 +21,7 @@ interface ParameterPanelProps {
   parameters: ParameterDef[];
   values: Record<string, number>;
   onParamChange: (key: string, value: number) => void;
+  summary?: string[];
 }
 
 const LENGTH_PARAMETER_UNITS = new Set(["m"]);
@@ -46,6 +47,7 @@ export function ParameterPanel({
   parameters,
   values,
   onParamChange,
+  summary = [],
 }: ParameterPanelProps) {
   const imperial = useUIStore((s) => s.imperial);
   const metricLengthUnit = useUIStore((s) => s.metricLengthUnit);
@@ -80,7 +82,7 @@ export function ParameterPanel({
         Parameters
       </h3>
       <div className="space-y-3">
-        {parameters.map((param) => {
+        {parameters.filter((param) => param.visibleWhen?.(values) ?? true).map((param) => {
           const rawValue = values[param.key] ?? param.defaultValue;
           if (param.options && param.options.length > 0) {
             return (
@@ -144,6 +146,11 @@ export function ParameterPanel({
           );
         })}
       </div>
+      {summary.length > 0 && (
+        <dl className="space-y-1 rounded border border-border bg-background/60 p-2 text-[10px] leading-4 text-text-secondary">
+          {summary.map((line) => <div key={line}>{line}</div>)}
+        </dl>
+      )}
     </div>
   );
 }

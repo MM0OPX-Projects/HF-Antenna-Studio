@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - Expanded the shared End-Fed Half-Wave template for Design and Wire Editor with horizontal, sloper, inverted-V and vertical arrangements, switchable End A/End B excitation, manual or frequency-derived length, bearing/height/apex controls, and explicit counterpoise attachment.
 - Added shared EFHW cross-parameter diagnostics plus real browser-local NEC regression coverage for every orientation/feed-end combination and an End-B Wire Editor transfer solve.
+- Corrected EFHW inverted-V construction to use a true coplanar physical included angle, symmetric classic defaults, an explicitly derived advanced asymmetric mode, conditional controls, and visible derived geometry values.
 
 - Added simultaneous driven-junction SWR readouts at 50 Ω and 75 Ω in the phased-array physical feed-network results.
 - Expanded radial-count controls across verticals, phased arrays, templates, comparisons, parameter sweeps and the Wire Editor to support up to 128 radials, with high-count convergence guidance.

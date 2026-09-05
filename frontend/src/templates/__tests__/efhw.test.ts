@@ -48,12 +48,24 @@ describe("EFHW parametric orientations", () => {
   });
 
   it("places inverted-V terminals at the requested heights", () => {
-    const p = params({ orientation: 2, apex_height: 14, feed_height: 4, far_end_height: 6, counterpoise_enabled: 0 });
+    const p = params({ orientation: 2, inverted_v_mode: 1, apex_height: 14, feed_height: 4, far_end_height: 6, counterpoise_enabled: 0 });
     const wires = efhwTemplate.generateGeometry(p);
     expect(wires[0]!.z1).toBeCloseTo(4, 6);
     expect(wires[0]!.z2).toBeCloseTo(14, 6);
     expect(wires[1]!.z1).toBeCloseTo(14, 6);
     expect(wires[1]!.z2).toBeCloseTo(6, 6);
+  });
+
+  it("generates a symmetric, coplanar classic inverted-V with the true requested angle", () => {
+    const p = params({ orientation: 2, inverted_v_mode: 0, included_angle: 120, bearing: 37, counterpoise_enabled: 0 });
+    const [a,b] = efhwTemplate.generateGeometry(p);
+    const va=[a!.x1-a!.x2,a!.y1-a!.y2,a!.z1-a!.z2];
+    const vb=[b!.x2-b!.x1,b!.y2-b!.y1,b!.z2-b!.z1];
+    const angle=Math.acos(va.reduce((sum,n,i)=>sum+n*vb[i]!,0)/(lengthOf(a!)*lengthOf(b!)))*180/Math.PI;
+    expect(lengthOf(a!)).toBeCloseTo(lengthOf(b!),8);
+    expect(a!.z1).toBeCloseTo(b!.z2,8);
+    expect(angle).toBeCloseTo(120,8);
+    expect((a!.x1-a!.x2)*(b!.y2-b!.y1)-(a!.y1-a!.y2)*(b!.x2-b!.x1)).toBeCloseTo(0,8);
   });
 
   it("reports impossible arrangements and missing return paths", () => {

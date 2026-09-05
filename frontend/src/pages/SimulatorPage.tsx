@@ -311,7 +311,7 @@ export function SimulatorPage() {
               <InspectorSection title="Antenna model" eyebrow="01 · Geometry" help="Choose a parametric antenna and edit its physical dimensions. Geometry updates immediately; NEC results do not update until calculation.">
                 <WireEditorPromo />
                 <TemplatePicker selectedId={template.id} onSelect={handleTemplateSelect} />
-                <ParameterPanel parameters={template.parameters} values={params} onParamChange={setParam} />
+                <ParameterPanel parameters={template.parameters} values={params} onParamChange={setParam} summary={template.summarizeParameters?.(params)} />
               </InspectorSection>
               <InspectorSection title="Environment and feed" eyebrow="02 · Installation" help="Ground and matching choices are model or feed-system inputs, not calculated values." defaultOpen={false}>
                 <GroundEditor ground={ground} onChange={setGround} />
@@ -407,6 +407,7 @@ export function SimulatorPage() {
               parameters={template.parameters}
               values={params}
               onParamChange={setParam}
+              summary={template.summarizeParameters?.(params)}
             />
 
             <div className="border-t border-border" />
@@ -603,6 +604,7 @@ export function SimulatorPage() {
                 parameters={template.parameters}
                 values={params}
                 onParamChange={setParam}
+                summary={template.summarizeParameters?.(params)}
               />
               <GroundEditor ground={ground} onChange={setGround} />
               <BalunEditor matching={matching} onChange={setMatching} />
