@@ -28,6 +28,8 @@ describe("EFHW parametric orientations", () => {
       expect(excitation.segment).toBe(feed_end === 0 ? 1 : lastRadiator.segments);
       expect(feed.wireTag).toBe(excitation.wire_tag);
       expect(wires.some((w) => w.tag === 99)).toBe(true);
+      const counterpoise = wires.find((w) => w.tag === 99)!;
+      expect(radiator.some((wire) => Math.abs((wire.x2-wire.x1)*(counterpoise.y2-counterpoise.y1)-(wire.y2-wire.y1)*(counterpoise.x2-counterpoise.x1)) < 1e-10 && orientation === 0)).toBe(false);
     }
   });
 
@@ -43,5 +45,19 @@ describe("EFHW parametric orientations", () => {
     const wire = efhwTemplate.generateGeometry(p)[0]!;
     expect(Math.abs(wire.y2 - wire.y1)).toBeLessThan(1e-8);
     expect(wire.x2).toBeGreaterThan(wire.x1);
+  });
+
+  it("places inverted-V terminals at the requested heights", () => {
+    const p = params({ orientation: 2, apex_height: 14, feed_height: 4, far_end_height: 6, counterpoise_enabled: 0 });
+    const wires = efhwTemplate.generateGeometry(p);
+    expect(wires[0]!.z1).toBeCloseTo(4, 6);
+    expect(wires[0]!.z2).toBeCloseTo(14, 6);
+    expect(wires[1]!.z1).toBeCloseTo(14, 6);
+    expect(wires[1]!.z2).toBeCloseTo(6, 6);
+  });
+
+  it("reports impossible arrangements and missing return paths", () => {
+    expect(efhwTemplate.validateParameters?.(params({ orientation: 1, length_mode: 1, total_length: 5, feed_height: 20, far_end_height: 1 }))).toEqual(expect.arrayContaining([expect.objectContaining({ code: "efhw-sloper-height-span", severity: "error" })]));
+    expect(efhwTemplate.validateParameters?.(params({ counterpoise_enabled: 0 }))).toEqual(expect.arrayContaining([expect.objectContaining({ code: "efhw-no-return-path", severity: "warning" })]));
   });
 });

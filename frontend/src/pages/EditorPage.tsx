@@ -57,7 +57,7 @@ import {
   metersToLengthUnit,
 } from "../utils/units";
 import type { LengthUnit } from "../utils/units";
-import { validateSimulationRequest } from "../engine/validation";
+import { appendValidationIssues, validateSimulationRequest } from "../engine/validation";
 import { resolveGeometryGroundFlag } from "../engine/geometry-ground";
 import { templates } from "../templates";
 import { getDefaultParams } from "../templates/types";
@@ -351,7 +351,13 @@ export function EditorPage() {
     setTemplateParams((prev) => ({ ...prev, [key]: value }));
   }, []);
 
+  const templateValidation = useMemo(() => appendValidationIssues(
+    { issues: [], valid: true, errorCount: 0, warningCount: 0 },
+    selectedTemplate.validateParameters?.(templateParams) ?? [],
+  ), [selectedTemplate, templateParams]);
+
   const handleLoadTemplate = useCallback(() => {
+    if (!templateValidation.valid) return;
     const geom = selectedTemplate.generateGeometry(templateParams);
     const rawExc = selectedTemplate.generateExcitation(templateParams, geom);
     const excitations = Array.isArray(rawExc) ? rawExc : [rawExc];
@@ -381,7 +387,7 @@ export function EditorPage() {
 
     // Switch to wires section after loading
     setEditorSection("wires");
-  }, [selectedTemplate, templateParams, clearAll, setWires, addLoad, addTransmissionLine, setDesignFrequency, setFrequencyRange, setGround, setMatching, setEditorSection]);
+  }, [selectedTemplate, templateParams, templateValidation.valid, clearAll, setWires, addLoad, addTransmissionLine, setDesignFrequency, setFrequencyRange, setGround, setMatching, setEditorSection]);
 
   const handleBandSelect = useCallback(
     (range: FrequencyRange, _band: HamBand) => {
@@ -770,6 +776,7 @@ export function EditorPage() {
               {/* Section selector dropdown */}
               <div className="px-2 py-1.5 border-b border-border shrink-0">
                 <select
+                  aria-label="Wire editor section"
                   value={editorSection}
                   onChange={(e) => setEditorSection(e.target.value as EditorSection)}
                   className="w-full bg-background text-text-primary text-xs font-medium px-2 py-1 rounded border border-border focus:border-accent/50 outline-none"
@@ -812,6 +819,7 @@ export function EditorPage() {
                       values={templateParams}
                       onParamChange={handleTemplateParamChange}
                     />
+                    <ValidationWarnings validation={templateValidation} />
                     {wires.length > 0 && (
                       <p className="text-[10px] text-swr-warning leading-tight px-0.5">
                         Loading a template will replace all current wires.
@@ -819,6 +827,7 @@ export function EditorPage() {
                     )}
                     <Button
                       onClick={handleLoadTemplate}
+                      disabled={!templateValidation.valid}
                       className="w-full"
                       size="sm"
                     >
@@ -1199,10 +1208,11 @@ export function EditorPage() {
                 <div className="mt-2">
                   <ParameterPanel parameters={selectedTemplate.parameters} values={templateParams} onParamChange={handleTemplateParamChange} />
                 </div>
+                <ValidationWarnings validation={templateValidation} />
                 {wires.length > 0 && (
                   <p className="text-[11px] text-swr-warning leading-tight mt-1.5">Replaces all current wires.</p>
                 )}
-                <Button onClick={handleLoadTemplate} className="w-full mt-2" size="sm">Load into Editor</Button>
+                <Button onClick={handleLoadTemplate} disabled={!templateValidation.valid} className="w-full mt-2" size="sm">Load into Editor</Button>
               </div>
               <div className="border-t border-border" />
               <TransformPanel />

@@ -31,6 +31,25 @@ export const efhwTemplate: AntennaTemplate = {
     "For an inverted-V, the apex is an electrical junction and the feed remains at a terminal end."
   ],
   relatedTemplates: ["dipole","inverted-v","vertical"],
+  validateParameters(params) {
+    const frequency=value(params,"frequency",7.1), lambda=C_MHZ_M/frequency;
+    const length=value(params,"length_mode",0)===1 ? value(params,"total_length",lambda*0.5*0.97) : lambda*0.5*0.97;
+    const orientation=Math.round(value(params,"orientation",1));
+    const endA=Math.max(0.05,value(params,"feed_height",10));
+    const endB=Math.max(0.05,value(params,"far_end_height",3));
+    const issues: import("./types").TemplateParameterIssue[]=[];
+    if (orientation===ORIENTATION.sloper && Math.abs(endB-endA)>=length) issues.push({severity:"error",code:"efhw-sloper-height-span",message:`The ${(Math.abs(endB-endA)).toFixed(2)} m height difference must be less than the ${length.toFixed(2)} m wire length.`});
+    if (orientation===ORIENTATION.invertedV) {
+      const ratio=Math.min(0.9,Math.max(0.1,value(params,"apex_position",50)/100)), legA=length*ratio, legB=length-legA;
+      const apex=value(params,"apex_height",10);
+      if (apex<=endA || apex<=endB) issues.push({severity:"error",code:"efhw-apex-not-highest",message:"The inverted-V apex must be higher than both terminal ends."});
+      if (apex-endA>=legA || apex-endB>=legB) issues.push({severity:"error",code:"efhw-leg-height-span",message:"An inverted-V leg is too short to reach its requested endpoint height. Increase total length, lower an end, or raise the apex position share."});
+    }
+    if (orientation===ORIENTATION.vertical && value(params,"feed_end",0)>=0.5) issues.push({severity:"warning",code:"efhw-top-feed-return",message:"Top-feeding the vertical places the explicit return path at the upper terminal. Confirm this represents the intended physical feed system."});
+    if (value(params,"counterpoise_enabled",1)<0.5) issues.push({severity:"warning",code:"efhw-no-return-path",message:"No explicit counterpoise is present. An EFHW still requires a feed line, counterpoise, ground or another physically meaningful return path."});
+    if (value(params,"counterpoise_enabled",1)>=0.5 && value(params,"counterpoise_length",2.1)<lambda*0.005) issues.push({severity:"warning",code:"efhw-short-counterpoise",message:"The counterpoise is shorter than 0.005λ; feed impedance may be dominated by the omitted feed system and environment."});
+    return issues;
+  },
   parameters: [
     {key:"frequency",label:"Design Frequency",description:"Fundamental frequency for the starting half-wave dimension",unit:"MHz",min:0.5,max:MAX_FREQUENCY_MHZ,step:0.1,defaultValue:7.1,decimals:3},
     {key:"orientation",label:"Orientation",description:"How the continuous EFHW is arranged",unit:"",min:0,max:3,step:1,defaultValue:1,decimals:0,options:[{value:0,label:"Horizontal"},{value:1,label:"Sloper"},{value:2,label:"Inverted-V"},{value:3,label:"Vertical"}]},
@@ -39,14 +58,14 @@ export const efhwTemplate: AntennaTemplate = {
     {key:"total_length",label:"Manual Total Length",description:"Total radiating wire length when Manual is selected",unit:"m",min:1,max:100,step:0.01,defaultValue:(C_MHZ_M/7.1)*0.5*0.97,decimals:3},
     {key:"feed_height",label:"Feed / End A Height",description:"Height of terminal End A above ground",unit:"m",min:0.05,max:100,step:0.1,defaultValue:10,decimals:2},
     {key:"far_end_height",label:"End B Height",description:"Height of terminal End B for horizontal or sloper geometry",unit:"m",min:0.05,max:100,step:0.1,defaultValue:3,decimals:2},
-    {key:"apex_height",label:"Inverted-V Apex Height",description:"Height of the junction between the two inverted-V legs",unit:"m",min:0.05,max:100,step:0.1,defaultValue:10,decimals:2},
+    {key:"apex_height",label:"Inverted-V Apex Height",description:"Height of the junction between the two inverted-V legs",unit:"m",min:0.05,max:100,step:0.1,defaultValue:12,decimals:2},
     {key:"apex_position",label:"Apex Position",description:"Percentage of total wire length from End A to the apex",unit:"%",min:10,max:90,step:1,defaultValue:50,decimals:0},
     {key:"included_angle",label:"Inverted-V Included Angle",description:"Angle between the two legs at the apex",unit:"deg",min:20,max:170,step:1,defaultValue:90,decimals:0},
     {key:"bearing",label:"Bearing",description:"Horizontal bearing of the wire or inverted-V bisector",unit:"deg",min:0,max:359,step:1,defaultValue:90,decimals:0},
     {key:"wire_diameter",label:"Wire Diameter",description:"Conductor diameter",unit:"mm",min:0.5,max:20,step:0.1,defaultValue:1,decimals:1},
     {key:"counterpoise_enabled",label:"Counterpoise",description:"Add an explicit return wire at the selected feed terminal",unit:"",min:0,max:1,step:1,defaultValue:1,decimals:0,options:[{value:1,label:"Enabled"},{value:0,label:"Disabled"}]},
     {key:"counterpoise_length",label:"Counterpoise Length",description:"Length of the explicit return wire",unit:"m",min:0.01,max:50,step:0.01,defaultValue:2.1,decimals:2},
-    {key:"counterpoise_bearing",label:"Counterpoise Bearing",description:"Horizontal direction of the return wire",unit:"deg",min:0,max:359,step:1,defaultValue:270,decimals:0}
+    {key:"counterpoise_bearing",label:"Counterpoise Bearing",description:"Horizontal direction of the return wire",unit:"deg",min:0,max:359,step:1,defaultValue:0,decimals:0}
   ],
   generateGeometry(params) {
     const frequency=value(params,"frequency",7.1), lambda=C_MHZ_M/frequency;
@@ -58,8 +77,10 @@ export const efhwTemplate: AntennaTemplate = {
       const apexHeight=Math.max(0.05,value(params,"apex_height",10)), apex:[number,number,number]=[0,0,apexHeight];
       const included=Math.max(20,Math.min(170,value(params,"included_angle",90)));
       const endAHeight=Math.max(0.05,value(params,"feed_height",10)), endBHeight=Math.max(0.05,value(params,"far_end_height",3));
-      const endA=pointAt(apex,legA,bearing-included/2+180,Math.atan2(apexHeight-endAHeight,Math.max(0.01,legA))*180/Math.PI);
-      const endB=pointAt(apex,legB,bearing+included/2,Math.atan2(apexHeight-endBHeight,Math.max(0.01,legB))*180/Math.PI);
+      const elevationA=Math.asin(Math.max(-1,Math.min(1,(endAHeight-apexHeight)/legA)))*180/Math.PI;
+      const elevationB=Math.asin(Math.max(-1,Math.min(1,(endBHeight-apexHeight)/legB)))*180/Math.PI;
+      const endA=pointAt(apex,legA,bearing-included/2+180,elevationA);
+      const endB=pointAt(apex,legB,bearing+included/2,elevationB);
       wires=[makeWire(1,endA,apex,legA,radius,maxFreq),makeWire(2,apex,endB,legB,radius,maxFreq)];
       feedPoint=value(params,"feed_end",0)<0.5?endA:endB;
     } else if (orientation===ORIENTATION.vertical) {

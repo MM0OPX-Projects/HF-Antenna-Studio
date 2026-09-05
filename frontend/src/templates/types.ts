@@ -55,6 +55,12 @@ export interface ParameterDef {
   options?: ReadonlyArray<{ value: number; label: string }>;
 }
 
+export interface TemplateParameterIssue {
+  severity: "error" | "warning" | "info";
+  code: string;
+  message: string;
+}
+
 /** Generated wire geometry for NEC2 simulation */
 export interface WireGeometry {
   tag: number;
@@ -131,6 +137,8 @@ export interface AntennaTemplate {
   bands: string[];
   /** Adjustable parameters */
   parameters: ParameterDef[];
+  /** Cross-parameter checks that cannot be inferred from generated wires alone. */
+  validateParameters?: (params: Record<string, number>) => TemplateParameterIssue[];
   /** Default ground configuration */
   defaultGround: GroundConfig;
   /** Default matching/transformer for this antenna type (optional) */

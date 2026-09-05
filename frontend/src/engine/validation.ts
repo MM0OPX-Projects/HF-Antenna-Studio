@@ -50,6 +50,17 @@ function wireLength(w: WireGeometry): number {
   return Math.sqrt(dx * dx + dy * dy + dz * dz);
 }
 
+/** Add template-specific cross-parameter issues to the shared geometry result. */
+export function appendValidationIssues(
+  validation: ValidationResult,
+  extraIssues: readonly ValidationIssue[],
+): ValidationResult {
+  const issues = [...extraIssues, ...validation.issues];
+  const errorCount = issues.filter((issue) => issue.severity === "error").length;
+  const warningCount = issues.filter((issue) => issue.severity === "warning").length;
+  return { issues, valid: errorCount === 0, errorCount, warningCount };
+}
+
 const GEOMETRY_TOLERANCE_M = 1e-6;
 const PAIRWISE_WIRE_LIMIT = 500;
 

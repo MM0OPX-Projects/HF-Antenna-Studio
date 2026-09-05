@@ -37,7 +37,7 @@ import { ValidationWarnings } from "../components/ui/ValidationWarnings";
 import { ResultsPanel } from "../components/results/ResultsTabs";
 import { PatternFrequencySlider } from "../components/results/PatternFrequencySlider";
 import { createSimulatorProject } from "../utils/project-file";
-import { validateSimulationRequest } from "../engine/validation";
+import { appendValidationIssues, validateSimulationRequest } from "../engine/validation";
 import { getTemplate, templateMap } from "../templates";
 import type { ProjectFile } from "../utils/project-file";
 import type { AntennaTemplate, FrequencyRange } from "../templates/types";
@@ -271,8 +271,11 @@ export function SimulatorPage() {
 
   // Pre-simulation validation
   const validation = useMemo(
-    () => validateSimulationRequest(wireGeometry, excitations, ground, frequencyRange),
-    [wireGeometry, excitations, ground, frequencyRange]
+    () => appendValidationIssues(
+      validateSimulationRequest(wireGeometry, excitations, ground, frequencyRange),
+      template.validateParameters?.(params) ?? [],
+    ),
+    [wireGeometry, excitations, ground, frequencyRange, template, params]
   );
 
   // Transmission-line feeders drawn as dashed lines in the 3D viewport.
