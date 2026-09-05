@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Expanded radial-count controls across verticals, phased arrays, templates, comparisons, parameter sweeps and the Wire Editor to support up to 128 radials, with high-count convergence guidance.
+- Ground-intersecting drooped radial attempts now leave the model unchanged and surface an actionable editor error instead of failing silently.
 - Added one application-wide antenna-wire material setting for Copper (default for new work), Aluminium, Steel, Stainless steel, Perfect conductor and custom conductivity; every NEC calculation/export applies the selected finite conductivity with a global `LD 5` card, while explicit imported `LD 5` cards retain precedence
 - Added Select-mode double-click precision editing for existing wires, with draft-before-apply length, active-plane angle, X/Y/Z endpoints, units, start/end/centre anchoring, safe cancellation and a single undo step
 - Added CAD-style exact wire creation with a draggable non-obscuring precision panel, synchronized Length/Angle/endpoint fields, metre/millimetre/foot/inch entry, `L` focus, Enter placement and stable previews across Front, Side and Top drawing planes
