@@ -71,7 +71,9 @@ function getOptWorker(): Worker {
 // Pending request tracking
 // ---------------------------------------------------------------------------
 
-const SIMULATION_TIMEOUT_MS = 120_000;
+// The backend nec2c limit is 180 s. Match it with a small transport margin so
+// large, valid explicit-radial models are not reported as client timeouts.
+const SIMULATION_TIMEOUT_MS = 210_000;
 
 type PendingSimulation = {
   resolve: (result: SimulationResult) => void;

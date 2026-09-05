@@ -83,7 +83,7 @@ export class BackendEngine implements SimulationEngine {
     };
 
     return api.post<SimulationResult>("/api/v1/simulate", body, {
-      timeout: 60000,
+      timeout: 210000,
     });
   }
 
@@ -151,7 +151,7 @@ export class BackendEngine implements SimulationEngine {
     };
 
     return api.post<SimulationResult>("/api/v1/simulate", body, {
-      timeout: 60000,
+      timeout: 210000,
     });
   }
 

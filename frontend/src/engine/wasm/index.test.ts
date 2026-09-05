@@ -100,10 +100,10 @@ describe("WasmEngine worker failures", () => {
     vi.stubGlobal("Worker", SilentWorker);
 
     const result = new WasmEngine().simulateAdvanced(request).catch((error: unknown) => error);
-    await vi.advanceTimersByTimeAsync(120_000);
+    await vi.advanceTimersByTimeAsync(210_000);
 
     await expect(result).resolves.toMatchObject({
-      message: "Simulation timed out after 120 seconds.",
+      message: "Simulation timed out after 210 seconds.",
     });
     expect(SilentWorker.latest?.terminated).toBe(true);
   });

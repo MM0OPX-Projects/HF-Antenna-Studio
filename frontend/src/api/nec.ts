@@ -223,7 +223,9 @@ export async function runSimulation(
   };
 
   return api.post<SimulationResult>("/api/v1/simulate", body, {
-    timeout: 60000,
+    // Keep the client deadline above the backend nec2c limit (180 s), so
+    // larger explicit-radial models are not aborted while the solver runs.
+    timeout: 210000,
   });
 }
 
@@ -293,6 +295,8 @@ export async function runAdvancedSimulation(
   };
 
   return api.post<SimulationResult>("/api/v1/simulate", body, {
-    timeout: 60000,
+    // Keep the client deadline above the backend nec2c limit (180 s), so
+    // larger explicit-radial models are not aborted while the solver runs.
+    timeout: 210000,
   });
 }
