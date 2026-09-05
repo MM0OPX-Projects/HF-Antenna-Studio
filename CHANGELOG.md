@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Added simultaneous driven-junction SWR readouts at 50 Ω and 75 Ω in the phased-array physical feed-network results.
 - Expanded radial-count controls across verticals, phased arrays, templates, comparisons, parameter sweeps and the Wire Editor to support up to 128 radials, with high-count convergence guidance.
 - Ground-intersecting drooped radial attempts now leave the model unchanged and surface an actionable editor error instead of failing silently.
 - Added one application-wide antenna-wire material setting for Copper (default for new work), Aluminium, Steel, Stainless steel, Perfect conductor and custom conductivity; every NEC calculation/export applies the selected finite conductivity with a global `LD 5` card, while explicit imported `LD 5` cards retain precedence
