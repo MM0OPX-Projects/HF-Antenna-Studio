@@ -50,6 +50,9 @@ export interface ParameterDef {
   defaultValue: number;
   /** Number of decimal places to display */
   decimals?: number;
+  /** Optional finite choices for enum-like template controls. Values remain numeric
+   * so existing project files and template APIs remain backwards compatible. */
+  options?: ReadonlyArray<{ value: number; label: string }>;
 }
 
 /** Generated wire geometry for NEC2 simulation */

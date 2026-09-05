@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Expanded the shared End-Fed Half-Wave template for Design and Wire Editor with horizontal, sloper, inverted-V and vertical arrangements, switchable End A/End B excitation, manual or frequency-derived length, bearing/height/apex controls, and explicit counterpoise attachment.
+
 - Added simultaneous driven-junction SWR readouts at 50 Ω and 75 Ω in the phased-array physical feed-network results.
 - Expanded radial-count controls across verticals, phased arrays, templates, comparisons, parameter sweeps and the Wire Editor to support up to 128 radials, with high-count convergence guidance.
 - Ground-intersecting drooped radial attempts now leave the model unchanged and surface an actionable editor error instead of failing silently.

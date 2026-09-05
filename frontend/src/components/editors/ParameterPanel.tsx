@@ -81,10 +81,28 @@ export function ParameterPanel({
       </h3>
       <div className="space-y-3">
         {parameters.map((param) => {
+          const rawValue = values[param.key] ?? param.defaultValue;
+          if (param.options && param.options.length > 0) {
+            return (
+              <div key={param.key} className="space-y-1">
+                <label className="block text-xs text-text-secondary" title={param.description}>
+                  {param.label}
+                </label>
+                <select
+                  aria-label={param.label}
+                  value={rawValue}
+                  onChange={(event) => onParamChange(param.key, Number(event.target.value))}
+                  className="w-full rounded border border-border bg-background px-2 py-1.5 text-xs text-text-primary"
+                >
+                  {param.options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                </select>
+                <p className="text-[10px] leading-4 text-text-secondary">{param.description}</p>
+              </div>
+            );
+          }
           const isLength = LENGTH_PARAMETER_UNITS.has(param.unit);
           const isHeight = HEIGHT_PARAMETER_KEYS.has(param.key);
           const lengthUnit = isLength ? selectedLengthUnit : undefined;
-          const rawValue = values[param.key] ?? param.defaultValue;
           const displayValue = lengthUnit
             ? metersToLengthUnit(rawValue, lengthUnit)
             : rawValue;
