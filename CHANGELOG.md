@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.0.3] - 2026-09-06
+
+### Added
+
+- Added saved Design, Wire Editor and supported specialist-module antennas to each Model Comparison slot alongside the standard reference models.
+- Saved comparison sources are embedded as immutable project-revision snapshots, with an explicit refresh action when the library project changes.
+
+### Fixed
+
+- Preserved the calibrated phased-array solve path and withheld single-port impedance claims for saved multiple-source models.
+- Refused unsafe regeneration of imported NEC projects containing unsupported preserved cards instead of silently approximating them.
+- Updated the Windows packaging release-identity regression to follow the current application version.
+
 ## [1.0.2] - 2026-09-06
 
 ### Fixed
