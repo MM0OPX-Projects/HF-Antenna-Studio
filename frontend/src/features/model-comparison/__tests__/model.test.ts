@@ -19,6 +19,14 @@ describe("model comparison definitions", () => {
     expect(validateComparisonDefinition({ id: "bad", family: "vertical", parameterValue: 3.5 })).toContain("Radial count must be a whole number.");
   });
 
+  it("labels and validates an immutable saved-project slot without using its built-in parameter", () => {
+    const snapshot = { projectId: "p1", projectName: "My phased verticals", projectRevision: 3, project: { version: 10 } };
+    const definition = { id: "saved", family: "dipole" as const, parameterValue: 0, source: "saved-project" as const, savedProject: snapshot };
+    expect(comparisonLabel(definition)).toBe("My phased verticals");
+    expect(validateComparisonDefinition(definition)).toEqual([]);
+    expect(validateComparisonDefinition({ ...definition, savedProject: undefined })).toContain("Select a valid saved antenna project.");
+  });
+
   it("warns rather than overlaying stale or differently conditioned snapshots", () => {
     const definitions = clonePreset("mixed");
     const currentKey = comparisonConditionKey(conditions);

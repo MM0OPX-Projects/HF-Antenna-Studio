@@ -52,12 +52,17 @@ export function comparisonConditionKey(conditions: ComparisonConditions, sweep?:
 }
 
 export function comparisonLabel(definition: ComparisonSlotDefinition): string {
+  if (definition.source === "saved-project") return definition.savedProject?.projectName ?? "Saved project";
   const meta = FAMILY_PARAMETERS[definition.family];
   const value = definition.family === "vertical" ? Math.round(definition.parameterValue).toString() : Number(definition.parameterValue.toFixed(2)).toString();
   return `${meta.familyLabel} · ${meta.parameterLabel} ${value}${meta.unit}`;
 }
 
 export function validateComparisonDefinition(definition: ComparisonSlotDefinition): string[] {
+  if (definition.source === "saved-project") {
+    if (!definition.savedProject || typeof definition.savedProject.projectName !== "string" || !definition.savedProject.project) return ["Select a valid saved antenna project."];
+    return [];
+  }
   const meta = FAMILY_PARAMETERS[definition.family];
   const errors: string[] = [];
   if (!Number.isFinite(definition.parameterValue) || definition.parameterValue < meta.min || definition.parameterValue > meta.max) errors.push(`${meta.parameterLabel} must be between ${meta.min} and ${meta.max}${meta.unit}.`);
@@ -67,7 +72,7 @@ export function validateComparisonDefinition(definition: ComparisonSlotDefinitio
 
 export function validateComparisonRadialCounts(definitions: ComparisonSlotDefinition[], conditions: ComparisonConditions): string[] {
   if (conditions.radialSystems.verticalMode !== "near-surface") return [];
-  return definitions.flatMap((definition, index) => definition.family === "vertical" && definition.parameterValue < 4
+  return definitions.flatMap((definition, index) => definition.source !== "saved-project" && definition.family === "vertical" && definition.parameterValue < 4
     ? [`Model ${index + 1}: near-surface vertical models require at least four explicit radial wires.`]
     : []);
 }

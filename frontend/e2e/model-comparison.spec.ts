@@ -76,3 +76,20 @@ test("comparison examples expose dipole height, radial count, array phase and Ya
   await expect(page.getByTestId("run-comparison")).toBeDisabled();
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 });
+
+test("a saved antenna can be snapshotted into a comparison slot and solved with standard models", async ({ page }) => {
+  await page.goto("/");
+  const changelog = page.getByRole("button", { name: "Got it" });
+  if (await changelog.isVisible().catch(() => false)) await changelog.click();
+  await page.locator('button[title^="Save project"]').first().click();
+  await page.getByLabel("Project name").fill("Saved comparison dipole");
+  await page.getByRole("button", { name: "Save As", exact: true }).click();
+  await page.goto("/model-comparison");
+  const savedOption = page.getByTestId("comparison-family-1").locator("option").filter({ hasText: "Saved comparison dipole" });
+  await page.getByTestId("comparison-family-1").selectOption(await savedOption.getAttribute("value") as string);
+  await expect(page.getByTestId("comparison-slot-1")).toContainText("Immutable revision");
+  await expect(page.getByTestId("comparison-parameter-1")).toHaveCount(0);
+  await page.getByTestId("run-comparison").click();
+  await expect(page.getByTestId("comparison-status")).toContainText("Comparison complete · 4 models", { timeout: 120_000 });
+  await expect(page.getByTestId("comparison-result-1")).toContainText("Saved comparison dipole");
+});

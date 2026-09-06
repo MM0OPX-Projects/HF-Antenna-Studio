@@ -4,10 +4,20 @@ import type { RadialWorkflowSettings } from "../ground-radials/workflow";
 
 export type ComparisonFamily = "dipole" | "vertical" | "phased-array" | "yagi";
 
+/** Immutable copy of a local project captured when it is assigned to a slot. */
+export interface ComparisonProjectSnapshot {
+  projectId: string;
+  projectName: string;
+  projectRevision: number;
+  project: unknown;
+}
+
 export interface ComparisonSlotDefinition {
   id: string;
   family: ComparisonFamily;
   parameterValue: number;
+  source?: "builtin" | "saved-project";
+  savedProject?: ComparisonProjectSnapshot;
 }
 
 export type ComparisonGround =
@@ -43,7 +53,7 @@ export interface ComparisonResult {
   slotId: string;
   label: string;
   color: string;
-  family: ComparisonFamily;
+  family: ComparisonFamily | "saved-project";
   definitionKey: string;
   conditionKey: string;
   conditions: ComparisonConditions;

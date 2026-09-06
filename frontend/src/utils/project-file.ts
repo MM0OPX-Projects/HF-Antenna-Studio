@@ -296,7 +296,13 @@ function validateCurrentProjectFile(data: unknown): ProjectFile {
   if (obj.mode === "model-comparison") {
     const workspace = obj.modelComparison as Record<string, unknown> | undefined;
     const conditions = workspace?.conditions as Record<string, unknown> | undefined;
-    const definitionsValid = Array.isArray(workspace?.definitions) && workspace.definitions.length === 4 && workspace.definitions.every((definition) => isRecord(definition) && typeof definition.id === "string" && allowedFamilies.has(String(definition.family)) && finiteNumber(definition.parameterValue));
+    const definitionsValid = Array.isArray(workspace?.definitions) && workspace.definitions.length === 4 && workspace.definitions.every((definition) => {
+      if (!isRecord(definition) || typeof definition.id !== "string" || !allowedFamilies.has(String(definition.family)) || !finiteNumber(definition.parameterValue)) return false;
+      if (definition.source === undefined || definition.source === "builtin") return true;
+      if (definition.source !== "saved-project" || !isRecord(definition.savedProject)) return false;
+      const snapshot = definition.savedProject;
+      return typeof snapshot.projectId === "string" && typeof snapshot.projectName === "string" && finiteNumber(snapshot.projectRevision) && isRecord(snapshot.project);
+    });
     const sweep = workspace?.sweep as Record<string, unknown> | undefined;
     const conditionsValid = Boolean(conditions && finiteNumber(conditions.frequencyMhz) && validGround(conditions.ground) && hasRadialSchema(conditions.radialSystems) && (conditions.referenceImpedanceOhm === 50 || conditions.referenceImpedanceOhm === 75) && finiteNumber(conditions.azimuthElevationDeg) && finiteNumber(conditions.elevationBearingDeg));
     const sweepValid = Boolean(sweep && (sweep.mode === "start-stop" || sweep.mode === "center-span") && finiteNumber(sweep.startMhz) && finiteNumber(sweep.stopMhz) && finiteNumber(sweep.points) && finiteNumber(sweep.referenceOhms));
