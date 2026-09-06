@@ -30,6 +30,9 @@ test("local projects support save, open, rename, duplicate, export, and confirme
   await page.getByRole("button", { name: "Duplicate" }).click();
   await expect(page.getByRole("heading", { name: "Portable dipole copy" })).toBeVisible();
 
+  // Exercise the documented download fallback independently of browsers that
+  // expose the native Save As picker.
+  await page.evaluate(() => { (window as Window & { showSaveFilePicker?: unknown }).showSaveFilePicker = undefined; });
   const download = page.waitForEvent("download");
   await page.getByRole("article").filter({ has: page.getByRole("heading", { name: "Portable dipole", exact: true }) }).getByRole("button", { name: "Export" }).click();
   expect((await download).suggestedFilename()).toBe("Portable-dipole.hfas");

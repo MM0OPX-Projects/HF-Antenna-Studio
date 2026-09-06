@@ -20,7 +20,6 @@ import type { ModelTransferProvenance } from "../features/model-transfer/types";
 import { cloneModelTransferProvenance } from "../features/model-transfer/types";
 import { DEFAULT_CONDUCTOR, LEGACY_CONDUCTOR, validateConductor, type ConductorMaterial } from "../engine/conductor";
 import { DEFAULT_MATCHING, type MatchingConfig } from "./units";
-import { isDesktopRuntime } from "../platform/desktop-runtime";
 
 interface SaveFilePickerOptions {
   suggestedName?: string;
@@ -567,11 +566,15 @@ export function downloadProject(project: ProjectFile, filename?: string): void {
   URL.revokeObjectURL(url);
 }
 
-/** Use the platform Save As picker where available, with a browser download fallback. */
+/**
+ * Use the platform Save As picker where available, with a browser download
+ * fallback. Chromium-based browsers and the packaged Windows shell expose
+ * the picker; Firefox and other browsers safely retain the download fallback.
+ */
 export async function saveProjectAs(project: ProjectFile, filename?: string): Promise<void> {
   const name = filename ?? `antenna-${project.mode}-${Date.now()}.${PROJECT_FILE_EXTENSION}`;
   const json = JSON.stringify(project, null, 2);
-  if (isDesktopRuntime() && typeof window !== "undefined" && typeof window.showSaveFilePicker === "function") {
+  if (typeof window !== "undefined" && typeof window.showSaveFilePicker === "function") {
     try {
       const handle = await window.showSaveFilePicker({
         suggestedName: name,
