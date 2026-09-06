@@ -107,6 +107,13 @@ export function ProjectActions({ onSave, className = "" }: ProjectActionsProps) 
         Projects
       </button>
       <button
+        onClick={handleOpenClick}
+        className="flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-text-secondary bg-surface border border-border rounded hover:border-accent/50 hover:text-text-primary transition-colors"
+        title="Open Save As in Project Management"
+      >
+        Save As
+      </button>
+      <button
         onClick={handleExport}
         className="flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-text-secondary bg-surface border border-border rounded hover:border-accent/50 hover:text-text-primary transition-colors"
         title="Export portable .hfas file"
