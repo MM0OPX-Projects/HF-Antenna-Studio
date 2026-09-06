@@ -8,7 +8,7 @@
 
 import { useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { downloadProject } from "../../utils/project-file";
+import { saveProjectAs } from "../../utils/project-file";
 import type { ProjectFile } from "../../utils/project-file";
 import { useProjectSession } from "../../features/project-management/ProjectSessionProvider";
 import { useUIStore } from "../../stores/uiStore";
@@ -55,7 +55,7 @@ export function ProjectActions({ onSave, className = "" }: ProjectActionsProps) 
   }, [navigate]);
 
   const handleExport = useCallback(() => {
-    downloadProject(capture());
+    void saveProjectAs(capture());
   }, [capture]);
 
   // Keyboard shortcuts: Ctrl+S to save, Ctrl+O to open

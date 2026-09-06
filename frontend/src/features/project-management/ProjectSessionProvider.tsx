@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { downloadProject, isSupportedProjectFilename, parseProjectText, type ProjectFile, type ProjectMigrationResult } from "../../utils/project-file";
+import { isSupportedProjectFilename, parseProjectText, saveProjectAs, type ProjectFile, type ProjectMigrationResult } from "../../utils/project-file";
 import {
   LocalProjectLibrary,
   clearRecovery,
@@ -394,7 +394,7 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
     const record = library.get(id);
     if (!record) throw new Error("The project no longer exists in local storage.");
     const safeName = record.name.replace(/[^a-z0-9._-]+/gi, "-").replace(/^-+|-+$/g, "") || "antenna-project";
-    downloadProject(record.project, `${safeName}.hfas`);
+    void saveProjectAs(record.project, `${safeName}.hfas`);
   }, [library]);
 
   const inspectImport = useCallback((text: string, filename: string): PendingProjectImport => {

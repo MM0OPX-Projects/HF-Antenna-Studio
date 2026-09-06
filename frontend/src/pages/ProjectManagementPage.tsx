@@ -69,7 +69,7 @@ export function ProjectManagementPage() {
   return (
     <div className="min-h-dvh bg-background text-text-primary">
       <Navbar />
-      <main className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6 lg:p-8">
+      <main className="h-[calc(100dvh-3rem)] overflow-y-auto mx-auto max-w-6xl space-y-6 p-4 sm:p-6 lg:p-8">
         <header className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">Local workspace</p>
           <h1 className="text-2xl font-semibold sm:text-3xl">Project management</h1>
@@ -146,7 +146,7 @@ export function ProjectManagementPage() {
           <div className="rounded-xl border border-border bg-surface p-4 sm:p-5">
             <h2 className="text-lg font-semibold">Portable project file</h2>
             <p className="mt-2 text-sm leading-6 text-text-secondary">Import is reviewed before anything is added. Older schemas migrate on a copy; the source file is never rewritten.</p>
-            <button type="button" onClick={() => fileRef.current?.click()} className="mt-4 rounded-md border border-border px-3 py-2 text-sm hover:border-accent">Choose .hfas file</button>
+            <button type="button" onClick={() => fileRef.current?.click()} className="mt-4 rounded-md border border-border px-3 py-2 text-sm hover:border-accent">Import Portable Project File</button>
             <input ref={fileRef} data-testid="project-file-input" className="hidden" type="file" accept=".hfas,.antennasim,.json" onChange={(event) => void inspectFile(event)} />
             {pendingImport && (
               <div className="mt-4 rounded-lg border border-accent/30 bg-accent/5 p-3 text-sm">
