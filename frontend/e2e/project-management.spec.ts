@@ -51,6 +51,19 @@ test("local projects support save, open, rename, duplicate, export, and confirme
   expect(browserErrors).toEqual([]);
 });
 
+test("projects workspace returns to the active project and constrains the recent list", async ({ page }) => {
+  await page.goto("/");
+  const changelog = page.getByRole("button", { name: "Got it" });
+  if (await changelog.isVisible().catch(() => false)) await changelog.click();
+  await page.locator('button[title^="Save project"]').first().click();
+  await page.getByLabel("Project name").fill("Return navigation test");
+  await page.getByRole("button", { name: "Save As", exact: true }).click();
+  await expect(page.getByTestId("return-to-current-project")).toBeEnabled();
+  await expect(page.getByTestId("recent-projects-list")).toHaveCSS("overflow-y", "auto");
+  await page.getByTestId("return-to-current-project").click();
+  await expect(page).toHaveURL(/\/$/);
+});
+
 test("recovery survives reload and legacy imports are reviewed before migration", async ({ page }) => {
   await openProjects(page);
   await page.getByRole("button", { name: "New template project" }).click();

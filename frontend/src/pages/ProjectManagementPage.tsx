@@ -1,8 +1,10 @@
 import { useRef, useState, type ChangeEvent } from "react";
+import { useNavigate } from "react-router-dom";
 import { Navbar } from "../components/layout/Navbar";
 import { useProjectSession, type PendingProjectImport } from "../features/project-management/ProjectSessionProvider";
 import type { LocalProjectRecord } from "../features/project-management/local-project-library";
 import { moduleProjectDefinition } from "../features/project-management/module-project-catalog";
+import { routeForProject } from "../features/project-management/project-state";
 
 function formatDate(value: string): string {
   const date = new Date(value);
@@ -28,6 +30,7 @@ function modeLabel(record: LocalProjectRecord): string {
 
 export function ProjectManagementPage() {
   const session = useProjectSession();
+  const navigate = useNavigate();
   const [name, setName] = useState("");
   const [renameId, setRenameId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
@@ -73,6 +76,17 @@ export function ProjectManagementPage() {
           <p className="max-w-3xl text-sm leading-6 text-text-secondary">
             Projects stay in this browser profile. No account or cloud connection is used. Export a <code>.hfas</code> file for backup or transfer to another computer.
           </p>
+          <div className="flex flex-wrap gap-2 pt-1">
+            <button
+              type="button"
+              data-testid="return-to-current-project"
+              disabled={!session.current}
+              onClick={() => session.current && navigate(routeForProject(session.current.project))}
+              className="rounded-md border border-border px-3 py-2 text-sm hover:border-accent disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Return to current project
+            </button>
+          </div>
         </header>
 
         {(localError || session.error) && <div role="alert" className="rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-300">{localError ?? session.error}</div>}
@@ -158,7 +172,7 @@ export function ProjectManagementPage() {
             <button type="button" onClick={session.refresh} className="rounded-md border border-border px-3 py-2 text-sm">Refresh</button>
           </div>
           {session.projects.length === 0 ? <div className="mt-5 rounded-lg border border-dashed border-border p-8 text-center text-sm text-text-secondary">No saved projects yet. Name the current workspace and choose Save.</div> : (
-            <div className="mt-4 space-y-3">
+            <div data-testid="recent-projects-list" className="mt-4 max-h-[32rem] space-y-3 overflow-y-auto pr-2">
               {session.projects.map((record) => (
                 <article key={record.id} className="rounded-lg border border-border bg-background/60 p-3 sm:p-4">
                   <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
