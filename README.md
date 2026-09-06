@@ -2,7 +2,7 @@
 
 HF Antenna Studio is a local, open-source antenna-modelling application for Windows 11. It combines an original HTML/TypeScript interface with a pinned nec2c/WebAssembly NEC-2 engine. Normal calculations, projects, and imported measurement data remain on the user's computer and require no cloud account.
 
-Version 1.0.3 is the current maintenance release. The numerical validation scope remains the documented v1.0.0 campaign. It is engineering software, not a substitute for construction measurements or professional safety analysis.
+Version 1.0.4 is the current maintenance release. The numerical validation scope remains the documented v1.0.0 campaign. It is engineering software, not a substitute for construction measurements or professional safety analysis.
 
 ## Install HF Antenna Studio on Windows 11
 

@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.0.4] - 2026-09-06
+
+### Fixed
+
+- Added an explicit Save As action to workspace project controls and made overwrite confirmations include the active project name.
+- Enabled the native Save As picker for project exports wherever the host supports it, while retaining the browser download fallback.
+
 ## [1.0.3] - 2026-09-06
 
 ### Added
