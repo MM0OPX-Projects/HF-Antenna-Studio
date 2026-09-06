@@ -80,8 +80,11 @@ export function ProjectManagementPage() {
             <button
               type="button"
               data-testid="return-to-current-project"
-              disabled={!session.current}
-              onClick={() => session.current && navigate(routeForProject(session.current.project))}
+              disabled={!session.currentRoute}
+              onClick={() => {
+                const destination = session.currentRoute ?? (session.current ? routeForProject(session.current.project) : null);
+                if (destination) navigate(destination);
+              }}
               className="rounded-md border border-border px-3 py-2 text-sm hover:border-accent disabled:cursor-not-allowed disabled:opacity-50"
             >
               Return to current project

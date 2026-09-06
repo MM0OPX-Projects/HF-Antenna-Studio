@@ -5,6 +5,7 @@ import { AppRoutes } from "./routes";
 import { useUIStore } from "./stores/uiStore";
 import { ProjectSessionProvider } from "./features/project-management/ProjectSessionProvider";
 import { initialiseDesktopDiagnostics } from "./platform/desktop-runtime";
+import { ExitConfirmation } from "./components/ui/ExitConfirmation";
 
 /** Basename for the router — matches Vite's base path (e.g. "/AntennaSim/" on GitHub Pages). */
 const basename = import.meta.env.BASE_URL;
@@ -29,6 +30,7 @@ export function App() {
       <ProjectSessionProvider>
         <AppRoutes />
         <ChangelogPopup />
+        <ExitConfirmation />
       </ProjectSessionProvider>
     </BrowserRouter>
   );

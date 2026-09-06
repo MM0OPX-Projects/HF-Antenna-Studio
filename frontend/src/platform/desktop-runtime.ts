@@ -9,9 +9,13 @@ interface TauriCoreBridge {
   invoke<T>(command: string, arguments_?: Record<string, unknown>): Promise<T>;
 }
 
+interface TauriEventBridge {
+  listen<T>(event: string, handler: (event: { payload: T }) => void): Promise<() => void>;
+}
+
 declare global {
   interface Window {
-    __TAURI__?: { core?: TauriCoreBridge };
+    __TAURI__?: { core?: TauriCoreBridge; event?: TauriEventBridge };
   }
 }
 
@@ -47,6 +51,18 @@ export async function openLogDirectory(): Promise<void> {
   const bridge = coreBridge();
   if (!bridge) throw new Error("File logs are available only in the installed Windows application.");
   await bridge.invoke("open_log_directory");
+}
+
+export async function requestApplicationExit(): Promise<void> {
+  const bridge = coreBridge();
+  if (!bridge) throw new Error("Application exit is available only in the installed desktop application.");
+  await bridge.invoke("exit_application");
+}
+
+export async function listenForExitRequest(handler: () => void): Promise<() => void> {
+  const eventBridge = typeof window === "undefined" ? undefined : window.__TAURI__?.event;
+  if (!eventBridge) return () => undefined;
+  return eventBridge.listen("exit-requested", handler);
 }
 
 function errorMessage(value: unknown): string {

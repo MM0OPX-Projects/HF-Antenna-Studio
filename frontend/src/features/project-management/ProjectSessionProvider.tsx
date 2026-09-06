@@ -46,6 +46,7 @@ interface ProjectSessionValue {
   status: ProjectSaveStatus;
   error: string | null;
   lastSavedAt: string | null;
+  currentRoute: string | null;
   refresh: () => void;
   newProject: (mode: ManagedProjectMode) => void;
   save: (nameIfNew?: string) => LocalProjectRecord;
@@ -82,6 +83,7 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<ProjectSaveStatus>("idle");
   const [error, setError] = useState<string | null>(null);
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
+  const [currentRoute, setCurrentRoute] = useState<string | null>(null);
   const currentRef = useRef<LocalProjectRecord | null>(null);
   const modeRef = useRef<ManagedProjectMode>(projectModeForRoute(location.pathname));
   const routeRef = useRef(location.pathname);
@@ -113,6 +115,7 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     routeRef.current = location.pathname;
+    if (location.pathname !== "/projects") setCurrentRoute(location.pathname);
     if (isManagedProjectRoute(location.pathname)) {
       const nextMode = projectModeForRoute(location.pathname);
       modeRef.current = nextMode;
@@ -210,6 +213,16 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  useEffect(() => {
+    const warnBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (status !== "dirty" && status !== "saving" && status !== "error") return;
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warnBeforeUnload);
+    return () => window.removeEventListener("beforeunload", warnBeforeUnload);
+  }, [status]);
+
   const beginRestore = useCallback((project: ProjectFile) => {
     restoringRef.current = true;
     try {
@@ -226,6 +239,8 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
     try {
       const project = createNewProject(mode);
       modeRef.current = mode;
+      routeRef.current = routeForProjectMode(mode);
+      setCurrentRoute(routeForProjectMode(mode));
       currentRef.current = null;
       setCurrent(null);
       fingerprintRef.current = projectFingerprint(project);
@@ -323,6 +338,8 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
     beginRestore(record.project);
     currentRef.current = record;
     setCurrent(record);
+    routeRef.current = routeForProject(record.project);
+    setCurrentRoute(routeForProject(record.project));
     setProjects(library.list());
     clearRecovery(window.localStorage);
     setRecovery(null);
@@ -423,6 +440,7 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
     status,
     error,
     lastSavedAt,
+    currentRoute,
     refresh,
     newProject,
     save,
@@ -437,7 +455,7 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
     importProject,
     recover,
     discardRecovery,
-  }), [projects, current, recovery, status, error, lastSavedAt, refresh, newProject, save, saveAs, saveExternal, open, rename, duplicate, deleteProject, exportProject, inspectImport, importProject, recover, discardRecovery]);
+  }), [projects, current, currentRoute, recovery, status, error, lastSavedAt, refresh, newProject, save, saveAs, saveExternal, open, rename, duplicate, deleteProject, exportProject, inspectImport, importProject, recover, discardRecovery]);
 
   return <ProjectSessionContext.Provider value={value}>{children}</ProjectSessionContext.Provider>;
 }

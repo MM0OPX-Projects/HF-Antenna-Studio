@@ -3,7 +3,7 @@ use std::fs::{create_dir_all, OpenOptions};
 use std::io::Write;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Emitter, Manager, WindowEvent};
 
 const LOG_FILE_NAME: &str = "hf-antenna-studio.log";
 const MAX_FRONTEND_LOG_LENGTH: usize = 4_000;
@@ -104,6 +104,12 @@ fn open_log_directory(app: AppHandle) -> Result<(), String> {
     }
 }
 
+#[tauri::command]
+fn exit_application(app: AppHandle) -> Result<(), String> {
+    app.exit(0);
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -120,8 +126,15 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             get_runtime_info,
             append_diagnostic_log,
-            open_log_directory
+            open_log_directory,
+            exit_application
         ])
+        .on_window_event(|window, event| {
+            if let WindowEvent::CloseRequested { api, .. } = event {
+                api.prevent_close();
+                let _ = window.emit("exit-requested", ());
+            }
+        })
         .run(tauri::generate_context!())
         .expect("HF Antenna Studio desktop runtime failed");
 }

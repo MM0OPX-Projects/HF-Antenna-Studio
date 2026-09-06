@@ -64,6 +64,31 @@ test("projects workspace returns to the active project and constrains the recent
   await expect(page).toHaveURL(/\/$/);
 });
 
+test("projects workspace returns to an unsaved specialist module", async ({ page }) => {
+  await page.goto("/phased-arrays");
+  const changelog = page.getByRole("button", { name: "Got it" });
+  if (await changelog.isVisible().catch(() => false)) await changelog.click();
+  await page.getByRole("link", { name: "Projects" }).click();
+  await expect(page.getByTestId("return-to-current-project")).toBeEnabled();
+  await page.getByTestId("return-to-current-project").click();
+  await expect(page).toHaveURL(/\/phased-arrays$/);
+});
+
+test("return follows the live workspace even when another project is selected", async ({ page }) => {
+  await page.goto("/");
+  const changelog = page.getByRole("button", { name: "Got it" });
+  if (await changelog.isVisible().catch(() => false)) await changelog.click();
+  await page.locator('button[title^="Save project"]').first().click();
+  await page.getByLabel("Project name").fill("Previously saved design");
+  await page.getByRole("button", { name: "Save As", exact: true }).click();
+  await page.getByRole("link", { name: "HF Antenna Studio" }).click();
+  await page.getByRole("button", { name: /Modules/ }).click();
+  await page.getByRole("menuitem", { name: "Phased Arrays" }).click();
+  await page.getByRole("link", { name: "Projects" }).click();
+  await page.getByTestId("return-to-current-project").click();
+  await expect(page).toHaveURL(/\/phased-arrays$/);
+});
+
 test("recovery survives reload and legacy imports are reviewed before migration", async ({ page }) => {
   await openProjects(page);
   await page.getByRole("button", { name: "New template project" }).click();
