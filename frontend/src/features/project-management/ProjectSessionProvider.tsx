@@ -52,6 +52,8 @@ interface ProjectSessionValue {
   save: (nameIfNew?: string) => LocalProjectRecord;
   saveAs: (name: string) => LocalProjectRecord;
   saveExternal: (project: ProjectFile) => LocalProjectRecord;
+  /** Start editing a fresh unsaved document without changing the current route. */
+  detachCurrent: () => void;
   open: (id: string) => void;
   rename: (id: string, name: string) => void;
   duplicate: (id: string, name?: string) => void;
@@ -313,6 +315,19 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
     return record;
   }, [library]);
 
+  const detachCurrent = useCallback(() => {
+    currentRef.current = null;
+    setCurrent(null);
+    clearRecovery(window.localStorage);
+    setRecovery(null);
+    setStatus("dirty");
+    setLastSavedAt(null);
+    setError(null);
+    // Capture the now-detached document as the new autosave baseline. The
+    // next edit is therefore never written back to the previously saved file.
+    fingerprintRef.current = projectFingerprint(captureProject(modeRef.current));
+  }, []);
+
   const save = useCallback((nameIfNew?: string): LocalProjectRecord => {
     const active = currentRef.current;
     if (!active) {
@@ -446,6 +461,7 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
     save,
     saveAs,
     saveExternal,
+    detachCurrent,
     open,
     rename,
     duplicate,
@@ -455,7 +471,7 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
     importProject,
     recover,
     discardRecovery,
-  }), [projects, current, currentRoute, recovery, status, error, lastSavedAt, refresh, newProject, save, saveAs, saveExternal, open, rename, duplicate, deleteProject, exportProject, inspectImport, importProject, recover, discardRecovery]);
+  }), [projects, current, currentRoute, recovery, status, error, lastSavedAt, refresh, newProject, save, saveAs, saveExternal, detachCurrent, open, rename, duplicate, deleteProject, exportProject, inspectImport, importProject, recover, discardRecovery]);
 
   return <ProjectSessionContext.Provider value={value}>{children}</ProjectSessionContext.Provider>;
 }

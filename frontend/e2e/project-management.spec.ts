@@ -293,3 +293,23 @@ test("Design, Wire Editor, sweeps, and optimiser Save As reopen in the correct m
   await optimiser.getByRole("button", { name: "Open" }).click();
   await expect(page).toHaveURL(/\/antenna-optimiser$/);
 });
+
+test("clearing Wire Editor detaches the saved identity before the next antenna is saved", async ({ page }) => {
+  await page.goto("/projects");
+  const changelog = page.getByRole("button", { name: "Got it" });
+  if (await changelog.isVisible().catch(() => false)) await changelog.click();
+  await page.getByRole("button", { name: "New wire project" }).click();
+  await page.locator('button[title^="Save project"]').first().click();
+  await page.getByLabel("Project name").fill("Delta loop source");
+  await page.getByRole("button", { name: "Save As", exact: true }).click();
+  await page.getByRole("button", { name: "Open" }).first().click();
+  await expect(page).toHaveURL(/\/editor$/);
+  await page.getByTitle("Clear all wires").click();
+  await page.locator("aside select").first().selectOption("templates");
+  await page.getByRole("button", { name: "Load into Editor" }).click();
+  await page.locator('button[title^="Save project"]').first().click();
+  await page.getByLabel("Project name").fill("Dipole source");
+  await page.getByRole("button", { name: "Save As", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Dipole source" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Delta loop source" })).toBeVisible();
+});

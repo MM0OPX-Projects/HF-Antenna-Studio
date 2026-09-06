@@ -51,7 +51,7 @@ function ToolBtn({
   );
 }
 
-export function EditorToolbar() {
+export function EditorToolbar({ onClearProject }: { onClearProject?: () => void } = {}) {
   const mode = useEditorStore((s) => s.mode);
   const setMode = useEditorStore((s) => s.setMode);
   const canUndo = useEditorStore((s) => s.canUndo);
@@ -167,7 +167,7 @@ export function EditorToolbar() {
       label: "Clear",
       icon: "C",
       title: "Clear all wires",
-      action: clearAll,
+      action: onClearProject ?? clearAll,
       disabled: wires.length === 0,
       danger: true,
     },

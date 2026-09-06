@@ -62,6 +62,7 @@ import { resolveGeometryGroundFlag } from "../engine/geometry-ground";
 import { templates } from "../templates";
 import { getDefaultParams } from "../templates/types";
 import type { ProjectFile } from "../utils/project-file";
+import { useProjectSession } from "../features/project-management/ProjectSessionProvider";
 import type { AntennaTemplate, FrequencyRange } from "../templates/types";
 import { bandToSegment, hasBandSegment, removeBandSegment } from "../utils/ham-bands";
 import type { HamBand } from "../utils/ham-bands";
@@ -87,6 +88,7 @@ const HEIGHT_UNIT_DECIMALS: Record<LengthUnit, number> = {
 };
 
 export function EditorPage() {
+  const projectSession = useProjectSession();
   const viewportRef = useRef<HTMLElement>(null);
   // Editor store
   const wires = useEditorStore((s) => s.wires);
@@ -565,7 +567,7 @@ export function EditorPage() {
       <div id="wire-editor-workspace" className="flex flex-1 overflow-hidden lg:h-[calc(100dvh-4.5rem)] lg:min-h-[640px] lg:flex-none">
         {/* === LEFT: TOOLBAR (desktop only) === */}
         <div className="hidden lg:block">
-          <EditorToolbar />
+          <EditorToolbar onClearProject={() => { clearAll(); projectSession.detachCurrent(); }} />
         </div>
 
         {/* === CENTER: 3D VIEWPORT === */}
