@@ -15,6 +15,7 @@ import {
   createModelComparisonProject,
   createParameterSweepProject,
   createAntennaOptimiserProject,
+  createModuleProject,
   estimateProjectSize,
   migrateProjectFile,
   parseProjectText,
@@ -299,8 +300,8 @@ describe("validateProjectFile — error cases", () => {
     expect(migrated.project.version).toBe(PROJECT_SCHEMA_VERSION);
     expect(migrated.project.editor?.junctions).toEqual([]);
     expect(migrated.project.conductor).toEqual({ id: "perfect", conductivitySPerM: null });
-    expect(migrated.migrations).toHaveLength(7);
-    expect(migrated.migrations[migrated.migrations.length - 1]).toContain("v7 to v8");
+    expect(migrated.migrations).toHaveLength(9);
+    expect(migrated.migrations).toContain("v7 to v8: preserved legacy lossless-wire behaviour by setting the conductor to perfect");
     expect(JSON.stringify(source)).toBe(sourceText);
   });
 
@@ -312,7 +313,7 @@ describe("validateProjectFile — error cases", () => {
 
     expect(parsed.originalText).toBe(text);
     expect(parsed.project.version).toBe(PROJECT_SCHEMA_VERSION);
-    expect(parsed.migrations).toHaveLength(3);
+    expect(parsed.migrations).toHaveLength(5);
   });
 
   it("accepts current and legacy project filenames case-insensitively", () => {
@@ -402,5 +403,33 @@ describe("estimateProjectSize", () => {
     const large = makeEditorProject();
     large.result = { frequency_data: [{ frequency_mhz: 14.1 } as never] } as never;
     expect(estimateProjectSize(large)).toBeGreaterThan(estimateProjectSize(small));
+  });
+});
+
+describe("module projects", () => {
+  it("round-trip specialist module state without mutation", () => {
+    const project = createModuleProject("phased-arrays", "40m array", "/phased-arrays", { spacingM: 7.92, phase2Deg: 79 });
+    expect(validateProjectFile(JSON.parse(JSON.stringify(project)))).toMatchObject({ mode: "module", module: { moduleId: "phased-arrays", state: { spacingM: 7.92, phase2Deg: 79 } } });
+  });
+
+  it.each([
+    ["verified-dipole", "/verified-dipole"],
+    ["dipole-height-lab", "/dipole-height-lab"],
+    ["antenna-templates", "/antenna-templates"],
+    ["vertical-antennas", "/vertical-antennas"],
+    ["yagi-beams", "/yagi-beams"],
+    ["loop-beams", "/loop-and-hexbeam-models"],
+    ["phased-arrays", "/phased-arrays"],
+    ["frequency-analyser", "/frequency-analyser"],
+    ["measurement-comparison", "/measurement-comparison"],
+  ])("preserves nested %s settings through JSON", (moduleId, route) => {
+    const state = { number: 12.345, choice: "custom", nested: { values: [1, 2, 3], enabled: true } };
+    const project = createModuleProject(moduleId, `${moduleId} audit`, route, state);
+    project.matching = { type: "unun", ratio: 49, feedlineZ0: 75 };
+
+    const parsed = validateProjectFile(JSON.parse(JSON.stringify(project)));
+
+    expect(parsed.module).toEqual({ moduleId, title: `${moduleId} audit`, route, state });
+    expect(parsed.matching).toEqual({ type: "unun", ratio: 49, feedlineZ0: 75 });
   });
 });

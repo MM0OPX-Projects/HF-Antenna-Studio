@@ -1,10 +1,10 @@
 # HF Antenna Studio project files
 
-Status: implemented browser-local project-management subset, extended 2026-09-04
+Status: implemented browser-local project management, audited 2026-09-06
 
 ## Purpose and boundaries
 
-HF Antenna Studio uses a human-readable UTF-8 JSON project file with the `.hfas` extension. A project stores the inputs required to reconstruct a template model, Wire Editor model, four-model comparison, parameter sweep, or optimiser definition. Solver results are derived cache data and the Project Management page deliberately does not store them in the canonical local record.
+HF Antenna Studio uses a human-readable UTF-8 JSON project file with the `.hfas` extension. A project stores the inputs required to reconstruct a Design template, Wire Editor model, comparison, parameter sweep, optimiser, or specialist antenna laboratory. Solver results are derived cache data and are deliberately recalculated rather than treated as canonical model input.
 
 The implementation is entirely local:
 
@@ -20,20 +20,21 @@ Browser storage is not encryption and is not a backup. Anyone with access to the
 - Encoding: UTF-8 JSON.
 - Extension: `.hfas`.
 - Legacy imports accepted: `.antennasim` and `.json`.
-- Current model schema: `version: 8`.
+- Current model schema: `version: 10`.
 - Application version: `app_version`.
 - Timestamps: ISO 8601 UTC strings.
-- Model mode: `simulator`, `editor`, `model-comparison`, `parameter-sweep`, or `antenna-optimiser`.
+- Model mode: `simulator`, `editor`, `model-comparison`, `parameter-sweep`, `antenna-optimiser`, or `module`.
 
 A minimal current simulator file is structurally equivalent to:
 
 ```json
 {
-  "version": 8,
-  "app_version": "1.0.0",
+  "version": 10,
+  "app_version": "1.0.1",
   "created_at": "2026-08-06T12:00:00.000Z",
   "mode": "simulator",
   "conductor": { "id": "copper", "conductivitySPerM": 58000000 },
+  "matching": { "type": "none", "ratio": 1, "feedlineZ0": 50 },
   "simulator": {
     "templateId": "dipole",
     "params": {
@@ -75,6 +76,10 @@ Schema v7 adds optional `editor.modelTransfer` evidence. An exact transfer recor
 
 Schema v8 adds the root `conductor` object, containing a material identifier and conductivity in S/m (or `null` for Perfect conductor). New projects use Copper at `5.8e7 S/m`. Migration deliberately assigns Perfect conductor to v1-v7 files because those versions did not encode finite wire loss; this preserves their historical calculation contract.
 
+Schema v9 adds specialist-module envelopes. The module identifier, canonical application route, descriptive title and module-owned input state are stored together. This covers Verified Dipole, Dipole Height Lab, Antenna Template Studio, Vertical Antennas, Yagi Beams, Loops & Hexbeam, Phased Arrays, Frequency Analyser and Measurement Comparison. Reopen routing uses the application's canonical module catalogue so an obsolete stored route cannot strand the user.
+
+Schema v10 adds the root `matching` object. It records the selected direct/balun/unun transformation ratio and feedline reference impedance, so displayed transformed impedance and SWR reproduce after reopening. Older files use an explicitly reported direct 50-ohm migration default because those versions did not record the original selection.
+
 ## Schema history and migration
 
 | Version | Relevant model change | Migration behaviour |
@@ -86,7 +91,9 @@ Schema v8 adds the root `conductor` object, containing a material identifier and
 | 5 | Comparison, parameter-sweep, and optimiser project modes with explicit radial identity | Migrates to v6; workflow inputs are retained. |
 | 6 | Managed parametric radial systems in the arbitrary Wire Editor | Migrates to v7 with no invented Module provenance. |
 | 7 | Optional reviewed specialist-Module transfer provenance and semantic fingerprint | Migrates to v8 with the historical lossless conductor contract. |
-| 8 | Application-wide antenna-conductor material and conductivity | Current write format; older projects become explicit Perfect conductor rather than silently acquiring copper loss. |
+| 8 | Application-wide antenna-conductor material and conductivity | Older projects become explicit Perfect conductor rather than silently acquiring copper loss. |
+| 9 | Specialist-module project envelopes | Existing project modes remain unchanged. |
+| 10 | Matching transformation and feedline reference impedance | Current write format; older projects receive a reported direct 50-ohm default. |
 
 Migration operates on a detached JSON copy. Import retains the exact source text in memory during review, reports every applied migration, and does not add or open the migrated project until the user confirms **Import and open**. A newer unknown schema is rejected. The source file is never rewritten.
 
@@ -106,13 +113,13 @@ The local library has its own storage schema (`schemaVersion: 1`). Each record c
 
 The collection is replaced with one `localStorage.setItem` operation. If quota or browser policy rejects the write, the previous value is retained and the UI instructs the user to export. Each named-project save checks its expected revision, preventing a stale tab from silently overwriting a newer revision. The current implementation limits the library to 100 projects.
 
-Model changes are checked every 800 ms. An unnamed project is written to the separate recovery journal. A named project is autosaved with a revision increment; its recovery journal is cleared only after that save succeeds. `pagehide` and hidden-page handling synchronously preserve a final changed snapshot where browser policy permits.
+Design, Wire Editor, comparison, sweep and optimiser changes are checked every 800 ms. An unnamed project is written to the separate recovery journal. A named project is autosaved with a revision increment; its recovery journal is cleared only after that save succeeds. `pagehide` and hidden-page handling synchronously preserve a final changed snapshot where browser policy permits. Specialist laboratories currently own local React state and therefore require the visible **Save** action before leaving the laboratory; Save As, duplicate, export and reopen then preserve that saved module envelope exactly.
 
 Recovery is always explicit: the Projects page offers **Recover** or **Discard**. Recovery never silently replaces the currently loaded model. A recovery journal records the named project's revision; if that revision no longer matches the library, the recovered model becomes unnamed and must be saved explicitly rather than overwriting the newer record.
 
 ## Operations
 
-- **New** resets the selected Template Simulator, Wire Editor, Model Comparison, Parameter Sweep, or Antenna Optimiser workspace to a known default and creates an unnamed recovery copy.
+- **New** resets the selected Design, Wire Editor, Model Comparison, Parameter Sweep, or Antenna Optimiser workspace to a known default and creates an unnamed recovery copy.
 - **Save** updates the current named record or creates it after the user supplies a name.
 - **Save As** always creates a new ID and leaves the prior record intact.
 - **Open** restores the complete stored model and clears stale solver results.
@@ -127,22 +134,22 @@ Recovery is always explicit: the Projects page offers **Recover** or **Discard**
 
 Automated tests cover:
 
-- v1 editor through v8 migration, including explicit legacy Perfect-conductor preservation;
-- v3 simulator through v8 migration with the missing-sweep limitation reported;
+- v1 editor through v10 migration, including explicit legacy Perfect-conductor and matching-default preservation;
+- v3 simulator through v10 migration with the missing-sweep limitation reported;
 - immutable source objects and exact source-text retention during review;
-- current-schema JSON round trips for simulator, editor, comparison, parameter-sweep, and optimiser models;
+- current-schema JSON round trips for simulator, editor, comparison, parameter-sweep, optimiser and every registered specialist module;
 - exact real-ground radial-system identity across capture, JSON round trip, restore, autosave route mapping, and browser reopen;
 - explicit simulator frequency and multi-band sweep persistence;
 - create/save/rename/duplicate/delete and recent-list operations;
 - stale-revision conflicts, rejected writes, corrupt indexes, and recovery round trips;
-- browser lifecycle flows for save/open/export/delete, reload recovery, and confirmed legacy import.
+- browser lifecycle flows for save/open/Save As/export/delete, reload recovery, confirmed legacy import, exact phased-feed restoration, matching restoration, module labelling and every registered project route.
 
 ## Known limitations
 
 - Browser `localStorage` quotas vary by browser/profile. The library is intended for canonical models, not large result arrays.
 - The web build cannot provide a persistent arbitrary Windows filesystem path with universal browser support. **Save As** creates a new local-library record; **Export** creates the portable file.
-- Project names are local-library metadata and are represented by the export filename, not embedded in the v8 model document.
-- Comparison, parameter-sweep, and optimiser inputs are embedded in `.hfas`; their calculated results retain separate evidence exports and are recalculated after open. Measurement-comparison and other specialist laboratory state is not yet a canonical `.hfas` mode.
+- Project names are local-library metadata and are represented by the export filename, not embedded in the v10 model document.
+- Calculated plots, solver caches, optimiser history and saved result overlays are recalculated after open. Canonical model inputs, imported measurement samples and specialist control state are preserved.
 - Import rejects unsupported extensions and source text over 5,000,000 characters, but runtime validation is not yet a complete finite-number/range/aggregate-array schema audit. Broader untrusted-input and fuzz testing remain Phase 4 work.
-- Schema v8 follows documented SI field conventions but does not yet carry the future canonical contract's explicit top-level unit declaration, document UUID, title, or notes.
+- Schema v10 follows documented SI field conventions but does not yet carry the future canonical contract's explicit top-level unit declaration, document UUID, title, or notes.
 - Native packaged atomic filesystem writes, backup rotation, Windows path/encoding tests, and cross-browser quota testing are not claimed.

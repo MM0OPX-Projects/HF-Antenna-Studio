@@ -24,7 +24,9 @@ import {
   isManagedProjectRoute,
   projectModeForRoute,
   routeForProjectMode,
+  routeForProject,
   restoreProject,
+  snapshotForSave,
   type ManagedProjectMode,
 } from "./project-state";
 
@@ -48,6 +50,7 @@ interface ProjectSessionValue {
   newProject: (mode: ManagedProjectMode) => void;
   save: (nameIfNew?: string) => LocalProjectRecord;
   saveAs: (name: string) => LocalProjectRecord;
+  saveExternal: (project: ProjectFile) => LocalProjectRecord;
   open: (id: string) => void;
   rename: (id: string, name: string) => void;
   duplicate: (id: string, name?: string) => void;
@@ -62,7 +65,7 @@ interface ProjectSessionValue {
 const ProjectSessionContext = createContext<ProjectSessionValue | null>(null);
 
 function projectFingerprint(project: ProjectFile): string {
-  return JSON.stringify({ mode: project.mode, simulator: project.simulator, editor: project.editor, modelComparison: project.modelComparison, parameterSweep: project.parameterSweep, antennaOptimiser: project.antennaOptimiser });
+  return JSON.stringify({ mode: project.mode, conductor: project.conductor, matching: project.matching, simulator: project.simulator, editor: project.editor, modelComparison: project.modelComparison, parameterSweep: project.parameterSweep, antennaOptimiser: project.antennaOptimiser, module: project.module });
 }
 
 function filenameStem(filename: string): string {
@@ -134,6 +137,7 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
       if (restoringRef.current) return;
       try {
         const mode = currentRef.current?.project.mode ?? modeRef.current;
+        if (mode === "module") return;
         const snapshot = captureProject(mode);
         const fingerprint = projectFingerprint(snapshot);
         if (fingerprint === fingerprintRef.current) return;
@@ -175,6 +179,10 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
     const preserveLatestChange = () => {
       try {
         const mode = currentRef.current?.project.mode ?? modeRef.current;
+        // Specialist pages hand their local React state to saveExternal().
+        // They cannot be recaptured through the simulator/editor stores while
+        // the browser is hiding or closing.
+        if (mode === "module") return;
         const snapshot = captureProject(mode);
         if (projectFingerprint(snapshot) === fingerprintRef.current) return;
         writeRecovery(window.localStorage, {
@@ -207,7 +215,7 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
     try {
       restoreProject(project);
       modeRef.current = project.mode;
-      fingerprintRef.current = projectFingerprint(captureProject(project.mode));
+      fingerprintRef.current = projectFingerprint(project);
     } finally {
       restoringRef.current = false;
     }
@@ -241,7 +249,13 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
   }, [navigate]);
 
   const saveAs = useCallback((name: string): LocalProjectRecord => {
-    const snapshot = captureProject(modeRef.current);
+    // Specialist modules keep their complete state in the project envelope;
+    // there is no corresponding Zustand simulator store to recapture when the
+    // user invokes Save As from the Projects page. Re-capturing the route as a
+    // simulator here used to turn phased-array (and other module) projects
+    // into an unrelated default simulator project.
+    const active = currentRef.current;
+    const snapshot = snapshotForSave(active?.project ?? null, modeRef.current);
     const record = library.create(name, snapshot);
     currentRef.current = record;
     setCurrent(record);
@@ -255,13 +269,42 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
     return record;
   }, [library]);
 
+  const saveExternal = useCallback((project: ProjectFile): LocalProjectRecord => {
+    const active = currentRef.current;
+    if (active?.project.mode === "module" && project.mode === "module" && active.project.module?.moduleId === project.module?.moduleId) {
+      const saved = library.save(active.id, project, active.revision);
+      currentRef.current = saved;
+      setCurrent(saved);
+      setProjects(library.list());
+      clearRecovery(window.localStorage);
+      setRecovery(null);
+      setLastSavedAt(saved.updatedAt);
+      setStatus("saved");
+      setError(null);
+      fingerprintRef.current = projectFingerprint(project);
+      return saved;
+    }
+    const title = project.mode === "module" ? project.module?.title : `${project.mode} project`;
+    const record = library.create(title || "Antenna project", project);
+    currentRef.current = record;
+    setCurrent(record);
+    setProjects(library.list());
+    clearRecovery(window.localStorage);
+    setRecovery(null);
+    setLastSavedAt(record.updatedAt);
+    setStatus("saved");
+    setError(null);
+    fingerprintRef.current = projectFingerprint(project);
+    return record;
+  }, [library]);
+
   const save = useCallback((nameIfNew?: string): LocalProjectRecord => {
     const active = currentRef.current;
     if (!active) {
       if (!nameIfNew) throw new Error("Choose a project name before the first save.");
       return saveAs(nameIfNew);
     }
-    const snapshot = captureProject(active.project.mode);
+    const snapshot = snapshotForSave(active.project, active.project.mode);
     const saved = library.save(active.id, snapshot, active.revision);
     currentRef.current = saved;
     setCurrent(saved);
@@ -286,7 +329,7 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
     setLastSavedAt(record.updatedAt);
     setStatus("saved");
     setError(null);
-    navigate(routeForProjectMode(record.project.mode));
+    navigate(routeForProject(record.project));
   }, [beginRestore, library, navigate]);
 
   const rename = useCallback((id: string, name: string) => {
@@ -307,7 +350,9 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
 
   const deleteProject = useCallback((id: string) => {
     const deletingCurrent = currentRef.current?.id === id ? currentRef.current : null;
-    const recoverySnapshot = deletingCurrent ? captureProject(deletingCurrent.project.mode) : null;
+    const recoverySnapshot = deletingCurrent
+      ? snapshotForSave(deletingCurrent.project, deletingCurrent.project.mode)
+      : null;
     library.delete(id);
     if (deletingCurrent && recoverySnapshot) {
       currentRef.current = null;
@@ -363,7 +408,7 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
     setCurrent(matching);
     setStatus("dirty");
     setError(null);
-    navigate(routeForProjectMode(recovered.project.mode));
+    navigate(routeForProject(recovered.project));
   }, [beginRestore, library, navigate]);
 
   const discardRecovery = useCallback(() => {
@@ -382,6 +427,7 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
     newProject,
     save,
     saveAs,
+    saveExternal,
     open,
     rename,
     duplicate,
@@ -391,7 +437,7 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
     importProject,
     recover,
     discardRecovery,
-  }), [projects, current, recovery, status, error, lastSavedAt, refresh, newProject, save, saveAs, open, rename, duplicate, deleteProject, exportProject, inspectImport, importProject, recover, discardRecovery]);
+  }), [projects, current, recovery, status, error, lastSavedAt, refresh, newProject, save, saveAs, saveExternal, open, rename, duplicate, deleteProject, exportProject, inspectImport, importProject, recover, discardRecovery]);
 
   return <ProjectSessionContext.Provider value={value}>{children}</ProjectSessionContext.Provider>;
 }

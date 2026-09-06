@@ -12,6 +12,9 @@ import type { TemplateGround, TemplateId } from "../features/antenna-templates/s
 import { HeightRadiation3D } from "../features/height-lab/HeightRadiation3D";
 import { RadiationCutPair } from "../components/results/RadiationCutPair";
 import { useUIStore } from "../stores/uiStore";
+import { ProjectActions } from "../components/ui/ProjectActions";
+import { createModuleProject } from "../utils/project-file";
+import { consumePendingModuleProject } from "../features/project-management/module-project-state";
 
 type GroundPreset = "perfect" | "average" | "pastoral" | "dry" | "custom";
 const GROUND: Record<Exclude<GroundPreset, "custom">, TemplateGround> = {
@@ -24,15 +27,16 @@ const GROUND: Record<Exclude<GroundPreset, "custom">, TemplateGround> = {
 function signed(value: number): string { return `${value >= 0 ? "+" : "−"} j${Math.abs(value).toFixed(2)}`; }
 
 export function AntennaTemplateStudioPage() {
+  const [restored] = useState<{ templateId: TemplateId; parametersSI: Record<string, number>; imperial?: boolean; manualDimensions?: boolean; groundPreset?: GroundPreset; conductivity?: number; permittivity?: number } | null>(() => consumePendingModuleProject("antenna-templates"));
   const conductor = useUIStore((state) => state.conductor);
-  const [templateId, setTemplateId] = useState<TemplateId>("horizontal-dipole");
+  const [templateId, setTemplateId] = useState<TemplateId>(() => restored?.templateId ?? "horizontal-dipole");
   const definition = useMemo(() => getTemplateDefinition(templateId), [templateId]);
-  const [parametersSI, setParametersSI] = useState<Record<string, number>>(() => initialTemplateParameters(definition));
-  const [imperial, setImperial] = useState(false);
-  const [manualDimensions, setManualDimensions] = useState(false);
-  const [groundPreset, setGroundPreset] = useState<GroundPreset>("average");
-  const [conductivity, setConductivity] = useState(0.005);
-  const [permittivity, setPermittivity] = useState(13);
+  const [parametersSI, setParametersSI] = useState<Record<string, number>>(() => restored?.parametersSI ?? initialTemplateParameters(definition));
+  const [imperial, setImperial] = useState(() => restored?.imperial ?? false);
+  const [manualDimensions, setManualDimensions] = useState(() => restored?.manualDimensions ?? false);
+  const [groundPreset, setGroundPreset] = useState<GroundPreset>(() => restored?.groundPreset ?? "average");
+  const [conductivity, setConductivity] = useState(() => restored?.conductivity ?? 0.005);
+  const [permittivity, setPermittivity] = useState(() => restored?.permittivity ?? 13);
   const [completed, setCompleted] = useState<{ key: string; result: TemplateSolverResult } | null>(null);
   const [running, setRunning] = useState(false);
   const [solverError, setSolverError] = useState<string | null>(null);
@@ -109,7 +113,7 @@ export function AntennaTemplateStudioPage() {
       <div className="mx-auto max-w-[1500px] space-y-5 px-3 py-5 sm:px-5">
         <header className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div><div className="mb-2 inline-flex rounded-full border border-violet-500/30 bg-violet-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-violet-500">Shared parametric framework · eight templates</div><h1 className="text-2xl font-bold">Antenna template studio</h1><p className="mt-1 max-w-3xl text-sm text-text-secondary">Every card below uses one SI model, validation path, segmentation policy, NEC adapter, solver service, and parameter interface.</p></div>
-          <div className="flex gap-2"><Button variant="secondary" size="sm" onClick={() => setImperial((value) => !value)} data-testid="template-units">{imperial ? "Imperial" : "Metric"}</Button><Button variant="secondary" size="sm" onClick={() => { setParametersSI(initialTemplateParameters(definition)); setManualDimensions(false); setCompleted(null); }}>Reset template</Button></div>
+          <div className="flex flex-wrap gap-2"><ProjectActions onSave={() => createModuleProject("antenna-templates", `${definition.name} template`, "/antenna-templates", { templateId, parametersSI, imperial, manualDimensions, groundPreset, conductivity, permittivity })} /><Button variant="secondary" size="sm" onClick={() => setImperial((value) => !value)} data-testid="template-units">{imperial ? "Imperial" : "Metric"}</Button><Button variant="secondary" size="sm" onClick={() => { setParametersSI(initialTemplateParameters(definition)); setManualDimensions(false); setCompleted(null); }}>Reset template</Button></div>
         </header>
 
         <section className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-8" aria-label="Antenna templates" data-testid="template-picker">

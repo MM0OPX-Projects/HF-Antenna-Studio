@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { downloadProject } from "../../utils/project-file";
 import type { ProjectFile } from "../../utils/project-file";
 import { useProjectSession } from "../../features/project-management/ProjectSessionProvider";
+import { useUIStore } from "../../stores/uiStore";
 
 interface ProjectActionsProps {
   /** Create a ProjectFile from current page state */
@@ -25,8 +26,19 @@ export function ProjectActions({ onSave, className = "" }: ProjectActionsProps) 
   const navigate = useNavigate();
   const session = useProjectSession();
 
+  const capture = useCallback((): ProjectFile => ({
+    ...onSave(),
+    conductor: { ...useUIStore.getState().conductor },
+    matching: { ...useUIStore.getState().matching },
+  }), [onSave]);
+
   const handleSave = useCallback(() => {
-    const model = onSave();
+    const model = capture();
+    if (model.mode === "module") {
+      session.saveExternal(model);
+      navigate("/projects");
+      return;
+    }
     if (!session.current || session.current.project.mode !== model.mode) {
       navigate("/projects");
       return;
@@ -36,15 +48,15 @@ export function ProjectActions({ onSave, className = "" }: ProjectActionsProps) 
     } catch {
       navigate("/projects");
     }
-  }, [navigate, onSave, session]);
+  }, [capture, navigate, session]);
 
   const handleOpenClick = useCallback(() => {
     navigate("/projects");
   }, [navigate]);
 
   const handleExport = useCallback(() => {
-    downloadProject(onSave());
-  }, [onSave]);
+    downloadProject(capture());
+  }, [capture]);
 
   // Keyboard shortcuts: Ctrl+S to save, Ctrl+O to open
   useEffect(() => {

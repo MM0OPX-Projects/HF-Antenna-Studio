@@ -50,13 +50,39 @@ export const verticalTemplate: AntennaTemplate = {
     {
       key: "radial_count",
       label: "Radials",
-      description: "Number of radial wires (2-8)",
+      description: "Number of explicit radial wires (2-128)",
       unit: "",
       min: 2,
-      max: 8,
+      max: 128,
       step: 1,
       defaultValue: 4,
       decimals: 0,
+    },
+    {
+      key: "radial_mode",
+      label: "Radial placement",
+      description: "Choose elevated radials or the near-surface NEC approximation used by the Wire Editor.",
+      unit: "",
+      min: 0,
+      max: 1,
+      step: 1,
+      defaultValue: 0,
+      decimals: 0,
+      options: [
+        { value: 0, label: "Elevated radials" },
+        { value: 1, label: "Near-surface radials" },
+      ],
+    },
+    {
+      key: "radial_length",
+      label: "Radial Length",
+      description: "Physical length of each radial wire.",
+      unit: "m",
+      min: 0.2,
+      max: 100,
+      step: 0.01,
+      defaultValue: 5.0,
+      decimals: 2,
     },
     {
       key: "radial_droop",
@@ -66,6 +92,30 @@ export const verticalTemplate: AntennaTemplate = {
       min: 0,
       max: 60,
       step: 5,
+      defaultValue: 0,
+      decimals: 0,
+      visibleWhen: (values) => (values.radial_mode ?? 0) === 0,
+    },
+    {
+      key: "radial_clearance",
+      label: "Near-surface clearance",
+      description: "Wire-axis clearance above soil; NEC cannot represent buried or exactly-on-ground wires.",
+      unit: "m",
+      min: 0.001,
+      max: 0.1,
+      step: 0.001,
+      defaultValue: 0.01,
+      decimals: 3,
+      visibleWhen: (values) => (values.radial_mode ?? 0) === 1,
+    },
+    {
+      key: "radial_rotation",
+      label: "Radial rotation",
+      description: "Compass rotation applied to the radial field.",
+      unit: "deg",
+      min: 0,
+      max: 360,
+      step: 1,
       defaultValue: 0,
       decimals: 0,
     },
@@ -96,17 +146,21 @@ export const verticalTemplate: AntennaTemplate = {
   generateGeometry(params: Record<string, number>): WireGeometry[] {
     const freq = params.frequency ?? 14.2;
     const radialCount = Math.round(params.radial_count ?? 4);
+    const radialMode = Math.round(params.radial_mode ?? 0);
     const radialDroopDeg = params.radial_droop ?? 0;
     const baseHeight = params.base_height ?? 0.5;
+    const radialClearance = Math.max(0.001, params.radial_clearance ?? 0.01);
+    const radialRotationDeg = params.radial_rotation ?? 0;
     const wireDiamMm = params.wire_diameter ?? 1.0;
 
     const wavelength = 300.0 / freq;
     const quarterWave = (wavelength / 4) * 0.95; // 5% shortening
+    const radialLength = params.radial_length ?? quarterWave;
+    const junctionHeight = radialMode === 1 ? radialClearance : baseHeight;
     const radius = (wireDiamMm / 1000) / 2;
 
     const maxFreq = freq * 1.15;
     const verticalSegs = autoSegment(quarterWave, maxFreq, 11);
-    const radialLength = quarterWave;
     const radialSegs = autoSegment(radialLength, maxFreq, 7);
 
     const wires: WireGeometry[] = [];
@@ -117,30 +171,31 @@ export const verticalTemplate: AntennaTemplate = {
       segments: verticalSegs,
       x1: 0,
       y1: 0,
-      z1: baseHeight,
+      z1: junctionHeight,
       x2: 0,
       y2: 0,
-      z2: baseHeight + quarterWave,
+      z2: junctionHeight + quarterWave,
       radius,
     });
 
     // Radials (tags 2, 3, 4, ...)
-    const droopRad = (radialDroopDeg * Math.PI) / 180;
+    const droopRad = (radialMode === 1 ? 0 : radialDroopDeg) * Math.PI / 180;
     const radialHorizLength = radialLength * Math.cos(droopRad);
     const radialVertDrop = radialLength * Math.sin(droopRad);
+    const rotationRad = radialRotationDeg * Math.PI / 180;
 
     for (let i = 0; i < radialCount; i++) {
-      const angle = (2 * Math.PI * i) / radialCount;
+      const angle = rotationRad + (2 * Math.PI * i) / radialCount;
       const endX = radialHorizLength * Math.cos(angle);
       const endY = radialHorizLength * Math.sin(angle);
-      const endZ = baseHeight - radialVertDrop;
+      const endZ = junctionHeight - radialVertDrop;
 
       wires.push({
         tag: i + 2,
         segments: radialSegs,
         x1: 0,
         y1: 0,
-        z1: baseHeight,
+        z1: junctionHeight,
         x2: endX,
         y2: endY,
         z2: endZ,
@@ -168,7 +223,8 @@ export const verticalTemplate: AntennaTemplate = {
     params: Record<string, number>,
     _wires: WireGeometry[]
   ): FeedpointData[] {
-    const baseHeight = params.base_height ?? 0.5;
+    const radialMode = Math.round(params.radial_mode ?? 0);
+    const baseHeight = radialMode === 1 ? Math.max(0.001, params.radial_clearance ?? 0.01) : (params.base_height ?? 0.5);
     return [{ position: [0, 0, baseHeight], wireTag: 1 }];
   },
 

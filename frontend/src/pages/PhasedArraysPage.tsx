@@ -16,6 +16,9 @@ import { usePhasedArrayCalculation } from "../features/phased-arrays/usePhasedAr
 import { computeSwr } from "../engine/parsers/nec-output";
 import { YagiSliderField } from "../features/yagi-beams/YagiSliderField";
 import { useUIStore } from "../stores/uiStore";
+import { ProjectActions } from "../components/ui/ProjectActions";
+import { createModuleProject } from "../utils/project-file";
+import { consumePendingModuleProject } from "../features/project-management/module-project-state";
 
 const TRACE_COLORS = ["#a855f7", "#14b8a6", "#eab308", "#f43f5e"];
 const BAND_PRESETS = [{ id: "40m", label: "40 m", hz: 7_100_000 }, { id: "20m", label: "20 m", hz: 14_100_000 }, { id: "15m", label: "15 m", hz: 21_200_000 }, { id: "10m", label: "10 m", hz: 28_400_000 }];
@@ -36,9 +39,10 @@ function NullableTermination({ label, value, testId, onChange }: { label: string
 }
 
 export function PhasedArraysPage() {
+  const [restored] = useState<{ model: PhasedArrayModel; displayMode?: PatternDisplayMode } | null>(() => consumePendingModuleProject("phased-arrays"));
   const conductor = useUIStore((state) => state.conductor);
-  const [model, setModel] = useState(() => startingPhasedArrayModel());
-  const [displayMode, setDisplayMode] = useState<PatternDisplayMode>("absolute");
+  const [model, setModel] = useState(() => restored?.model ?? startingPhasedArrayModel());
+  const [displayMode, setDisplayMode] = useState<PatternDisplayMode>(() => restored?.displayMode ?? "absolute");
   const [traces, setTraces] = useState<SavedPhasedTrace[]>([]);
   const [phaseSweep, setPhaseSweep] = useState(false);
   const generated = useMemo(() => generatePhasedArray(model), [model]);
@@ -100,7 +104,7 @@ export function PhasedArraysPage() {
   const lineMax = model.physical.lengthInput === "physical" ? 100 : model.physical.lengthInput === "electrical" ? 720 : 5000;
 
   return <div className="flex h-screen flex-col bg-background text-text-primary"><Navbar /><main className="min-h-0 flex-1 overflow-auto"><div className="mx-auto max-w-[1780px] p-4 lg:p-6">
-    <header className="mb-5 flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-500">Mutual-coupling laboratory</p><h1 className="mt-1 text-2xl font-bold">Two-element phased vertical arrays</h1><p className="mt-1 max-w-5xl text-sm text-text-secondary">Explore ideal enforced feed currents or an explicit lossless transmission-line network. These are separate NEC models and their controls, results, and claims remain visibly distinct.</p></div><div className="flex gap-2"><Button variant="secondary" size="sm" data-testid="phased-reset" onClick={() => { setModel(startingPhasedArrayModel()); setTraces([]); setPhaseSweep(false); }}>Reset</Button><Button size="sm" data-testid="phased-save-comparison" onClick={addTrace} disabled={!result || traces.length >= 4}>Save overlay ({traces.length}/4)</Button></div></header>
+    <header className="mb-5 flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-500">Mutual-coupling laboratory</p><h1 className="mt-1 text-2xl font-bold">Two-element phased vertical arrays</h1><p className="mt-1 max-w-5xl text-sm text-text-secondary">Explore ideal enforced feed currents or an explicit lossless transmission-line network. These are separate NEC models and their controls, results, and claims remain visibly distinct.</p></div><div className="flex gap-2"><ProjectActions onSave={() => createModuleProject("phased-arrays", "Phased vertical array", "/phased-arrays", { model, displayMode })} /><Button variant="secondary" size="sm" data-testid="phased-reset" onClick={() => { setModel(startingPhasedArrayModel()); setTraces([]); setPhaseSweep(false); }}>Reset</Button><Button size="sm" data-testid="phased-save-comparison" onClick={addTrace} disabled={!result || traces.length >= 4}>Save overlay ({traces.length}/4)</Button></div></header>
 
     <div className="grid gap-5 xl:grid-cols-[410px_minmax(0,1fr)]"><aside className="space-y-4">
       <Card className="p-4"><h2 className="text-sm font-semibold">Modelling mode</h2><div className="mt-3 grid gap-2"><button type="button" data-testid="phased-mode-ideal" onClick={() => setMode("ideal-current-phase")} className={`rounded-lg border p-3 text-left ${model.mode === "ideal-current-phase" ? "border-orange-500 bg-orange-500/10" : "border-border"}`}><span className="text-xs font-semibold">Mode 1 — ideal current / phase</span><span className="mt-1 block text-[10px] text-text-secondary">You prescribe relative feed currents. Two NEC calibration solves determine coupled-port voltages, then a final solve verifies the achieved currents.</span></button><button type="button" data-testid="phased-mode-physical" onClick={() => setMode("physical-feed-network")} className={`rounded-lg border p-3 text-left ${model.mode === "physical-feed-network" ? "border-fuchsia-500 bg-fuchsia-500/10" : "border-border"}`}><span className="text-xs font-semibold">Mode 2 — physical feed network</span><span className="mt-1 block text-[10px] text-text-secondary">One source drives ideal lossless NEC TL cards. Element current magnitude and phase are solved outputs—not requested settings.</span></button></div></Card>

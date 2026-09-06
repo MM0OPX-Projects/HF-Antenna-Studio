@@ -2,7 +2,7 @@
 
 HF Antenna Studio is a local, open-source antenna-modelling application for Windows 11. It combines an original HTML/TypeScript interface with a pinned nec2c/WebAssembly NEC-2 engine. Normal calculations, projects, and imported measurement data remain on the user's computer and require no cloud account.
 
-Version 1.0.0 is the first validation-bounded public release. It is engineering software, not a substitute for construction measurements or professional safety analysis.
+Version 1.0.2 is the current maintenance release. The numerical validation scope remains the documented v1.0.0 campaign. It is engineering software, not a substitute for construction measurements or professional safety analysis.
 
 ## Install HF Antenna Studio on Windows 11
 
@@ -10,7 +10,7 @@ Version 1.0.0 is the first validation-bounded public release. It is engineering 
 
 The installer is an Actions artifact rather than a file in the repository, so it will not appear in the **Code** file list. It is unsigned and may show a Windows SmartScreen warning. Verify the SHA-256 in the included `package-manifest.json` before installing. For the detailed install, offline, uninstall, log, and troubleshooting procedure, see [Installation and troubleshooting](docs/INSTALLATION.md).
 
-## What v1.0.0 provides
+## What the current release provides
 
 - Parametric dipole, vertical, loop/quad/hexbeam, Yagi, and two-element phased-array laboratories.
 - An arbitrary-wire editor with reviewed NEC import/export boundaries.
@@ -49,7 +49,7 @@ Not validated for v1.0.0 include finite Sommerfeld/Norton ground as an independe
 1. Open the [Windows package workflow](https://github.com/MM0OPX-Projects/HF-Antenna-Studio/actions?query=workflow%3A%22Windows+package%22+branch%3Afeature%2Fground-radial-integration), open the newest successful run, and download its `*-windows-x64-test` artifact. Extract the x64 setup executable, `package-manifest.json`, and corresponding-source ZIP.
 2. Verify the installer's SHA-256 against the manifest.
 3. Run the per-user installer and launch **HF Antenna Studio** from the Start menu.
-4. Open **About** and confirm version `1.0.0`.
+4. Open **About** and confirm version `1.0.2`.
 5. Open the verified dipole example and run one calculation before relying on a saved design.
 
 The current installer is unsigned, so Microsoft Defender SmartScreen may display an unknown-publisher warning. Do not install a file whose checksum does not match the release manifest. Windows 11 normally includes Evergreen WebView2; a stripped machine may need a connection while the small installer obtains that prerequisite. Once installed, normal calculations work offline.

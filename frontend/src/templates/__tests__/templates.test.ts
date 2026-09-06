@@ -149,4 +149,13 @@ describe("Parameter boundary tests", () => {
       }
     },
   );
+
+  it("ground-plane vertical supports 128 radials and editor-style near-surface placement", () => {
+    const template = getTemplate("vertical");
+    const params = { ...getDefaultParams(template), radial_count: 128, radial_mode: 1, radial_clearance: 0.01, radial_length: 5.25, radial_rotation: 17 };
+    const wires = template.generateGeometry(params);
+    expect(wires).toHaveLength(129);
+    expect(wires.slice(1).every((wire) => wire.z1 === 0.01 && wire.z2 === 0.01)).toBe(true);
+    expect(template.generateFeedpoints(params, wires)[0]?.position).toEqual([0, 0, 0.01]);
+  });
 });

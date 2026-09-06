@@ -13,6 +13,11 @@ import { runAnalyserSweep } from "../features/frequency-analyser/service";
 import type { AnalyserSweep, SweepConfig } from "../features/frequency-analyser/types";
 import type { SimulateAdvancedRequest } from "../engine/types";
 import { useAntennaStore } from "../stores/antennaStore";
+import { ProjectActions } from "../components/ui/ProjectActions";
+import { createModuleProject } from "../utils/project-file";
+import { consumePendingModuleProject } from "../features/project-management/module-project-state";
+import { getTemplate } from "../templates";
+import type { GroundConfig } from "../templates/types";
 
 const DEFAULT_CONFIG: SweepConfig = { mode: "start-stop", startMhz: 14, stopMhz: 14.35, points: 81, referenceOhms: 50 };
 const REASONS = [
@@ -33,18 +38,19 @@ function valueText(value: number | null, unit = "", digits = 3): string {
 }
 
 export function MeasurementComparisonPage() {
+  const [restored] = useState<{ templateId: string; params: Record<string, number>; ground: GroundConfig; measurement?: MeasurementDataset; config: SweepConfig; alignmentMode?: AlignmentMode; metric?: ComparisonMetric } | null>(() => consumePendingModuleProject("measurement-comparison"));
   const template = useAntennaStore((state) => state.template);
   const wires = useAntennaStore((state) => state.wireGeometry);
   const excitations = useAntennaStore((state) => state.excitations);
   const ground = useAntennaStore((state) => state.ground);
   const loads = useAntennaStore((state) => state.loads);
   const transmissionLines = useAntennaStore((state) => state.transmissionLines);
-  const [measurement, setMeasurement] = useState<MeasurementDataset | null>(null);
+  const [measurement, setMeasurement] = useState<MeasurementDataset | null>(() => restored?.measurement ?? null);
   const [simulation, setSimulation] = useState<AnalyserSweep | null>(null);
   const [simulationRequestKey, setSimulationRequestKey] = useState<string | null>(null);
-  const [config, setConfig] = useState<SweepConfig>(DEFAULT_CONFIG);
-  const [alignmentMode, setAlignmentMode] = useState<AlignmentMode>("linear-simulation");
-  const [metric, setMetric] = useState<ComparisonMetric>("swr");
+  const [config, setConfig] = useState<SweepConfig>(() => restored?.config ?? DEFAULT_CONFIG);
+  const [alignmentMode, setAlignmentMode] = useState<AlignmentMode>(() => restored?.alignmentMode ?? "linear-simulation");
+  const [metric, setMetric] = useState<ComparisonMetric>(() => restored?.metric ?? "swr");
   const [status, setStatus] = useState<"idle" | "running" | "success" | "cancelled" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
   const controllerRef = useRef<AbortController | null>(null);
@@ -65,6 +71,17 @@ export function MeasurementComparisonPage() {
   const simulationStale = simulation !== null && simulationRequestKey !== requestKey;
   const patternFrequencyMhz = simulation?.points.reduce((best, point) => point.swr < best.swr ? point : best, simulation.points[0]!).frequencyMhz ?? null;
   const measurementInsideHfRange = measurement ? measurement.points[0]!.frequencyMhz >= 1.8 && measurement.points[measurement.points.length - 1]!.frequencyMhz <= 54 && measurement.points.length >= 2 : false;
+
+  useEffect(() => {
+    if (!restored) return;
+    try {
+      useAntennaStore.getState().setTemplate(getTemplate(restored.templateId));
+      useAntennaStore.getState().setParams(restored.params);
+      useAntennaStore.getState().setGround(restored.ground);
+    } catch {
+      // Keep the current model if a future version removed the saved template.
+    }
+  }, [restored]);
 
   useEffect(() => () => controllerRef.current?.abort(), []);
 
@@ -124,7 +141,7 @@ export function MeasurementComparisonPage() {
   };
 
   return <main className="min-h-0 flex-1 overflow-y-auto bg-background px-4 py-5" data-testid="measurement-comparison-page"><div className="mx-auto max-w-[1500px] space-y-4">
-    <header className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">Measured vs modelled impedance</p><h1 className="text-2xl font-bold">Measurement Comparison</h1><p className="mt-1 max-w-4xl text-sm text-text-secondary">Overlay immutable Touchstone S11 measurements with a fresh impedance-only NEC sweep. Simulation and measurement remain separately labelled throughout.</p></div><div className="rounded border border-border bg-surface px-3 py-2 text-right text-xs"><strong>{template.name}</strong><div className="text-text-secondary">Current Simulator model · {wires.length} wires</div><Link to="/" className="text-accent hover:underline">Edit simulation model</Link></div></header>
+    <header className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">Measured vs modelled impedance</p><h1 className="text-2xl font-bold">Measurement Comparison</h1><p className="mt-1 max-w-4xl text-sm text-text-secondary">Overlay immutable Touchstone S11 measurements with a fresh impedance-only NEC sweep. Simulation and measurement remain separately labelled throughout.</p></div><div className="flex items-start gap-3"><ProjectActions onSave={() => createModuleProject("measurement-comparison", "Measurement comparison", "/measurement-comparison", { templateId: template.id, params: useAntennaStore.getState().params, ground, measurement, config, alignmentMode, metric })} /><div className="rounded border border-border bg-surface px-3 py-2 text-right text-xs"><strong>{template.name}</strong><div className="text-text-secondary">Current Simulator model · {wires.length} wires</div><Link to="/" className="text-accent hover:underline">Edit simulation model</Link></div></div></header>
 
     <div className="grid gap-4 xl:grid-cols-[350px_minmax(0,1fr)]"><aside className="space-y-4">
       <Card className="space-y-3 p-4"><div><h2 className="font-semibold">MEASUREMENT</h2><p className="mt-1 text-xs text-text-secondary">Touchstone .s1p only. The original UTF-8 source and every source line are retained unchanged.</p></div><label className="block rounded border border-dashed border-amber-500/60 bg-amber-500/5 p-3 text-xs"><span className="font-semibold text-amber-600">Import measured S11</span><input data-testid="measurement-file" className="mt-2 block w-full text-xs" type="file" accept=".s1p" onChange={(event) => void importFile(event.target.files?.[0])} /></label>{measurement && <div data-testid="measurement-summary" className="space-y-1 rounded border border-amber-500/30 p-3 text-xs"><strong className="break-all">{measurement.fileName}</strong><div>{measurement.points.length} original points · {measurement.touchstoneVersion} · {measurement.dataFormat}</div><div>Z₀ {measurement.referenceOhms} Ω · {(measurement.points[0]!.frequencyMhz).toFixed(6)}–{(measurement.points[measurement.points.length - 1]!.frequencyMhz).toFixed(6)} MHz</div><details><summary className="cursor-pointer text-amber-600">Original option line and source</summary><code className="mt-1 block break-all">{measurement.optionLine}</code><pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap rounded bg-background p-2 text-[10px]">{measurement.sourceText}</pre></details>{measurement.warnings.map((warning) => <p key={warning} className="text-amber-600">{warning}</p>)}</div>}<p className="text-[10px] leading-relaxed text-text-secondary">NanoVNA-Saver and NanoVNA-QT can export Touchstone. CSV import is intentionally rejected because NanoVNA applications use incompatible, sometimes display-derived column layouts.</p></Card>

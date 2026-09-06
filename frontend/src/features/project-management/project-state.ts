@@ -19,6 +19,8 @@ import { createDefaultSweepDefinition } from "../parameter-sweeps/model";
 import type { ParameterSweepDefinition } from "../parameter-sweeps/types";
 import { createDefaultOptimisationDefinition } from "../antenna-optimiser/model";
 import type { OptimisationDefinition } from "../antenna-optimiser/types";
+import { setPendingModuleProject } from "./module-project-state";
+import { moduleProjectDefinition } from "./module-project-catalog";
 
 export type ManagedProjectMode = ProjectFile["mode"];
 
@@ -47,6 +49,13 @@ export function routeForProjectMode(mode: ManagedProjectMode): string {
   return "/";
 }
 
+export function routeForProject(project: ProjectFile): string {
+  if (project.mode === "module" && project.module) {
+    return moduleProjectDefinition(project.module.moduleId)?.route ?? project.module.route;
+  }
+  return routeForProjectMode(project.mode);
+}
+
 export function projectModeForRoute(pathname: string): ManagedProjectMode {
   if (pathname.startsWith("/editor")) return "editor";
   if (pathname.startsWith("/model-comparison")) return "model-comparison";
@@ -61,13 +70,17 @@ export function isManagedProjectRoute(pathname: string): boolean {
 
 /** Capture only reproducibility inputs. Solver results are deliberately cache data. */
 export function captureProject(mode: ManagedProjectMode): ProjectFile {
-  const withConductor = (project: ProjectFile): ProjectFile => ({ ...project, conductor: { ...useUIStore.getState().conductor } });
-  if (mode === "model-comparison") return withConductor(createModelComparisonProject(comparisonWorkspace.definitions, comparisonWorkspace.conditions, comparisonWorkspace.sweep));
-  if (mode === "parameter-sweep") return withConductor(createParameterSweepProject(parameterSweepWorkspace));
-  if (mode === "antenna-optimiser") return withConductor(createAntennaOptimiserProject(optimiserWorkspace));
+  const withGlobalModelSettings = (project: ProjectFile): ProjectFile => ({
+    ...project,
+    conductor: { ...useUIStore.getState().conductor },
+    matching: { ...useUIStore.getState().matching },
+  });
+  if (mode === "model-comparison") return withGlobalModelSettings(createModelComparisonProject(comparisonWorkspace.definitions, comparisonWorkspace.conditions, comparisonWorkspace.sweep));
+  if (mode === "parameter-sweep") return withGlobalModelSettings(createParameterSweepProject(parameterSweepWorkspace));
+  if (mode === "antenna-optimiser") return withGlobalModelSettings(createAntennaOptimiserProject(optimiserWorkspace));
   if (mode === "editor") {
     const state = useEditorStore.getState();
-    return withConductor(createEditorProject(
+    return withGlobalModelSettings(createEditorProject(
       state.wires,
       state.excitations,
       state.loads,
@@ -86,7 +99,7 @@ export function captureProject(mode: ManagedProjectMode): ProjectFile {
   }
 
   const state = useAntennaStore.getState();
-  return withConductor(createSimulatorProject(
+  return withGlobalModelSettings(createSimulatorProject(
     state.template.id,
     state.params,
     state.ground,
@@ -96,9 +109,17 @@ export function captureProject(mode: ManagedProjectMode): ProjectFile {
   ));
 }
 
+/** Capture a managed store or preserve the exact envelope owned by a specialist page. */
+export function snapshotForSave(activeProject: ProjectFile | null, fallbackMode: ManagedProjectMode): ProjectFile {
+  return activeProject?.mode === "module"
+    ? structuredClone(activeProject)
+    : captureProject(fallbackMode);
+}
+
 export function restoreProject(project: ProjectFile): void {
   useSimulationStore.getState().reset();
   useUIStore.getState().setConductor(project.conductor);
+  useUIStore.getState().setMatching(project.matching);
   if (project.mode === "model-comparison") {
     if (!project.modelComparison) throw new Error("The model-comparison project has no comparison definition.");
     setComparisonWorkspace(project.modelComparison);
@@ -112,6 +133,11 @@ export function restoreProject(project: ProjectFile): void {
   if (project.mode === "antenna-optimiser") {
     if (!project.antennaOptimiser) throw new Error("The optimiser project has no optimisation definition.");
     setOptimiserWorkspace(project.antennaOptimiser.definition);
+    return;
+  }
+  if (project.mode === "module") {
+    if (!project.module) throw new Error("The module project has no module payload.");
+    setPendingModuleProject(project.module.moduleId, project.module.state);
     return;
   }
   if (project.mode === "simulator") {

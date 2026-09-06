@@ -21,6 +21,9 @@ import {
 import { useHeightLabCalculation } from "../features/height-lab/useHeightLabCalculation";
 import { wavelengthMetres } from "../features/verified-dipole/units";
 import { assessDipoleModel } from "../features/verified-dipole/validation";
+import { ProjectActions } from "../components/ui/ProjectActions";
+import { createModuleProject } from "../utils/project-file";
+import { consumePendingModuleProject } from "../features/project-management/module-project-state";
 
 const DEFAULT_FREQUENCY_MHZ = 14.1;
 const DEFAULT_HEIGHT_WAVELENGTHS = 0.5;
@@ -44,13 +47,14 @@ function groundLabel(id: GroundPresetId): string {
 }
 
 export function DipoleHeightLabPage() {
-  const [frequencyMhz, setFrequencyMhz] = useState(DEFAULT_FREQUENCY_MHZ);
-  const [heightWavelengths, setHeightWavelengths] = useState(DEFAULT_HEIGHT_WAVELENGTHS);
-  const [heightUnit, setHeightUnit] = useState<HeightUnit>("m");
-  const [groundPreset, setGroundPreset] = useState<GroundPresetId>("perfect");
-  const [conductivity, setConductivity] = useState(0.005);
-  const [permittivity, setPermittivity] = useState(13);
-  const [mode, setMode] = useState<PatternDisplayMode>("absolute");
+  const [restored] = useState<{ frequencyMhz: number; heightWavelengths: number; heightUnit?: HeightUnit; groundPreset: GroundPresetId; conductivity: number; permittivity: number; mode?: PatternDisplayMode } | null>(() => consumePendingModuleProject("dipole-height-lab"));
+  const [frequencyMhz, setFrequencyMhz] = useState(() => restored?.frequencyMhz ?? DEFAULT_FREQUENCY_MHZ);
+  const [heightWavelengths, setHeightWavelengths] = useState(() => restored?.heightWavelengths ?? DEFAULT_HEIGHT_WAVELENGTHS);
+  const [heightUnit, setHeightUnit] = useState<HeightUnit>(() => restored?.heightUnit ?? "m");
+  const [groundPreset, setGroundPreset] = useState<GroundPresetId>(() => restored?.groundPreset ?? "perfect");
+  const [conductivity, setConductivity] = useState(() => restored?.conductivity ?? 0.005);
+  const [permittivity, setPermittivity] = useState(() => restored?.permittivity ?? 13);
+  const [mode, setMode] = useState<PatternDisplayMode>(() => restored?.mode ?? "absolute");
   const [comparisons, setComparisons] = useState<HeightLabTrace[]>([]);
   const [sweeping, setSweeping] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
@@ -166,6 +170,7 @@ export function DipoleHeightLabPage() {
               <p className="mt-1 max-w-3xl text-sm text-text-secondary">Move a horizontal ½λ dipole between 0.05λ and 2λ. Geometry responds immediately; the real nec2c/Wasm pattern is calculated only after you pause.</p>
             </div>
             <div className="flex flex-wrap gap-2">
+              <ProjectActions onSave={() => createModuleProject("dipole-height-lab", "Dipole height laboratory", "/dipole-height-lab", { frequencyMhz, heightWavelengths, heightUnit, groundPreset, conductivity, permittivity, mode })} />
               <Button variant="secondary" size="sm" onClick={reset}>Reset</Button>
               <Button variant="secondary" size="sm" onClick={() => exportHeightTracesCsv(plotLegend)} disabled={plotLegend.length === 0} data-testid="export-csv">Export CSV</Button>
               <Button variant="secondary" size="sm" onClick={async () => {

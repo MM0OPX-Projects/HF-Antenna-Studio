@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-09-06
+
+### Fixed
+
+- Corrected Save As so phased arrays and every specialist laboratory retain their exact module state instead of being recaptured as an unrelated Design project.
+- Corrected Loops & Hexbeam reopen routing, including compatibility routing for locally saved projects containing the former route.
+- Preserved conductor material, balun/unun ratio and feedline reference impedance across Save, Save As, export and reopen.
+- Added project controls and exact input restoration to the Verified Dipole workflow.
+- Replaced generic specialist-project labelling with the correct laboratory family and removed duplicate changelog render identifiers.
+
+### Added
+
+- Added schema-v10 `.hfas` projects with safe migrations for specialist-module envelopes and explicit matching configuration.
+- Added browser round-trip coverage across Design, Wire Editor, comparison, sweeps, optimiser and all registered specialist antenna laboratories.
+- Expanded vertical and Wire Editor ground-radial controls and validation, including up to 128 radials and actionable ground-intersection diagnostics.
+
 ## [1.0.1] - 2026-09-05
 
 ### Fixed

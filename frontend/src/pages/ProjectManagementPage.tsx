@@ -2,6 +2,7 @@ import { useRef, useState, type ChangeEvent } from "react";
 import { Navbar } from "../components/layout/Navbar";
 import { useProjectSession, type PendingProjectImport } from "../features/project-management/ProjectSessionProvider";
 import type { LocalProjectRecord } from "../features/project-management/local-project-library";
+import { moduleProjectDefinition } from "../features/project-management/module-project-catalog";
 
 function formatDate(value: string): string {
   const date = new Date(value);
@@ -9,12 +10,18 @@ function formatDate(value: string): string {
 }
 
 function modeLabel(record: LocalProjectRecord): string {
+  if (record.project.mode === "module") {
+    const module = record.project.module;
+    const family = module ? moduleProjectDefinition(module.moduleId)?.label : null;
+    return family ?? module?.title ?? "Specialist Module";
+  }
   const labels: Record<LocalProjectRecord["project"]["mode"], string> = {
     simulator: "Template Simulator",
     editor: "Wire Editor",
     "model-comparison": "Model Comparison",
     "parameter-sweep": "Parameter Sweep",
     "antenna-optimiser": "Antenna Optimiser",
+    module: "Specialist Module",
   };
   return labels[record.project.mode];
 }

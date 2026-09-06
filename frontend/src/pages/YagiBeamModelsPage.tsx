@@ -13,6 +13,9 @@ import { YagiCurrentPlot } from "../features/yagi-beams/YagiCurrentPlot";
 import { YagiGeometry3D } from "../features/yagi-beams/YagiGeometry3D";
 import { YagiSliderField } from "../features/yagi-beams/YagiSliderField";
 import { useUIStore } from "../stores/uiStore";
+import { ProjectActions } from "../components/ui/ProjectActions";
+import { createModuleProject } from "../utils/project-file";
+import { consumePendingModuleProject } from "../features/project-management/module-project-state";
 
 const TRACE_COLORS = ["#a855f7", "#14b8a6", "#eab308", "#f43f5e"];
 
@@ -27,9 +30,10 @@ function statusText(phase: string): string {
 }
 
 export function YagiBeamModelsPage() {
+  const [restored] = useState<{ model: YagiAntennaModel; mode?: PatternDisplayMode } | null>(() => consumePendingModuleProject("yagi-beams"));
   const conductor = useUIStore((state) => state.conductor);
-  const [model, setModel] = useState(() => startingYagiModel());
-  const [mode, setMode] = useState<PatternDisplayMode>("absolute");
+  const [model, setModel] = useState(() => restored?.model ?? startingYagiModel());
+  const [mode, setMode] = useState<PatternDisplayMode>(() => restored?.mode ?? "absolute");
   const [traces, setTraces] = useState<SavedYagiTrace[]>([]);
   const generated = useMemo(() => generateYagiModel(model), [model]);
   const key = useMemo(() => yagiModelKey(model), [conductor, model]);
@@ -60,7 +64,7 @@ export function YagiBeamModelsPage() {
   const elevationSeries: PolarSeries[] = [...traces.map((trace) => ({ id: trace.id, label: trace.label, color: trace.color, points: trace.result.elevationPattern })), ...(result ? [{ id: "current", label: "Current model", color: "#f97316", points: result.elevationPattern, current: true }] : [])];
 
   return <div className="flex h-screen flex-col bg-background text-text-primary"><Navbar /><main className="min-h-0 flex-1 overflow-auto"><div className="mx-auto max-w-[1700px] p-4 lg:p-6">
-    <header className="mb-5 flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-500">Directional antenna laboratory</p><h1 className="mt-1 text-2xl font-bold">Parametric Yagi beam models</h1><p className="mt-1 max-w-4xl text-sm text-text-secondary">A dedicated typed model maps exact element dimensions to NEC-2. The gray boom is visual only; the conducting elements, source, ground, and displayed deck are the solved model.</p></div><div className="flex gap-2"><Button variant="secondary" size="sm" data-testid="yagi-reset" onClick={() => { setModel(startingYagiModel()); setTraces([]); }}>Reset</Button><Button size="sm" data-testid="yagi-save-comparison" onClick={addTrace} disabled={!result || traces.length >= 4}>Save comparison ({traces.length}/4)</Button></div></header>
+    <header className="mb-5 flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-500">Directional antenna laboratory</p><h1 className="mt-1 text-2xl font-bold">Parametric Yagi beam models</h1><p className="mt-1 max-w-4xl text-sm text-text-secondary">A dedicated typed model maps exact element dimensions to NEC-2. The gray boom is visual only; the conducting elements, source, ground, and displayed deck are the solved model.</p></div><div className="flex gap-2"><ProjectActions onSave={() => createModuleProject("yagi-beams", "Yagi beam model", "/yagi-beams", { model, mode })} /><Button variant="secondary" size="sm" data-testid="yagi-reset" onClick={() => { setModel(startingYagiModel()); setTraces([]); }}>Reset</Button><Button size="sm" data-testid="yagi-save-comparison" onClick={addTrace} disabled={!result || traces.length >= 4}>Save comparison ({traces.length}/4)</Button></div></header>
 
     <div className="grid gap-5 xl:grid-cols-[390px_minmax(0,1fr)]"><aside className="space-y-4"><Card className="p-4"><h2 className="text-sm font-semibold">Array configuration</h2><div className="mt-3 grid grid-cols-3 gap-2">{[2, 3, 5].map((elements) => <button key={elements} type="button" data-testid={`yagi-preset-${elements}`} onClick={() => selectElements(elements)} className={`rounded border px-2 py-2 text-xs ${model.directors.length + 2 === elements ? "border-orange-500 bg-orange-500/10 text-orange-500" : "border-border"}`}>{elements}-element</button>)}</div><label className="mt-3 block text-xs font-medium" htmlFor="yagi-director-count">Configurable directors</label><div className="mt-1 flex items-center gap-2"><input id="yagi-director-count" data-testid="yagi-director-count" type="number" min="0" max="6" step="1" value={model.directors.length} onChange={(event) => setModel((current) => resizeYagi(current, Number(event.target.value)))} className="w-24 rounded border border-border bg-background px-2 py-1 text-right font-mono text-xs" /><input type="range" aria-label="Number of directors" data-testid="yagi-director-count-slider" min="0" max="6" step="1" value={model.directors.length} onChange={(event) => setModel((current) => resizeYagi(current, Number(event.target.value)))} className="min-w-0 flex-1 accent-orange-500" /></div><p className="mt-2 text-[10px] text-text-secondary">0 directors = 2-element; 1 = 3-element; 2–6 = configurable multi-element.</p></Card>
 

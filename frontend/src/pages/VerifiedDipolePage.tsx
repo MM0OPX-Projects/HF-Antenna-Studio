@@ -16,8 +16,22 @@ import type { EditorModelTransfer } from "../features/model-transfer/types";
 import { TransferReviewDialog } from "../components/model-transfer/TransferReviewDialog";
 import { useEditorStore } from "../stores/editorStore";
 import { useUIStore } from "../stores/uiStore";
+import { ProjectActions } from "../components/ui/ProjectActions";
+import { createModuleProject } from "../utils/project-file";
+import { consumePendingModuleProject } from "../features/project-management/module-project-state";
 
 interface DimensionValue { value: number; unit: LengthUnit }
+
+interface VerifiedDipoleProjectState {
+  frequencyMhz: number;
+  length: DimensionValue;
+  diameter: DimensionValue;
+  height: DimensionValue;
+  groundKind: DipoleGround["kind"];
+  conductivity: number;
+  permittivity: number;
+  referenceOhm: 50 | 75;
+}
 
 const UNIT_LABELS: Record<LengthUnit, string> = { m: "metres", mm: "millimetres", ft: "feet", in: "inches" };
 
@@ -49,18 +63,19 @@ function formatSigned(value: number): string {
 }
 
 export function VerifiedDipolePage() {
+  const [restored] = useState<VerifiedDipoleProjectState | null>(() => consumePendingModuleProject("verified-dipole"));
   const navigate = useNavigate();
   const applyModelTransfer = useEditorStore((state) => state.applyModelTransfer);
   const setMatching = useUIStore((state) => state.setMatching);
   const conductor = useUIStore((state) => state.conductor);
-  const [frequencyMhz, setFrequencyMhz] = useState(14.1);
-  const [length, setLength] = useState<DimensionValue>({ value: 10.15, unit: "m" });
-  const [diameter, setDiameter] = useState<DimensionValue>({ value: 1, unit: "mm" });
-  const [height, setHeight] = useState<DimensionValue>({ value: 10, unit: "m" });
-  const [groundKind, setGroundKind] = useState<DipoleGround["kind"]>("perfect");
-  const [conductivity, setConductivity] = useState(0.005);
-  const [permittivity, setPermittivity] = useState(13);
-  const [referenceOhm, setReferenceOhm] = useState<50 | 75>(50);
+  const [frequencyMhz, setFrequencyMhz] = useState(() => restored?.frequencyMhz ?? 14.1);
+  const [length, setLength] = useState<DimensionValue>(() => restored?.length ?? { value: 10.15, unit: "m" });
+  const [diameter, setDiameter] = useState<DimensionValue>(() => restored?.diameter ?? { value: 1, unit: "mm" });
+  const [height, setHeight] = useState<DimensionValue>(() => restored?.height ?? { value: 10, unit: "m" });
+  const [groundKind, setGroundKind] = useState<DipoleGround["kind"]>(() => restored?.groundKind ?? "perfect");
+  const [conductivity, setConductivity] = useState(() => restored?.conductivity ?? 0.005);
+  const [permittivity, setPermittivity] = useState(() => restored?.permittivity ?? 13);
+  const [referenceOhm, setReferenceOhm] = useState<50 | 75>(() => restored?.referenceOhm ?? 50);
   const [completedRun, setCompletedRun] = useState<{ modelKey: string; result: VerifiedDipoleResult } | null>(null);
   const [failedRun, setFailedRun] = useState<{ modelKey: string; message: string } | null>(null);
   const [running, setRunning] = useState(false);
@@ -118,8 +133,11 @@ export function VerifiedDipolePage() {
               <h1 className="text-2xl font-bold text-text-primary">Centre-fed horizontal dipole</h1>
               <p className="mt-1 max-w-3xl text-sm text-text-secondary">One traceable path from SI parameters to the exact NEC deck, local nec2c/WASM solve, validated result model, and plots. No design leaves this browser.</p>
             </div>
-            <div className="flex flex-wrap gap-2 text-[11px] font-mono text-text-secondary">
-              {['Parameters', 'SI model', 'NEC adapter', 'nec2c', 'Parser', 'Validated UI'].map((step, index) => <span key={step} className="rounded border border-border bg-surface px-2 py-1"><b className="text-accent">{index + 1}</b> {step}</span>)}
+            <div className="flex flex-col items-start gap-2 lg:items-end">
+              <ProjectActions onSave={() => createModuleProject("verified-dipole", "Verified centre-fed dipole", "/verified-dipole", { frequencyMhz, length, diameter, height, groundKind, conductivity, permittivity, referenceOhm } satisfies VerifiedDipoleProjectState)} />
+              <div className="flex flex-wrap gap-2 text-[11px] font-mono text-text-secondary">
+                {['Parameters', 'SI model', 'NEC adapter', 'nec2c', 'Parser', 'Validated UI'].map((step, index) => <span key={step} className="rounded border border-border bg-surface px-2 py-1"><b className="text-accent">{index + 1}</b> {step}</span>)}
+              </div>
             </div>
           </header>
 

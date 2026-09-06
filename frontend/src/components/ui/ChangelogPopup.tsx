@@ -189,10 +189,10 @@ export function ChangelogPopup() {
           <div className="space-y-2">
             {CHANGELOG_ENTRIES.map((entry, index) => {
               const expanded = expandedVersions.has(entry.version);
-              const panelId = `changelog-version-${entry.version.replace(/[^a-zA-Z0-9]/g, "-")}`;
+              const panelId = `changelog-version-${entry.version.replace(/[^a-zA-Z0-9]/g, "-")}-${index}`;
               return (
                 <article
-                  key={entry.version}
+                  key={`${entry.version}-${index}`}
                   className="overflow-hidden rounded-lg border border-border bg-background/35"
                 >
                   <button

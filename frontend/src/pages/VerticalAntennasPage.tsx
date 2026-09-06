@@ -12,6 +12,9 @@ import { VerticalCurrentPlot } from "../features/vertical-antennas/VerticalCurre
 import { VerticalGeometry3D } from "../features/vertical-antennas/VerticalGeometry3D";
 import { VerticalSliderField } from "../features/vertical-antennas/VerticalSliderField";
 import { useUIStore } from "../stores/uiStore";
+import { ProjectActions } from "../components/ui/ProjectActions";
+import { createModuleProject } from "../utils/project-file";
+import { consumePendingModuleProject } from "../features/project-management/module-project-state";
 
 const METRES_PER_FOOT = 0.3048;
 const METRES_PER_INCH = 0.0254;
@@ -25,10 +28,11 @@ const MODE_INFO: Record<VerticalConfiguration, { title: string; description: str
 function signedReactance(value: number): string { return `${value >= 0 ? "+" : "−"} j${Math.abs(value).toFixed(2)}`; }
 
 export function VerticalAntennasPage() {
+  const [restored] = useState<{ model: VerticalAntennaModel; imperial?: boolean; patternMode?: "absolute" | "normalised" } | null>(() => consumePendingModuleProject("vertical-antennas"));
   const conductor = useUIStore((state) => state.conductor);
-  const [model, setModel] = useState<VerticalAntennaModel>(() => startingVerticalModel());
-  const [imperial, setImperial] = useState(false);
-  const [patternMode, setPatternMode] = useState<"absolute" | "normalised">("absolute");
+  const [model, setModel] = useState<VerticalAntennaModel>(() => restored?.model ?? startingVerticalModel());
+  const [imperial, setImperial] = useState(() => restored?.imperial ?? false);
+  const [patternMode, setPatternMode] = useState<"absolute" | "normalised">(() => restored?.patternMode ?? "absolute");
   const [running, setRunning] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
   const [completed, setCompleted] = useState<{ key: string; result: VerticalSolverResult } | null>(null);
@@ -94,7 +98,7 @@ export function VerticalAntennasPage() {
   const elevationSeries = result ? [{ id: "vertical-current", label: "Current model", color: "#8b5cf6", points: result.elevationPattern, current: true }] : [];
   const azimuthSeries = result ? [{ id: "vertical-current", label: "Current model", color: "#22d3ee", points: result.azimuthPattern, pattern: result.radiationPattern, current: true }] : [];
   return <div className="flex h-dvh flex-col bg-background"><Navbar /><main className="flex-1 overflow-y-auto"><div className="mx-auto max-w-[1540px] space-y-5 px-3 py-5 sm:px-5">
-    <header className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between"><div><div className="mb-2 inline-flex rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-emerald-500">Ground-aware NEC vertical laboratory</div><h1 className="text-2xl font-bold">Vertical antennas</h1><p className="mt-1 max-w-3xl text-sm text-text-secondary">Model the radiator, radial geometry, and ground assumption explicitly. These modes are intentionally not interchangeable.</p></div><div className="flex gap-2"><Button variant="secondary" size="sm" onClick={() => setImperial((value) => !value)} data-testid="vertical-units">{imperial ? "Imperial" : "Metric"}</Button><Button variant="secondary" size="sm" onClick={() => applyModel(startingVerticalModel(model.frequencyHz, model.configuration))}>Reset model</Button></div></header>
+    <header className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between"><div><div className="mb-2 inline-flex rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-emerald-500">Ground-aware NEC vertical laboratory</div><h1 className="text-2xl font-bold">Vertical antennas</h1><p className="mt-1 max-w-3xl text-sm text-text-secondary">Model the radiator, radial geometry, and ground assumption explicitly. These modes are intentionally not interchangeable.</p></div><div className="flex flex-wrap gap-2"><ProjectActions onSave={() => createModuleProject("vertical-antennas", "Vertical antenna model", "/vertical-antennas", { model, imperial, patternMode })} /><Button variant="secondary" size="sm" onClick={() => setImperial((value) => !value)} data-testid="vertical-units">{imperial ? "Imperial" : "Metric"}</Button><Button variant="secondary" size="sm" onClick={() => applyModel(startingVerticalModel(model.frequencyHz, model.configuration))}>Reset model</Button></div></header>
 
     <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4" aria-label="Vertical model configuration">{(Object.keys(MODE_INFO) as VerticalConfiguration[]).map((configuration) => { const info = MODE_INFO[configuration]; const selected = model.configuration === configuration; return <button type="button" key={configuration} data-testid={`vertical-mode-${configuration}`} aria-pressed={selected} onClick={() => applyModel(switchVerticalConfiguration(model, configuration))} className={`rounded-lg border p-4 text-left transition-colors ${selected ? "border-emerald-500 bg-emerald-500/10" : "border-border bg-surface hover:border-emerald-500/50"}`}><span className="block text-sm font-semibold">{info.title}</span><span className="mt-1 block text-[11px] leading-relaxed text-text-secondary">{info.description}</span><span className="mt-3 inline-block rounded-full bg-background px-2 py-1 text-[9px] font-semibold text-emerald-500">{info.badge}</span></button>; })}</section>
 

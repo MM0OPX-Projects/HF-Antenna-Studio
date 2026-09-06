@@ -11,6 +11,11 @@ import { centerSpanToStartStop, deriveAnalyserPoints, nearestPointIndex, startSt
 import { runAnalyserSweep } from "../features/frequency-analyser/service";
 import { exportAnalyserCsv, exportAnalyserProject, exportChartPng } from "../features/frequency-analyser/exports";
 import type { AnalyserSweep, SweepConfig, SweepEntryMode } from "../features/frequency-analyser/types";
+import { ProjectActions } from "../components/ui/ProjectActions";
+import { createModuleProject } from "../utils/project-file";
+import { consumePendingModuleProject } from "../features/project-management/module-project-state";
+import { getTemplate } from "../templates";
+import type { GroundConfig } from "../templates/types";
 
 const DEFAULT_CONFIG: SweepConfig = { mode: "start-stop", startMhz: 14, stopMhz: 14.35, points: 81, referenceOhms: 50 };
 const METRICS: Array<{ id: AnalyserMetric; label: string }> = [
@@ -27,24 +32,36 @@ function NumericInput({ label, value, onChange, min, max, step = "any", testId }
 }
 
 export function FrequencyAnalyserPage() {
+  const [restored] = useState<{ templateId: string; params: Record<string, number>; ground: GroundConfig; config: SweepConfig; metric?: AnalyserMetric; showSmith?: boolean } | null>(() => consumePendingModuleProject("frequency-analyser"));
   const template = useAntennaStore((state) => state.template);
   const wires = useAntennaStore((state) => state.wireGeometry);
   const excitations = useAntennaStore((state) => state.excitations);
   const ground = useAntennaStore((state) => state.ground);
   const loads = useAntennaStore((state) => state.loads);
   const transmissionLines = useAntennaStore((state) => state.transmissionLines);
-  const [config, setConfig] = useState<SweepConfig>(DEFAULT_CONFIG);
-  const [metric, setMetric] = useState<AnalyserMetric>("swr");
+  const [config, setConfig] = useState<SweepConfig>(() => restored?.config ?? DEFAULT_CONFIG);
+  const [metric, setMetric] = useState<AnalyserMetric>(() => restored?.metric ?? "swr");
   const [activeSweep, setActiveSweep] = useState<AnalyserSweep | null>(null);
   const [savedSweeps, setSavedSweeps] = useState<AnalyserSweep[]>([]);
   const [cursorIndex, setCursorIndex] = useState(0);
-  const [showSmith, setShowSmith] = useState(false);
+  const [showSmith, setShowSmith] = useState(() => restored?.showSmith ?? false);
   const [status, setStatus] = useState<"idle" | "running" | "success" | "cancelled" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
   const [exportError, setExportError] = useState<string | null>(null);
   const controllerRef = useRef<AbortController | null>(null);
   const jobRef = useRef(0);
   const chartRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!restored) return;
+    try {
+      useAntennaStore.getState().setTemplate(getTemplate(restored.templateId));
+      useAntennaStore.getState().setParams(restored.params);
+      useAntennaStore.getState().setGround(restored.ground);
+    } catch {
+      // Keep the current model if a future version removed the saved template.
+    }
+  }, [restored]);
 
   const antennaSnapshot = useMemo<SimulateAdvancedRequest>(() => ({
     wires, excitations, ground,
@@ -127,7 +144,7 @@ export function FrequencyAnalyserPage() {
       <div className="mx-auto max-w-[1500px] space-y-4">
         <header className="flex flex-wrap items-start justify-between gap-3">
           <div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">Virtual antenna analyser</p><h1 className="text-2xl font-bold text-text-primary">Frequency Analyser</h1><p className="mt-1 max-w-3xl text-sm text-text-secondary">One impedance-only NEC batch runs off the main UI thread. SWR, return loss and reflection coefficient are derived from solved complex impedance at the selected reference impedance.</p></div>
-          <div className="rounded-md border border-border bg-surface px-3 py-2 text-right"><div className="text-[10px] uppercase text-text-secondary">Antenna under test</div><div className="text-sm font-semibold text-text-primary">{template.name}</div><div className="text-[10px] text-text-secondary">Current Simulator model · {wires.length} wires · {wires.reduce((sum, wire) => sum + wire.segments, 0)} segments</div><Link className="text-[10px] text-accent hover:underline" to="/">Edit in Simulator</Link></div>
+          <div className="flex items-start gap-3"><ProjectActions onSave={() => createModuleProject("frequency-analyser", `${template.name} frequency sweep`, "/frequency-analyser", { templateId: template.id, params: useAntennaStore.getState().params, ground, config, metric, showSmith })} /><div className="rounded-md border border-border bg-surface px-3 py-2 text-right"><div className="text-[10px] uppercase text-text-secondary">Antenna under test</div><div className="text-sm font-semibold text-text-primary">{template.name}</div><div className="text-[10px] text-text-secondary">Current Simulator model · {wires.length} wires · {wires.reduce((sum, wire) => sum + wire.segments, 0)} segments</div><Link className="text-[10px] text-accent hover:underline" to="/">Edit in Simulator</Link></div></div>
         </header>
 
         <div className="grid gap-4 xl:grid-cols-[330px_minmax(0,1fr)]">

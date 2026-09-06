@@ -80,6 +80,7 @@ export function BalunEditor({ matching, onChange }: BalunEditorProps) {
         Matching
       </h3>
       <select
+        aria-label="Matching network preset"
         value={isCustom ? "custom" : String(currentPresetIndex)}
         onChange={handlePresetChange}
         className="w-full bg-background border border-border rounded-md px-2.5 py-1.5

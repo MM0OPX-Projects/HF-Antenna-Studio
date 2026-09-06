@@ -1,10 +1,11 @@
 import { useAntennaStore } from "../../../stores/antennaStore";
 import { useEditorStore } from "../../../stores/editorStore";
-import { createAntennaOptimiserProject, createEditorProject, createModelComparisonProject, createParameterSweepProject, createSimulatorProject } from "../../../utils/project-file";
+import { createAntennaOptimiserProject, createEditorProject, createModelComparisonProject, createModuleProject, createParameterSweepProject, createSimulatorProject } from "../../../utils/project-file";
 import { clonePreset, createDefaultComparisonConditions, createDefaultComparisonSweep } from "../../model-comparison/model";
 import { createDefaultSweepDefinition } from "../../parameter-sweeps/model";
 import { createDefaultOptimisationDefinition } from "../../antenna-optimiser/model";
-import { captureProject, projectModeForRoute, restoreProject, routeForProjectMode } from "../project-state";
+import { captureProject, projectModeForRoute, restoreProject, routeForProject, routeForProjectMode, snapshotForSave } from "../project-state";
+import { consumePendingModuleProject } from "../module-project-state";
 
 describe("managed project state", () => {
   const originalSimulator = captureProject("simulator");
@@ -101,5 +102,33 @@ describe("managed project state", () => {
     optimiser.objective.weights = { ...optimiser.objective.weights, swr: 0, resistance: 0, reactance: 0 };
     restoreProject(createAntennaOptimiserProject(optimiser));
     expect(captureProject("antenna-optimiser").antennaOptimiser?.definition).toMatchObject({ family: "phased-array", radialSystems: { phasedMode: "near-surface-shared", phasedRadialCount: 20 } });
+  });
+
+  it("round-trips specialist state and uses the canonical route", () => {
+    const state = { model: { spacingM: 7.92, ideal: { phase2Deg: 79 } }, displayMode: "absolute" };
+    const project = createModuleProject("phased-arrays", "40 m phased verticals", "/wrong-old-route", state);
+
+    restoreProject(project);
+
+    expect(consumePendingModuleProject("phased-arrays")).toEqual(state);
+    expect(routeForProject(project)).toBe("/phased-arrays");
+  });
+
+  it("keeps the complete specialist envelope when Save or Save As takes a snapshot", () => {
+    const moduleProject = createModuleProject("phased-arrays", "40 m phased verticals", "/phased-arrays", {
+      model: { spacingM: 7.92, ideal: { amplitude1: 1, amplitude2: 0.83, phase1Deg: 0, phase2Deg: 79 } },
+    });
+
+    const snapshot = snapshotForSave(moduleProject, "simulator");
+
+    expect(snapshot).toEqual(moduleProject);
+    expect(snapshot).not.toBe(moduleProject);
+    expect(snapshot.module?.state).not.toBe(moduleProject.module?.state);
+    expect(snapshot.mode).toBe("module");
+  });
+
+  it("repairs the historical loop-module reopen route", () => {
+    const legacyRouteProject = createModuleProject("loop-beams", "Classic G3TXQ hexbeam", "/loop-beams", { model: { family: "hexbeam" } });
+    expect(routeForProject(legacyRouteProject)).toBe("/loop-and-hexbeam-models");
   });
 });

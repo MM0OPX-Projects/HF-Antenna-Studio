@@ -19,13 +19,14 @@ import type { EditorRadialSystem } from "../features/wire-editor/radial-system";
 import type { ModelTransferProvenance } from "../features/model-transfer/types";
 import { cloneModelTransferProvenance } from "../features/model-transfer/types";
 import { DEFAULT_CONDUCTOR, LEGACY_CONDUCTOR, validateConductor, type ConductorMaterial } from "../engine/conductor";
+import { DEFAULT_MATCHING, type MatchingConfig } from "./units";
 
 // ---------------------------------------------------------------------------
 // Schema
 // ---------------------------------------------------------------------------
 
 /** Current schema version. Increment when the format changes. */
-export const PROJECT_SCHEMA_VERSION = 8;
+export const PROJECT_SCHEMA_VERSION = 10;
 
 /** File extension (without dot) */
 export const PROJECT_FILE_EXTENSION = "hfas";
@@ -52,9 +53,11 @@ export interface ProjectFile {
   /** ISO 8601 creation timestamp */
   created_at: string;
   /** Which mode the project was saved from */
-  mode: "simulator" | "editor" | "model-comparison" | "parameter-sweep" | "antenna-optimiser";
+  mode: "simulator" | "editor" | "model-comparison" | "parameter-sweep" | "antenna-optimiser" | "module";
   /** Global antenna-wire material used for NEC conductor loss. */
   conductor: ConductorMaterial;
+  /** Feedline reference and ideal balun/unun transformation used by displayed impedance and SWR. */
+  matching: MatchingConfig;
 
   /** Simulator mode state */
   simulator?: {
@@ -98,6 +101,8 @@ export interface ProjectFile {
 
   parameterSweep?: { definition: ParameterSweepDefinition };
   antennaOptimiser?: { definition: OptimisationDefinition };
+  /** Parametric specialist-module state. The module owns the payload schema. */
+  module?: { moduleId: string; title: string; route: string; state: unknown };
 
   /** Cached simulation result (optional — can be large) */
   result?: SimulationResult | null;
@@ -126,6 +131,9 @@ function validateCurrentProjectFile(data: unknown): ProjectFile {
   if (!isRecord(obj.conductor) || typeof obj.conductor.id !== "string" || !validateConductor(obj.conductor as unknown as ConductorMaterial)) {
     throw new Error("Invalid project file: conductor material is missing or invalid");
   }
+  if (!isRecord(obj.matching) || !["none", "balun", "unun"].includes(String(obj.matching.type)) || !finiteNumber(obj.matching.ratio) || obj.matching.ratio <= 0 || !finiteNumber(obj.matching.feedlineZ0) || obj.matching.feedlineZ0 <= 0) {
+    throw new Error("Invalid project file: matching configuration is missing or invalid");
+  }
   const validGround = (value: unknown): boolean => isRecord(value) && (value.kind === "perfect" || (value.kind === "sommerfeld-norton" && finiteNumber(value.conductivitySPerM) && finiteNumber(value.relativePermittivity)));
   const hasRadialSchema = (value: unknown): boolean => {
     if (!isRecord(value) || value.schemaVersion !== 1) return false;
@@ -142,8 +150,8 @@ function validateCurrentProjectFile(data: unknown): ProjectFile {
       `Project file version ${obj.version} is newer than supported (${PROJECT_SCHEMA_VERSION}). Please update HF Antenna Studio.`,
     );
   }
-  if (!(["simulator", "editor", "model-comparison", "parameter-sweep", "antenna-optimiser"] as const).includes(obj.mode as ProjectFile["mode"])) {
-    throw new Error("Invalid project file: 'mode' must be one of simulator, editor, model-comparison, parameter-sweep, or antenna-optimiser");
+  if (!(["simulator", "editor", "model-comparison", "parameter-sweep", "antenna-optimiser", "module"] as const).includes(obj.mode as ProjectFile["mode"])) {
+    throw new Error("Invalid project file: 'mode' must be one of simulator, editor, model-comparison, parameter-sweep, antenna-optimiser, or module");
   }
 
   if (obj.mode === "simulator") {
@@ -300,6 +308,12 @@ function validateCurrentProjectFile(data: unknown): ProjectFile {
     if (!definition || definition.schemaVersion !== 2 || !allowedFamilies.has(String(definition.family)) || !finiteNumber(definition.frequencyMhz) || !validGround(definition.ground) || !hasRadialSchema(definition.radialSystems) || (definition.referenceImpedanceOhm !== 50 && definition.referenceImpedanceOhm !== 75) || !variablesValid || !objectiveValid || !constraintsValid || !algorithmValid) throw new Error("Invalid project file: antenna-optimiser mode requires a complete schema-v2 definition");
   }
 
+  if (obj.mode === "module") {
+    const module = obj.module as Record<string, unknown> | undefined;
+    if (!module || typeof module.moduleId !== "string" || typeof module.title !== "string" || typeof module.route !== "string" || module.state === undefined) {
+      throw new Error("Invalid project file: module mode requires moduleId, title, route, and state");
+    }
+  }
   return data as ProjectFile;
 }
 
@@ -352,6 +366,7 @@ export function migrateProjectFile(data: unknown): ProjectMigrationResult {
   if (sourceVersion < 5) {
     migrations.push("v4 to v5: added project modes for comparison, parameter sweeps, and optimisation; legacy project inputs were retained unchanged");
   }
+
   if (sourceVersion < 6 && copy.mode === "editor") {
     const editor = copy.editor as Record<string, unknown> | undefined;
     if (editor && editor.radialSystems === undefined) editor.radialSystems = [];
@@ -365,6 +380,13 @@ export function migrateProjectFile(data: unknown): ProjectMigrationResult {
   if (sourceVersion < 8) {
     copy.conductor = { ...LEGACY_CONDUCTOR };
     migrations.push("v7 to v8: preserved legacy lossless-wire behaviour by setting the conductor to perfect");
+  }
+  if (sourceVersion < 9) {
+    migrations.push("v8 to v9: added specialist-module project envelopes; existing project modes were retained unchanged");
+  }
+  if (sourceVersion < 10) {
+    copy.matching = { ...DEFAULT_MATCHING };
+    migrations.push("v9 to v10: added explicit matching and feedline-reference settings; older projects use direct 50-ohm defaults because the original setting was not recorded");
   }
 
   copy.version = PROJECT_SCHEMA_VERSION;
@@ -401,6 +423,7 @@ export function createSimulatorProject(
     created_at: new Date().toISOString(),
     mode: "simulator",
     conductor: { ...DEFAULT_CONDUCTOR },
+    matching: { ...DEFAULT_MATCHING },
     simulator: {
       templateId,
       params: { ...params },
@@ -437,6 +460,7 @@ export function createEditorProject(
     created_at: new Date().toISOString(),
     mode: "editor",
     conductor: { ...DEFAULT_CONDUCTOR },
+    matching: { ...DEFAULT_MATCHING },
     editor: {
       wires: wires.map((wire) => ({
         tag: wire.tag,
@@ -478,13 +502,14 @@ export function createEditorProject(
   };
 }
 
-function projectEnvelope(mode: ProjectFile["mode"]): Pick<ProjectFile, "version" | "app_version" | "created_at" | "mode" | "conductor"> {
+function projectEnvelope(mode: ProjectFile["mode"]): Pick<ProjectFile, "version" | "app_version" | "created_at" | "mode" | "conductor" | "matching"> {
   return {
     version: PROJECT_SCHEMA_VERSION,
     app_version: typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "unknown",
     created_at: new Date().toISOString(),
     mode,
     conductor: { ...DEFAULT_CONDUCTOR },
+    matching: { ...DEFAULT_MATCHING },
   };
 }
 
@@ -498,6 +523,10 @@ export function createParameterSweepProject(definition: ParameterSweepDefinition
 
 export function createAntennaOptimiserProject(definition: OptimisationDefinition): ProjectFile {
   return { ...projectEnvelope("antenna-optimiser"), antennaOptimiser: { definition: structuredClone(definition) }, result: null };
+}
+
+export function createModuleProject(moduleId: string, title: string, route: string, state: unknown): ProjectFile {
+  return { ...projectEnvelope("module"), module: { moduleId, title, route, state: structuredClone(state) }, result: null };
 }
 
 /**
