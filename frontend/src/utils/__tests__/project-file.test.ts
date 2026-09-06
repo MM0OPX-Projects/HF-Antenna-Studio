@@ -28,7 +28,6 @@ import { createDefaultSweepDefinition } from "../../features/parameter-sweeps/mo
 import { createDefaultOptimisationDefinition } from "../../features/antenna-optimiser/model";
 import { createDefaultDipoleModel } from "../../features/verified-dipole/model";
 import { createVerifiedDipoleTransfer } from "../../features/verified-dipole/transfer";
-
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
