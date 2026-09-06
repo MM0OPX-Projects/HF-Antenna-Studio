@@ -43,7 +43,8 @@ export function ProjectActions({ onSave, className = "" }: ProjectActionsProps) 
       navigate("/projects");
       return;
     }
-    const confirmed = window.confirm("Are you sure you want to save this project? Any changes will overwrite the existing local project. Use Save As to create a separate project.");
+    const projectName = session.current.name;
+    const confirmed = window.confirm(`Are you sure you want to save project "${projectName}"? Any changes will overwrite the existing local project. Use Save As to create a separate project.`);
     if (!confirmed) return;
     try {
       session.save();

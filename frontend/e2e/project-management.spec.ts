@@ -329,5 +329,6 @@ test("saving an existing project requires explicit overwrite confirmation", asyn
   let prompt = "";
   page.once("dialog", async (dialog) => { prompt = dialog.message(); await dialog.dismiss(); });
   await page.locator('button[title^="Save project"]').first().click();
+  await expect.poll(() => prompt).toContain('save project "Confirmed save project"');
   await expect.poll(() => prompt).toContain("overwrite the existing local project");
 });
