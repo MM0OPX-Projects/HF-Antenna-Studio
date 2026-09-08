@@ -6,6 +6,15 @@ export function normalizeBearing(value: number): number {
   return ((value % 360) + 360) % 360;
 }
 
+/** Matches the compass convention used by the Wire Editor and 3D viewport. */
+export function compassBearingForPhi(phiDeg: number): number {
+  return normalizeBearing(-90 - phiDeg);
+}
+
+function phiForCompassBearing(bearingDeg: number): number {
+  return normalizeBearing(-90 - bearingDeg);
+}
+
 function angularDistance(a: number, b: number): number {
   return Math.abs(((a - b + 540) % 360) - 180);
 }
@@ -31,7 +40,7 @@ function nearestIndex(start: number, step: number, count: number, target: number
 export function extractComparisonCuts(pattern: PatternData, azimuthElevationDeg: number, elevationBearingDeg: number): { azimuth: ComparisonPatternPoint[]; elevation: ComparisonPatternPoint[]; actualAzimuthElevationDeg: number; actualElevationBearingDeg: number } {
   const requestedTheta = 90 - azimuthElevationDeg;
   const thetaIndex = nearestIndex(pattern.theta_start, pattern.theta_step, pattern.theta_count, requestedTheta, false);
-  const requestedPhi = normalizeBearing(90 - elevationBearingDeg);
+  const requestedPhi = phiForCompassBearing(elevationBearingDeg);
   const phiIndex = nearestIndex(pattern.phi_start, pattern.phi_step, pattern.phi_count, requestedPhi, true);
   const azimuth = normalize(Array.from({ length: pattern.phi_count }, (_, index) => ({
     angleDeg: normalizeBearing(90 - (pattern.phi_start + index * pattern.phi_step)),
@@ -43,8 +52,25 @@ export function extractComparisonCuts(pattern: PatternData, azimuthElevationDeg:
     azimuth,
     elevation,
     actualAzimuthElevationDeg: 90 - (pattern.theta_start + thetaIndex * pattern.theta_step),
-    actualElevationBearingDeg: normalizeBearing(90 - (pattern.phi_start + phiIndex * pattern.phi_step)),
+    actualElevationBearingDeg: compassBearingForPhi(pattern.phi_start + phiIndex * pattern.phi_step),
   };
+}
+
+/** Return the compass bearing of the strongest valid solved pattern sample. */
+export function strongestComparisonBearing(pattern: PatternData): number {
+  let bestGain = -Infinity;
+  let bestPhiIndex = 0;
+  for (let thetaIndex = 0; thetaIndex < pattern.theta_count; thetaIndex += 1) {
+    for (let phiIndex = 0; phiIndex < pattern.phi_count; phiIndex += 1) {
+      const gain = pattern.gain_dbi[thetaIndex]?.[phiIndex] ?? -999.99;
+      if (Number.isFinite(gain) && gain > bestGain) {
+        bestGain = gain;
+        bestPhiIndex = phiIndex;
+      }
+    }
+  }
+  if (!Number.isFinite(bestGain) || bestGain <= -900) throw new Error("The solved pattern contains no valid gain samples.");
+  return compassBearingForPhi(pattern.phi_start + bestPhiIndex * pattern.phi_step);
 }
 
 export function circularPatternMetrics(points: ComparisonPatternPoint[]): { frontToBackDb: number | null; beamwidthDeg: number | null } {

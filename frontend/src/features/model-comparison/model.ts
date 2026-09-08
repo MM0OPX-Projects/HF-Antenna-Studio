@@ -1,4 +1,4 @@
-import type { ComparisonConditions, ComparisonFamily, ComparisonSlotDefinition } from "./types";
+import type { ComparisonConditions, ComparisonFamily, ComparisonSlotDefinition, ElevationBearingMode, SavedProjectConditionMode } from "./types";
 import type { SweepConfig } from "../frequency-analyser/types";
 import { createDefaultRadialWorkflowSettings } from "../ground-radials/workflow";
 import { useUIStore } from "../../stores/uiStore";
@@ -25,6 +25,14 @@ export function enabledComparisonSlots(definitions: ComparisonSlotDefinition[]):
   return definitions.filter(isComparisonSlotEnabled);
 }
 
+export function elevationBearingMode(conditions: ComparisonConditions): ElevationBearingMode {
+  return conditions.elevationBearingMode ?? "common";
+}
+
+export function savedProjectConditionMode(definition: ComparisonSlotDefinition): SavedProjectConditionMode {
+  return definition.savedConditionMode ?? "common";
+}
+
 export const COMPARISON_PRESETS = {
   mixed: [slot("model-1", "dipole", 5), slot("model-2", "vertical", 4), slot("model-3", "phased-array", 90), slot("model-4", "yagi", 10)],
   dipole: [slot("model-1", "dipole", 5), slot("model-2", "dipole", 10), slot("model-3", "dipole", 15), slot("model-4", "dipole", 20)],
@@ -45,6 +53,7 @@ export function createDefaultComparisonConditions(): ComparisonConditions {
     referenceImpedanceOhm: 50,
     azimuthElevationDeg: 10,
     elevationBearingDeg: 0,
+    elevationBearingMode: "common",
   };
 }
 

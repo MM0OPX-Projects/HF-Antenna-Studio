@@ -5,7 +5,7 @@ import type { ComparisonResult, ComparisonRunConfig } from "../types";
 
 const config: ComparisonRunConfig = { conditions: createDefaultComparisonConditions(), sweep: { mode: "start-stop", startMhz: 14, stopMhz: 14.2, points: 3, referenceOhms: 50 } };
 const result: ComparisonResult = {
-  slotId: "one", label: "Dipole <unsafe>", color: "#3b82f6", family: "dipole", definitionKey: "definition", conditionKey: "condition", conditions: config.conditions, sweepConfig: config.sweep,
+  slotId: "one", label: "Dipole <unsafe>", color: "#3b82f6", family: "dipole", definitionKey: "definition", conditionKey: "condition", conditions: config.conditions, elevationBearingDeg: 0, elevationBearingMode: "common", savedConditionMode: "common", sweepConfig: config.sweep,
   metrics: { gainDbi: 7, takeOffAngleDeg: 25, frontToBackDb: 0, beamwidthDeg: 90, resistanceOhm: 50, reactanceOhm: 2, swr: 1.04 },
   azimuthPattern: [{ angleDeg: 0, gainDbi: 7, normalizedDb: 0 }, { angleDeg: 180, gainDbi: 7, normalizedDb: 0 }],
   elevationPattern: [{ angleDeg: 0, gainDbi: 1, normalizedDb: -6 }, { angleDeg: 90, gainDbi: 7, normalizedDb: 0 }],
@@ -24,5 +24,14 @@ describe("comparison HTML report", () => {
     expect(html).toContain("Radial definition:");
     expect(html).toContain("perfect-ground-image");
     expect(html).not.toContain("<unsafe>");
+  });
+
+  it("states strongest-bearing and saved-condition choices with each actual bearing", () => {
+    const strongestConfig: ComparisonRunConfig = { ...config, conditions: { ...config.conditions, elevationBearingMode: "strongest" } };
+    const strongestResult: ComparisonResult = { ...result, elevationBearingDeg: 230, elevationBearingMode: "strongest", savedConditionMode: "saved" };
+    const html = buildComparisonHtml([strongestResult], strongestConfig, []);
+    expect(html).toContain("each model&#39;s strongest solved compass bearing");
+    expect(html).toContain("230.0° strongest");
+    expect(html).toContain("saved model conditions");
   });
 });

@@ -3,6 +3,8 @@ import type { AnalyserSweep, SweepConfig } from "../frequency-analyser/types";
 import type { RadialWorkflowSettings } from "../ground-radials/workflow";
 
 export type ComparisonFamily = "dipole" | "vertical" | "phased-array" | "yagi";
+export type ElevationBearingMode = "common" | "strongest";
+export type SavedProjectConditionMode = "common" | "saved";
 
 /** Immutable copy of a local project captured when it is assigned to a slot. */
 export interface ComparisonProjectSnapshot {
@@ -19,6 +21,8 @@ export interface ComparisonSlotDefinition {
   family: ComparisonFamily;
   parameterValue: number;
   source?: "builtin" | "saved-project";
+  /** Saved-project snapshots normally use the shared comparison conditions. */
+  savedConditionMode?: SavedProjectConditionMode;
   savedProject?: ComparisonProjectSnapshot;
 }
 
@@ -33,6 +37,8 @@ export interface ComparisonConditions {
   referenceImpedanceOhm: 50 | 75;
   azimuthElevationDeg: number;
   elevationBearingDeg: number;
+  /** Missing in older projects means the original common-bearing behaviour. */
+  elevationBearingMode?: ElevationBearingMode;
 }
 
 export interface ComparisonPatternPoint {
@@ -59,6 +65,9 @@ export interface ComparisonResult {
   definitionKey: string;
   conditionKey: string;
   conditions: ComparisonConditions;
+  elevationBearingDeg: number;
+  elevationBearingMode: ElevationBearingMode;
+  savedConditionMode: SavedProjectConditionMode;
   sweepConfig: SweepConfig;
   metrics: ComparisonMetrics;
   azimuthPattern: ComparisonPatternPoint[];

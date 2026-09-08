@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { PatternData } from "../../../api/nec";
-import { circularPatternMetrics, extractComparisonCuts } from "../patterns";
+import { circularPatternMetrics, extractComparisonCuts, strongestComparisonBearing } from "../patterns";
 
 describe("compatible pattern cuts", () => {
   it("extracts a common elevation and compass-bearing plane from the NEC grid", () => {
@@ -11,7 +11,13 @@ describe("compatible pattern cuts", () => {
     expect(cuts.azimuth).toHaveLength(8);
     expect(cuts.azimuth.map((point) => point.angleDeg)).toEqual([0, 45, 90, 135, 180, 225, 270, 315]);
     expect(cuts.elevation.map((point) => point.angleDeg)).toEqual(Array.from({ length: 19 }, (_, index) => index * 10));
-    expect(cuts.elevation.map((point) => point.gainDbi)).toEqual([92, 82, 72, 62, 52, 42, 32, 22, 12, 2, 16, 26, 36, 46, 56, 66, 76, 86, 96]);
+    expect(cuts.elevation.map((point) => point.gainDbi)).toEqual([96, 86, 76, 66, 56, 46, 36, 26, 16, 6, 12, 22, 32, 42, 52, 62, 72, 82, 92]);
+  });
+
+  it("finds the strongest solved compass bearing using the Wire Editor compass convention", () => {
+    const pattern: PatternData = { theta_start: 0, theta_step: 10, theta_count: 2, phi_start: 0, phi_step: 90, phi_count: 4, gain_dbi: [[1, 2, 3, 4], [5, 6, 7, 11]] };
+    // NEC phi 270° is north (0°) in the shared Wire Editor compass convention.
+    expect(strongestComparisonBearing(pattern)).toBe(0);
   });
 
   it("derives axial front-to-back and interpolated half-power beamwidth", () => {

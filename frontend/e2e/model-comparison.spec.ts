@@ -14,6 +14,8 @@ test("four different antenna models solve under common conditions and export an 
   await openComparison(page);
   await expect(page.locator('[data-testid^="comparison-slot-"]')).toHaveCount(4);
   await expect(page.getByTestId("comparison-condition-summary")).toContainText("14.100 MHz");
+  await expect(page.getByTestId("comparison-elevation-bearing-mode")).toHaveValue("common");
+  await expect(page.getByTestId("comparison-elevation-bearing")).toBeEnabled();
   await page.getByTestId("run-comparison").click();
   await expect(page.getByTestId("comparison-status")).toContainText("Comparison complete · 4 models", { timeout: 120_000 });
   await expect(page.locator('[data-testid^="comparison-result-"]')).toHaveCount(4);
@@ -96,6 +98,12 @@ test("comparison can run two or three enabled models while retaining disabled sl
   await page.getByTestId("run-comparison").click();
   await expect(page.getByTestId("comparison-status")).toContainText("Comparison complete · 3 models", { timeout: 120_000 });
   await expect(page.locator('[data-testid^="comparison-result-"]')).toHaveCount(3);
+  await page.getByTestId("comparison-elevation-bearing-mode").selectOption("strongest");
+  await expect(page.getByTestId("comparison-elevation-bearing")).toBeDisabled();
+  await page.getByTestId("run-comparison").click();
+  await expect(page.getByTestId("comparison-status")).toContainText("Comparison complete · 3 models", { timeout: 120_000 });
+  await expect(page.locator('[data-testid^="comparison-elevation-bearing-result-"]')).toHaveCount(3);
+  await expect(page.locator('[data-testid^="comparison-elevation-bearing-result-"]').first()).toContainText("strongest");
 });
 
 test("a saved antenna can be snapshotted into a comparison slot and solved with standard models", async ({ page }) => {
@@ -109,6 +117,9 @@ test("a saved antenna can be snapshotted into a comparison slot and solved with 
   const savedOption = page.getByTestId("comparison-family-1").locator("option").filter({ hasText: "Saved comparison dipole" });
   await page.getByTestId("comparison-family-1").selectOption(await savedOption.getAttribute("value") as string);
   await expect(page.getByTestId("comparison-slot-1")).toContainText("Immutable revision");
+  await expect(page.getByTestId("comparison-saved-condition-mode-1")).toHaveValue("common");
+  await page.getByTestId("comparison-saved-condition-mode-1").selectOption("saved");
+  await expect(page.getByTestId("comparison-slot-1")).toContainText("Saved frequency, ground and GE geometry-ground settings are preserved");
   await expect(page.getByTestId("comparison-parameter-1")).toHaveCount(0);
   await page.getByTestId("run-comparison").click();
   await expect(page.getByTestId("comparison-status")).toContainText("Comparison complete · 4 models", { timeout: 120_000 });

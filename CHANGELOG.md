@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.0.6] - 2026-09-08
+
+### Added
+
+- Added a global Model Comparison elevation-cut bearing mode: controlled common compass bearing or each model's strongest solved bearing, with actual bearings shown in the result table and exported report.
+- Added an explicit saved-project comparison-condition choice for supported Wire Editor and simulator snapshots: common comparison conditions or exact saved model conditions.
+
+### Fixed
+
+- Aligned Model Comparison compass-bearing cuts with the Wire Editor convention.
+- Preserved saved Wire Editor frequency, ground configuration, and explicit NEC `GE` geometry-ground card during exact-reproduction comparisons.
+
 ## [1.0.5] - 2026-09-08
 
 ### Added

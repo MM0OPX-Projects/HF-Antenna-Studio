@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { clonePreset, comparisonConditionKey, comparisonConditionWarnings, comparisonLabel, createDefaultComparisonConditions, validateComparisonDefinition, validateComparisonRadialCounts } from "../model";
 import type { ComparisonConditions } from "../types";
+import { createModelComparisonProject, migrateProjectFile } from "../../../utils/project-file";
 
 const conditions: ComparisonConditions = createDefaultComparisonConditions();
 
@@ -47,5 +48,12 @@ describe("model comparison definitions", () => {
     };
     expect(validateComparisonRadialCounts(clonePreset("vertical"), realConditions).join(" ")).toContain("Model 1");
     expect(validateComparisonRadialCounts(clonePreset("vertical").map((item) => ({ ...item, parameterValue: Math.max(4, item.parameterValue) })), realConditions)).toEqual([]);
+  });
+
+  it("saves and restores the selected elevation-bearing mode", () => {
+    const strongest = { ...conditions, elevationBearingMode: "strongest" as const };
+    const project = createModelComparisonProject(clonePreset("mixed"), strongest, { mode: "start-stop", startMhz: 14, stopMhz: 14.2, points: 3, referenceOhms: 50 });
+    expect(migrateProjectFile(JSON.parse(JSON.stringify(project))).project.modelComparison?.conditions.elevationBearingMode).toBe("strongest");
+    expect(createDefaultComparisonConditions().elevationBearingMode).toBe("common");
   });
 });

@@ -18,6 +18,7 @@ import { adaptYagiToNec } from "../yagi-beams/nec-adapter";
 import { generateYagiModel, startingYagiModel } from "../yagi-beams/model";
 import { runYagiModel } from "../yagi-beams/service";
 import { migrateProjectFile, type ProjectFile } from "../../utils/project-file";
+import { resolveGeometryGroundFlag } from "../../engine/geometry-ground";
 import { getTemplate, templateMap } from "../../templates";
 import { adaptIdealFinalToNec, adaptPhysicalNetworkToNec } from "../phased-arrays/nec-adapter";
 import type { PhasedArrayModel } from "../phased-arrays/schema";
@@ -26,9 +27,9 @@ import type { YagiAntennaModel } from "../yagi-beams/schema";
 import { adaptLoopBeamToNec } from "../loop-beams/nec-adapter";
 import { generateLoopBeamModel } from "../loop-beams/model";
 import type { LoopBeamModel } from "../loop-beams/schema";
-import { COMPARISON_COLORS, comparisonConditionKey, comparisonDefinitionKey, comparisonLabel, validateComparisonDefinition } from "./model";
-import { circularPatternMetrics, extractComparisonCuts } from "./patterns";
-import type { ComparisonConditions, ComparisonMetrics, ComparisonResult, ComparisonSlotDefinition } from "./types";
+import { COMPARISON_COLORS, comparisonConditionKey, comparisonDefinitionKey, comparisonLabel, elevationBearingMode, savedProjectConditionMode, validateComparisonDefinition } from "./model";
+import { circularPatternMetrics, extractComparisonCuts, strongestComparisonBearing } from "./patterns";
+import type { ComparisonConditions, ComparisonMetrics, ComparisonResult, ComparisonSlotDefinition, SavedProjectConditionMode } from "./types";
 
 const sweepEngine = new WasmEngine();
 
@@ -99,20 +100,28 @@ function parseForRequest(request: SimulateAdvancedRequest): NecDeckRunRequest {
   return { deck: buildCardDeck(request), parse: { nTheta: Math.floor((free ? 360 : 180) / step) + 1, nPhi: Math.floor(360 / step), thetaStart: free ? -180 : -90, thetaStep: step, phiStart: 0, phiStep: step, computeCurrents: false, totalSegments: request.wires.reduce((sum, wire) => sum + wire.segments, 0) } };
 }
 
-export function createSavedProjectComparisonRequest(project: ProjectFile, conditions: ComparisonConditions): { run: NecDeckRunRequest; portCount: number; warnings: string[] } {
-  const frequency = { start_mhz: conditions.frequencyMhz, stop_mhz: conditions.frequencyMhz, steps: 1 };
+export function createSavedProjectComparisonRequest(project: ProjectFile, conditions: ComparisonConditions, conditionMode: SavedProjectConditionMode = "common"): { run: NecDeckRunRequest; portCount: number; warnings: string[] } {
+  const commonFrequency = { start_mhz: conditions.frequencyMhz, stop_mhz: conditions.frequencyMhz, steps: 1 };
   if (project.mode === "simulator" && project.simulator) {
     if (!templateMap.has(project.simulator.templateId)) throw new Error(`Saved project template "${project.simulator.templateId}" is not installed.`);
-    const template = getTemplate(project.simulator.templateId); const params = { ...project.simulator.params, frequency: conditions.frequencyMhz };
+    const savedFrequency = Number(project.simulator.params.frequency ?? ((project.simulator.frequencyRange?.start_mhz ?? conditions.frequencyMhz) + (project.simulator.frequencyRange?.stop_mhz ?? conditions.frequencyMhz)) / 2);
+    const frequency = conditionMode === "saved" ? { start_mhz: savedFrequency, stop_mhz: savedFrequency, steps: 1 } : commonFrequency;
+    const template = getTemplate(project.simulator.templateId); const params = { ...project.simulator.params, frequency: frequency.start_mhz };
     const wires = template.generateGeometry(params); const raw = template.generateExcitation(params, wires); const excitations = Array.isArray(raw) ? raw : [raw];
-    const request: SimulateAdvancedRequest = { wires, excitations, loads: template.generateLoads?.(params, wires) ?? [], transmission_lines: template.generateTransmissionLines?.(params, wires) ?? [], ground: comparisonGround(conditions), frequency, compute_currents: false, compute_pattern: true, pattern_step: 2, comment: `Saved project: ${project.simulator.templateId}` };
-    return { run: parseForRequest(request), portCount: excitations.length, warnings: [] };
+    const ground = conditionMode === "saved" ? project.simulator.ground : comparisonGround(conditions);
+    const request: SimulateAdvancedRequest = { wires, excitations, loads: template.generateLoads?.(params, wires) ?? [], transmission_lines: template.generateTransmissionLines?.(params, wires) ?? [], ground, frequency, compute_currents: false, compute_pattern: true, pattern_step: 2, comment: `Saved project: ${project.simulator.templateId}` };
+    return { run: parseForRequest(request), portCount: excitations.length, warnings: conditionMode === "saved" ? ["Saved model conditions are in use; this result is not a common-condition comparison."] : [] };
   }
   if (project.mode === "editor" && project.editor) {
     const report = project.editor.necImport?.document;
-    if (report && (!report.structured_editable || report.cards.some((card) => card.disposition === "blocking" || card.disposition === "preserved_only"))) throw new Error("This imported NEC project contains cards that cannot be safely regenerated under common comparison conditions. It has not been modified or solved approximately.");
-    const request: SimulateAdvancedRequest = { wires: project.editor.wires, excitations: project.editor.excitations, loads: project.editor.loads, transmission_lines: project.editor.transmissionLines, ground: comparisonGround(conditions), frequency, compute_currents: false, compute_pattern: true, pattern_step: 2, comment: "Saved Wire Editor project" };
-    return { run: parseForRequest(request), portCount: request.excitations.length, warnings: [] };
+    if (report && (!report.structured_editable || report.cards.some((card) => card.disposition === "blocking" || card.disposition === "preserved_only"))) throw new Error("This imported NEC project contains cards that cannot be safely regenerated for comparison. It has not been modified or solved approximately.");
+    const frequency = conditionMode === "saved" ? { start_mhz: project.editor.designFrequencyMhz, stop_mhz: project.editor.designFrequencyMhz, steps: 1 } : commonFrequency;
+    const ground = conditionMode === "saved" ? project.editor.ground : comparisonGround(conditions);
+    // An explicit GE card is model identity and must survive either comparison
+    // mode. Automatic GE is recomputed against whichever ground mode is active.
+    const geometry_ground_flag = project.editor.geometryGroundFlag ?? resolveGeometryGroundFlag(project.editor.wires, ground, null);
+    const request: SimulateAdvancedRequest = { wires: project.editor.wires, excitations: project.editor.excitations, loads: project.editor.loads, transmission_lines: project.editor.transmissionLines, ground, geometry_ground_flag, frequency, compute_currents: false, compute_pattern: true, pattern_step: 2, comment: "Saved Wire Editor project" };
+    return { run: parseForRequest(request), portCount: request.excitations.length, warnings: conditionMode === "saved" ? ["Saved Wire Editor frequency, ground, and GE geometry-ground flag are in use; this result is not a common-condition comparison."] : [] };
   }
   if (project.mode === "module" && project.module) {
     const state = project.module.state as Record<string, unknown>; const ground = conditions.ground.kind === "perfect" ? { kind: "perfect" as const } : { kind: "sommerfeld-norton" as const, ...realGround(conditions)! };
@@ -126,7 +135,7 @@ export function createSavedProjectComparisonRequest(project: ProjectFile, condit
     if (project.module.moduleId === "loop-beams") { const model = structuredClone(state.model) as LoopBeamModel; model.frequencyHz = conditions.frequencyMhz * 1e6; model.referenceImpedanceOhm = conditions.referenceImpedanceOhm; model.ground = ground; const adapted = adaptLoopBeamToNec(generateLoopBeamModel(model)); return { run: adapted.runRequest, portCount: 1, warnings: [] }; }
     if (project.module.moduleId === "phased-arrays") { const model = structuredClone(state.model) as PhasedArrayModel; model.frequencyHz = conditions.frequencyMhz * 1e6; model.ground = ground; const generated = generatePhasedArray(model); if (model.mode === "ideal-current-phase") { const adapted = adaptIdealFinalToNec(generated, [{ real: 1, imag: 0 }, { real: Math.cos(model.ideal.phase2Deg * Math.PI / 180) * model.ideal.amplitude2, imag: Math.sin(model.ideal.phase2Deg * Math.PI / 180) * model.ideal.amplitude2 }]); return { run: adapted.runRequest, portCount: 2, warnings: [] }; } const adapted = adaptPhysicalNetworkToNec(generated); return { run: adapted.runRequest, portCount: 1, warnings: [] }; }
     if (["antenna-templates", "frequency-analyser", "measurement-comparison"].includes(project.module.moduleId)) {
-      const templateId = String(state.templateId ?? ""); if (!templateMap.has(templateId)) throw new Error(`Saved module template "${templateId}" is not installed.`); const template = getTemplate(templateId); const params = { ...((state.params ?? state.parametersSI) as Record<string, number>), frequency: conditions.frequencyMhz }; const wires = template.generateGeometry(params); const raw = template.generateExcitation(params, wires); const excitations = Array.isArray(raw) ? raw : [raw]; const request: SimulateAdvancedRequest = { wires, excitations, loads: template.generateLoads?.(params, wires) ?? [], transmission_lines: template.generateTransmissionLines?.(params, wires) ?? [], ground: comparisonGround(conditions), frequency, compute_currents: false, compute_pattern: true, pattern_step: 2, comment: `Saved module: ${project.module.moduleId}` }; return { run: parseForRequest(request), portCount: excitations.length, warnings: [] };
+      const templateId = String(state.templateId ?? ""); if (!templateMap.has(templateId)) throw new Error(`Saved module template "${templateId}" is not installed.`); const template = getTemplate(templateId); const params = { ...((state.params ?? state.parametersSI) as Record<string, number>), frequency: conditions.frequencyMhz }; const wires = template.generateGeometry(params); const raw = template.generateExcitation(params, wires); const excitations = Array.isArray(raw) ? raw : [raw]; const request: SimulateAdvancedRequest = { wires, excitations, loads: template.generateLoads?.(params, wires) ?? [], transmission_lines: template.generateTransmissionLines?.(params, wires) ?? [], ground: comparisonGround(conditions), frequency: commonFrequency, compute_currents: false, compute_pattern: true, pattern_step: 2, comment: `Saved module: ${project.module.moduleId}` }; return { run: parseForRequest(request), portCount: excitations.length, warnings: [] };
     }
     throw new Error(`Saved ${project.module.title} projects are not yet safely convertible to the controlled comparison solver.`);
   }
@@ -135,7 +144,7 @@ export function createSavedProjectComparisonRequest(project: ProjectFile, condit
 
 async function runSavedProject(definition: ComparisonSlotDefinition, conditions: ComparisonConditions, options: { signal?: AbortSignal; solver?: (request: NecDeckRunRequest, signal?: AbortSignal) => Promise<SimulationResult> }) {
   const migrated = migrateProjectFile(definition.savedProject!.project).project;
-  const prepared = createSavedProjectComparisonRequest(migrated, conditions);
+  const prepared = createSavedProjectComparisonRequest(migrated, conditions, savedProjectConditionMode(definition));
   const simulation = await (options.solver ?? ((request, signal) => sweepEngine.runDeck(request, 120_000, signal)))(prepared.run, options.signal);
   const data = simulation.frequency_data[0]; if (!data?.pattern) throw new Error("The saved project did not return a radiation pattern.");
   const cuts = extractComparisonCuts(data.pattern, conditions.azimuthElevationDeg, conditions.elevationBearingDeg); const direction = baseMetrics(cuts.azimuth);
@@ -214,13 +223,15 @@ export async function runComparisonSlot(
     sweepUnavailableReason = "Ideal current/phase mode has two enforced ports and no single physical input impedance; R, X, SWR and an impedance sweep are intentionally not reported.";
   }
 
-  const cuts = extractComparisonCuts(radiationPattern, conditions.azimuthElevationDeg, conditions.elevationBearingDeg);
+  const bearingMode = elevationBearingMode(conditions);
+  const requestedElevationBearingDeg = bearingMode === "strongest" ? strongestComparisonBearing(radiationPattern) : conditions.elevationBearingDeg;
+  const cuts = extractComparisonCuts(radiationPattern, conditions.azimuthElevationDeg, requestedElevationBearingDeg);
   if (Math.abs(cuts.actualAzimuthElevationDeg - conditions.azimuthElevationDeg) > 0.001) warnings = [...warnings, `Azimuth comparison uses the nearest solved elevation (${cuts.actualAzimuthElevationDeg.toFixed(1)}°).`];
-  if (Math.abs(cuts.actualElevationBearingDeg - conditions.elevationBearingDeg) > 0.001) warnings = [...warnings, `Elevation comparison uses the nearest solved compass bearing (${cuts.actualElevationBearingDeg.toFixed(1)}°).`];
+  if (bearingMode === "common" && Math.abs(cuts.actualElevationBearingDeg - requestedElevationBearingDeg) > 0.001) warnings = [...warnings, `Elevation comparison uses the nearest solved compass bearing (${cuts.actualElevationBearingDeg.toFixed(1)}°).`];
   const sweep = sweepUnavailableReason ? null : await runSweep(generatedNec, totalSegments, sweepConfig, label, color, options.signal, options.sweepSolver);
   return {
     slotId: definition.id, label, color, family: definition.source === "saved-project" ? "saved-project" : definition.family, definitionKey: comparisonDefinitionKey(definition), conditionKey: comparisonConditionKey(conditions, sweepConfig),
-    conditions: structuredClone(conditions), sweepConfig: { ...sweepConfig }, metrics, azimuthPattern: cuts.azimuth, elevationPattern: cuts.elevation,
+    conditions: structuredClone(conditions), elevationBearingDeg: cuts.actualElevationBearingDeg, elevationBearingMode: bearingMode, savedConditionMode: definition.source === "saved-project" ? savedProjectConditionMode(definition) : "common", sweepConfig: { ...sweepConfig }, metrics, azimuthPattern: cuts.azimuth, elevationPattern: cuts.elevation,
     radiationPattern, sweep, sweepUnavailableReason, generatedNec, engine, warnings: [...new Set([...warnings, ...(sweep?.warnings ?? [])])],
   };
 }
