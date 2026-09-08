@@ -728,7 +728,7 @@ export function WireEditor2D() {
 
   return (
     <section className="relative h-full w-full overflow-hidden bg-background" data-testid="wire-editor-2d" aria-label="Fixed two-dimensional wire editor">
-      <div className="pointer-events-none absolute left-2 right-2 top-12 z-20 flex flex-wrap items-start justify-between gap-2">
+      <div className="pointer-events-none absolute left-8 right-2 top-12 z-20 flex flex-wrap items-start justify-between gap-2">
         <div className="pointer-events-auto rounded-md border border-border bg-surface/95 p-1 shadow-lg backdrop-blur-sm">
           <div className="flex flex-wrap gap-1" role="group" aria-label="Drawing plane">
             {(Object.keys(DRAWING_PLANES) as DrawingPlane[]).map((candidate) => (

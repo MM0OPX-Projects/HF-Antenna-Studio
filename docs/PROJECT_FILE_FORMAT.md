@@ -121,7 +121,7 @@ Recovery is always explicit: the Projects page offers **Recover** or **Discard**
 
 - **New** resets the selected Design, Wire Editor, Model Comparison, Parameter Sweep, or Antenna Optimiser workspace to a known default and creates an unnamed recovery copy.
 - **Save** updates the current named record or creates it after the user supplies a name.
-- **Save As** always creates a new ID and leaves the prior record intact.
+- **Save As** always creates a new ID and leaves the prior record intact. A workspace Save As stages the live snapshot before opening Project Management; its Save As mode disables overwrite Save until the new record is created.
 - **Open** restores the complete stored model and clears stale solver results.
 - **Recent projects** are ordered by last-opened timestamp.
 - **Duplicate** deep-copies the model into a new record.

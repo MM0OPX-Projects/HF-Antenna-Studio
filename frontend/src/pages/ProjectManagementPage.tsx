@@ -1,5 +1,5 @@
 import { useRef, useState, type ChangeEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Navbar } from "../components/layout/Navbar";
 import { useProjectSession, type PendingProjectImport } from "../features/project-management/ProjectSessionProvider";
 import type { LocalProjectRecord } from "../features/project-management/local-project-library";
@@ -31,6 +31,8 @@ function modeLabel(record: LocalProjectRecord): string {
 export function ProjectManagementPage() {
   const session = useProjectSession();
   const navigate = useNavigate();
+  const location = useLocation();
+  const saveAsMode = new URLSearchParams(location.search).get("intent") === "save-as";
   const [name, setName] = useState("");
   const [renameId, setRenameId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
@@ -87,10 +89,15 @@ export function ProjectManagementPage() {
               }}
               className="rounded-md border border-border px-3 py-2 text-sm hover:border-accent disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Return to current project
+              {saveAsMode ? "Cancel Save As" : "Return to current project"}
             </button>
           </div>
         </header>
+
+        {saveAsMode && <section className="rounded-xl border border-accent/40 bg-accent/10 p-4" data-testid="save-as-mode" aria-labelledby="save-as-mode-title">
+          <h2 id="save-as-mode-title" className="font-semibold">Save As mode</h2>
+          <p className="mt-1 text-sm leading-6 text-text-secondary">This action will create a separate project from the workspace you just left. The existing project will not be overwritten. Enter a new name and use Save As below.</p>
+        </section>}
 
         {(localError || session.error) && <div role="alert" className="rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-300">{localError ?? session.error}</div>}
         {message && <div role="status" className="rounded-lg border border-emerald-500/35 bg-emerald-500/10 p-3 text-sm text-emerald-300">{message}</div>}
@@ -127,13 +134,14 @@ export function ProjectManagementPage() {
             <label className="mt-4 block text-sm font-medium" htmlFor="project-name">Project name</label>
             <input id="project-name" value={name} maxLength={80} onChange={(event) => setName(event.target.value)} placeholder={session.current?.name ?? "My antenna project"} className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent" />
             <div className="mt-4 flex flex-wrap gap-2">
-              <button type="button" onClick={() => run(() => {
+              <button type="button" data-testid="project-save" disabled={saveAsMode} title={saveAsMode ? "Save is disabled while Save As mode is active." : undefined} onClick={() => run(() => {
                 const record = session.save(session.current ? undefined : name);
                 setName(record.name);
-              }, "Project saved locally.")} className="rounded-md bg-accent px-3 py-2 text-sm font-semibold text-slate-950">Save</button>
-              <button type="button" onClick={() => run(() => {
+              }, "Project saved locally.")} className="rounded-md bg-accent px-3 py-2 text-sm font-semibold text-slate-950 disabled:cursor-not-allowed disabled:opacity-50">Save</button>
+              <button type="button" data-testid="project-save-as" onClick={() => run(() => {
                 const record = session.saveAs(name);
                 setName(record.name);
+                if (saveAsMode) navigate("/projects", { replace: true });
               }, "A new local project copy was saved.")} className="rounded-md border border-border px-3 py-2 text-sm hover:border-accent">Save As</button>
               <button type="button" onClick={() => run(() => session.newProject("simulator"))} className="rounded-md border border-border px-3 py-2 text-sm hover:border-accent">New template project</button>
               <button type="button" onClick={() => run(() => session.newProject("editor"))} className="rounded-md border border-border px-3 py-2 text-sm hover:border-accent">New wire project</button>

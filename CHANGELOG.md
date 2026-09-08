@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.0.5] - 2026-09-08
+
+### Added
+
+- Added individually enabled Model Comparison slots so users can compare any two, three or four configured models while retaining disabled-slot settings.
+- Added a dedicated **New** Wire Editor document action, including `Ctrl+N`, which resets wire numbering and document-owned geometry while preserving editor preferences.
+
+### Fixed
+
+- Made workspace **Save As** stage the exact live antenna and enter a protected Project Management mode where the existing project cannot be overwritten accidentally.
+- Reset Wire Editor sources, loads, transmission lines, junctions, radial systems, selections and undo history when starting a new document.
+- Moved the Wire Editor mode and drawing-plane controls clear of the left-side scale labels.
+
 ## [1.0.4] - 2026-09-06
 
 ### Fixed

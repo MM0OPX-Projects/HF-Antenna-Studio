@@ -48,6 +48,62 @@ function reset() {
 describe("wire-editor transforms", () => {
   beforeEach(reset);
 
+  it("starts a blank document with Wire 1 while preserving modelling preferences", () => {
+    useEditorStore.getState().newDocument();
+    const store = useEditorStore.getState();
+    store.addWire({ x1: 0, y1: 0, z1: 1, x2: 2, y2: 0, z2: 1, radius: 0.0005 });
+    store.addWire({ x1: 2, y1: 0, z1: 1, x2: 4, y2: 0, z2: 1, radius: 0.0005 });
+    useEditorStore.getState().deleteWires([1, 2]);
+    expect(useEditorStore.getState().nextTag).toBe(3);
+
+    useEditorStore.setState({
+      ground: { type: "custom", custom_permittivity: 12, custom_conductivity: 0.003 },
+      frequencyRange: { start_mhz: 7, stop_mhz: 7.3, steps: 4 },
+      snapSize: 0.25,
+      showGrid: false,
+      continuousDraw: false,
+      endpointSnap: false,
+      designFrequencyMhz: 7.1,
+      computeCurrents: false,
+      verticalDrag: true,
+      loads: [{ load_type: 4, wire_tag: 1, segment_start: 1, segment_end: 1, param1: 20, param2: 0, param3: 0 }],
+      transmissionLines: [{ wire_tag1: 1, segment1: 1, wire_tag2: 2, segment2: 1, impedance: 50, length: 1 }],
+      pickingExcitationForTag: 1,
+    });
+    expect(useEditorStore.getState().undoStack.length).toBeGreaterThan(0);
+
+    useEditorStore.getState().newDocument();
+    const fresh = useEditorStore.getState();
+    expect(fresh.wires).toEqual([]);
+    expect(fresh.excitations).toEqual([]);
+    expect(fresh.loads).toEqual([]);
+    expect(fresh.transmissionLines).toEqual([]);
+    expect(fresh.junctions).toEqual([]);
+    expect(fresh.radialSystems).toEqual([]);
+    expect(fresh.selectedTags).toEqual(new Set());
+    expect(fresh.selectedEndpoints).toEqual([]);
+    expect(fresh.pickingExcitationForTag).toBeNull();
+    expect(fresh.nextTag).toBe(1);
+    expect(fresh.undoStack).toEqual([]);
+    expect(fresh.redoStack).toEqual([]);
+    expect(fresh.canUndo).toBe(false);
+    expect(fresh.canRedo).toBe(false);
+    expect(fresh.ground).toEqual({ type: "custom", custom_permittivity: 12, custom_conductivity: 0.003 });
+    expect(fresh.frequencyRange).toEqual({ start_mhz: 7, stop_mhz: 7.3, steps: 4 });
+    expect(fresh.snapSize).toBe(0.25);
+    expect(fresh.showGrid).toBe(false);
+    expect(fresh.continuousDraw).toBe(false);
+    expect(fresh.endpointSnap).toBe(false);
+    expect(fresh.designFrequencyMhz).toBe(7.1);
+    expect(fresh.computeCurrents).toBe(false);
+    expect(fresh.verticalDrag).toBe(true);
+
+    const firstTag = useEditorStore.getState().addWire({
+      x1: 0, y1: 0, z1: 1, x2: 1, y2: 0, z2: 1, radius: 0.0005,
+    });
+    expect(firstTag).toBe(1);
+  });
+
   it("translates selected geometry and restores it with undo", () => {
     useEditorStore.getState().moveSelected(1, -2, 3);
     expect(useEditorStore.getState().wires[0]).toMatchObject({ x1: 1, y1: -2, z1: 13, x2: 3, y2: -2, z2: 13 });

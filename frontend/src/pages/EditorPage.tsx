@@ -131,6 +131,7 @@ export function EditorPage() {
   const getTotalSegments = useEditorStore((s) => s.getTotalSegments);
   const moveAllWiresZ = useEditorStore((s) => s.moveAllWiresZ);
   const clearAll = useEditorStore((s) => s.clearAll);
+  const newDocument = useEditorStore((s) => s.newDocument);
   const setWires = useEditorStore((s) => s.setWires);
   const addLoad = useEditorStore((s) => s.addLoad);
   const addTransmissionLine = useEditorStore((s) => s.addTransmissionLine);
@@ -207,6 +208,35 @@ export function EditorPage() {
   // Mobile tab state (local to editor)
   const [mobileTab, setMobileTab] = useState<MobileEditorTab>("wires");
 
+  const handleNewDocument = useCallback(() => {
+    const hasDocumentContent =
+      wires.length > 0 ||
+      excitations.length > 0 ||
+      loads.length > 0 ||
+      transmissionLines.length > 0 ||
+      junctions.length > 0 ||
+      radialSystems.length > 0;
+    const hasUnsavedChanges =
+      projectSession.recovery !== null ||
+      (projectSession.current !== null &&
+        (projectSession.status === "dirty" ||
+          projectSession.status === "saving" ||
+          projectSession.status === "error")) ||
+      (projectSession.current === null && hasDocumentContent);
+    if (
+      hasUnsavedChanges &&
+      !window.confirm(
+        "Start a new blank wire document? Any unsaved changes will be discarded. Save or export the current project first.",
+      )
+    ) {
+      return;
+    }
+    newDocument();
+    projectSession.detachCurrent();
+    setMobileTab("wires");
+    setEditorSection("wires");
+  }, [newDocument, projectSession, setEditorSection, setMobileTab, wires, excitations, loads, transmissionLines, junctions, radialSystems]);
+
   // The editor canvas owns deliberate wheel gestures for zoom. Prevent the
   // newly scrollable desktop page from moving at the same time; users can use
   // its scrollbar or the Analysis/Back controls for page navigation.
@@ -269,6 +299,10 @@ export function EditorPage() {
           deleteSelected();
         }
       }
+      else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "n") {
+        e.preventDefault();
+        handleNewDocument();
+      }
       else if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
         e.preventDefault();
         undo();
@@ -296,7 +330,7 @@ export function EditorPage() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [setMode, deselectAll, clearEndpointSelection, snapSelectedEndpoints, toggleSelectedJunction, deleteSelected, selectedTags.size, undo, redo, selectAll, copySelected, paste, duplicateSelected, measurementActive, toggleWireMeasurement]);
+  }, [setMode, deselectAll, clearEndpointSelection, snapSelectedEndpoints, toggleSelectedJunction, deleteSelected, selectedTags.size, undo, redo, selectAll, copySelected, paste, duplicateSelected, measurementActive, toggleWireMeasurement, handleNewDocument]);
 
   // Clear stale results on page entry (prevents cross-page state leaks)
   // and whenever antenna geometry or config changes.
@@ -667,7 +701,7 @@ export function EditorPage() {
           )}
 
           {/* Mode indicator */}
-          <div className="absolute top-2 left-2 z-10">
+          <div className="absolute top-2 left-8 z-10" data-testid="editor-mode-indicator">
             <div className="bg-surface/80 backdrop-blur-sm border border-border rounded-md px-2 py-1 text-[10px] font-mono text-text-secondary">
               Mode:{" "}
               <span className="text-accent font-bold uppercase">
@@ -764,8 +798,19 @@ export function EditorPage() {
         <aside className="hidden lg:flex flex-col w-80 xl:w-96 border-l border-border bg-surface overflow-hidden shrink-0">
           {/* Editing controls stay beside the geometry; detailed results live below. */}
           <div className="p-2 border-b border-border shrink-0 space-y-1.5">
-            <div className="px-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-text-secondary">
-              Wire and project controls
+            <div className="flex items-center justify-between gap-2 px-1">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-text-secondary">
+                Wire and project controls
+              </div>
+              <button
+                type="button"
+                data-testid="new-wire-document"
+                onClick={handleNewDocument}
+                className="rounded border border-border bg-surface px-2 py-1 text-[11px] font-medium text-text-secondary transition-colors hover:border-accent/50 hover:text-text-primary"
+                title="Start a new blank wire document (Ctrl+N)"
+              >
+                New
+              </button>
             </div>
             <ProjectActions
               onSave={handleProjectSave}
@@ -1106,6 +1151,14 @@ export function EditorPage() {
             </button>
             <button onClick={selectAll} className="px-2 py-1 text-[11px] rounded border border-border text-text-secondary hover:bg-surface-hover" title="Select all">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M9 12l2 2 4-4" /></svg>
+            </button>
+            <button
+              onClick={handleNewDocument}
+              data-testid="new-wire-document-mobile"
+              className="rounded border border-border px-2 py-1 text-[11px] text-text-secondary hover:bg-surface-hover"
+              title="Start a new blank wire document (Ctrl+N)"
+            >
+              New
             </button>
             <div className="flex-1" />
             <span className="text-[11px] text-text-secondary font-mono">

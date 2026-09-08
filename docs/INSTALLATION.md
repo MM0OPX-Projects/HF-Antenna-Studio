@@ -17,7 +17,7 @@ The installer is unsigned. Only download it from the project's GitHub v1.0.0 rel
 
 3. Compare every character with `installerSha256` in the manifest. Stop if it differs.
 4. Run setup. It installs for the current Windows user and creates a Start-menu launcher.
-5. Launch the application, open **About**, and confirm version `1.0.4`.
+5. Launch the application, open **About**, and confirm version `1.0.5`.
 6. Open the verified dipole model, run a calculation, and confirm R, X, SWR and plots appear without an engine error.
 
 SmartScreen may report an unknown publisher because v1.0.0 is not code-signed. A correct checksum verifies the downloaded bytes match the published artifact; it does not create publisher identity.

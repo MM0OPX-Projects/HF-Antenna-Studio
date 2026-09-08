@@ -180,6 +180,8 @@ interface EditorState {
   resetSegments: (tag: number) => void;
   /** Clear all wires */
   clearAll: () => void;
+  /** Start a fresh blank wire document while preserving editor preferences. */
+  newDocument: () => void;
   /** Set all wires at once (e.g. from import) */
   setWires: (wires: EditorWire[], excitations?: Excitation[], junctions?: EditorJunction[], radialSystems?: EditorRadialSystem[]) => void;
   /** Atomically replace the complete editable model with a reviewed NEC import. */
@@ -1426,6 +1428,39 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       necImport: null,
       blockedNecImport: null,
       modelTransfer: null,
+    });
+  },
+
+  newDocument: () => {
+    // A new document is a hard document boundary. Nothing from the previous
+    // antenna (including sources, radial groups, imports, or history) may be
+    // carried into the next drawing. Display/model preferences remain intact.
+    set({
+      wires: [],
+      excitations: [],
+      loads: [],
+      transmissionLines: [],
+      junctions: [],
+      nextJunctionId: 1,
+      radialSystems: [],
+      nextRadialSystemId: 1,
+      selectedTags: new Set(),
+      selectedEndpoints: [],
+      lastEditorMessage: null,
+      mode: "select",
+      pickingExcitationForTag: null,
+      nextTag: 1,
+      geometryGroundFlag: null,
+      necImport: null,
+      blockedNecImport: null,
+      modelTransfer: null,
+      clipboard: [],
+      clipboardJunctions: [],
+      undoStack: [],
+      redoStack: [],
+      canUndo: false,
+      canRedo: false,
+      geometryTransaction: null,
     });
   },
 

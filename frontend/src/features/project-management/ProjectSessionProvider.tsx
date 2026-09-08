@@ -49,6 +49,8 @@ interface ProjectSessionValue {
   currentRoute: string | null;
   refresh: () => void;
   newProject: (mode: ManagedProjectMode) => void;
+  /** Stage the exact live workspace snapshot for the next Save As action. */
+  stageSaveAs: (project: ProjectFile) => void;
   save: (nameIfNew?: string) => LocalProjectRecord;
   saveAs: (name: string) => LocalProjectRecord;
   saveExternal: (project: ProjectFile) => LocalProjectRecord;
@@ -91,6 +93,7 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
   const routeRef = useRef(location.pathname);
   const fingerprintRef = useRef("");
   const restoringRef = useRef(false);
+  const saveAsProjectRef = useRef<ProjectFile | null>(null);
 
   const refresh = useCallback(() => {
     try {
@@ -117,6 +120,8 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     routeRef.current = location.pathname;
+    const saveAsIntent = location.pathname === "/projects" && new URLSearchParams(location.search).get("intent") === "save-as";
+    if (!saveAsIntent) saveAsProjectRef.current = null;
     if (location.pathname !== "/projects") setCurrentRoute(location.pathname);
     if (isManagedProjectRoute(location.pathname)) {
       const nextMode = projectModeForRoute(location.pathname);
@@ -130,7 +135,7 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
         });
       }
     }
-  }, [location.pathname]);
+  }, [location.pathname, location.search]);
 
   useEffect(() => {
     fingerprintRef.current = projectFingerprint(captureProject(modeRef.current));
@@ -265,6 +270,10 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
     }
   }, [navigate]);
 
+  const stageSaveAs = useCallback((project: ProjectFile) => {
+    saveAsProjectRef.current = structuredClone(project);
+  }, []);
+
   const saveAs = useCallback((name: string): LocalProjectRecord => {
     // Specialist modules keep their complete state in the project envelope;
     // there is no corresponding Zustand simulator store to recapture when the
@@ -272,8 +281,11 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
     // simulator here used to turn phased-array (and other module) projects
     // into an unrelated default simulator project.
     const active = currentRef.current;
-    const snapshot = snapshotForSave(active?.project ?? null, modeRef.current);
+    const snapshot = saveAsProjectRef.current
+      ? structuredClone(saveAsProjectRef.current)
+      : snapshotForSave(active?.project ?? null, modeRef.current);
     const record = library.create(name, snapshot);
+    saveAsProjectRef.current = null;
     currentRef.current = record;
     setCurrent(record);
     setProjects(library.list());
@@ -458,6 +470,7 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
     currentRoute,
     refresh,
     newProject,
+    stageSaveAs,
     save,
     saveAs,
     saveExternal,
@@ -471,7 +484,7 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
     importProject,
     recover,
     discardRecovery,
-  }), [projects, current, currentRoute, recovery, status, error, lastSavedAt, refresh, newProject, save, saveAs, saveExternal, detachCurrent, open, rename, duplicate, deleteProject, exportProject, inspectImport, importProject, recover, discardRecovery]);
+  }), [projects, current, currentRoute, recovery, status, error, lastSavedAt, refresh, newProject, stageSaveAs, save, saveAs, saveExternal, detachCurrent, open, rename, duplicate, deleteProject, exportProject, inspectImport, importProject, recover, discardRecovery]);
 
   return <ProjectSessionContext.Provider value={value}>{children}</ProjectSessionContext.Provider>;
 }

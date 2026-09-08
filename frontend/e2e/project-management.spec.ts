@@ -332,3 +332,31 @@ test("saving an existing project requires explicit overwrite confirmation", asyn
   await expect.poll(() => prompt).toContain('save project "Confirmed save project"');
   await expect.poll(() => prompt).toContain("overwrite the existing local project");
 });
+
+test("workspace Save As cannot fall through to an overwrite in Project Management", async ({ page }) => {
+  await page.goto("/projects");
+  const changelog = page.getByRole("button", { name: "Got it" });
+  if (await changelog.isVisible().catch(() => false)) await changelog.click();
+  await page.getByRole("button", { name: "New wire project" }).click();
+  await page.locator('button[title^="Save project"]').first().click();
+  await page.getByLabel("Project name").fill("Original wire model");
+  await page.getByTestId("project-save").click();
+  await expect(page.getByText("Project saved locally.")).toBeVisible();
+  await page.getByRole("article").filter({ has: page.getByRole("heading", { name: "Original wire model" }) }).getByRole("button", { name: "Open" }).click();
+  await expect(page).toHaveURL(/\/editor$/);
+
+  await page.getByRole("button", { name: "Save As", exact: true }).click();
+  await expect(page).toHaveURL(/\/projects\?intent=save-as$/);
+  await expect(page.getByTestId("save-as-mode")).toBeVisible();
+  await expect(page.getByTestId("project-save")).toBeDisabled();
+  await page.getByLabel("Project name").fill("Copied wire model");
+  await page.getByTestId("project-save-as").click();
+  await expect(page).toHaveURL(/\/projects$/);
+  await expect(page.getByText("A new local project copy was saved.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Original wire model" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Copied wire model" })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => {
+    const library = JSON.parse(window.localStorage.getItem("hfas.project-library.v1") ?? "{}");
+    return library.projects?.filter((project: { name: string }) => ["Original wire model", "Copied wire model"].includes(project.name)).length ?? 0;
+  })).toBe(2);
+});

@@ -77,6 +77,27 @@ test("comparison examples expose dipole height, radial count, array phase and Ya
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 });
 
+test("comparison can run two or three enabled models while retaining disabled slot settings", async ({ page }) => {
+  await openComparison(page);
+  await page.getByTestId("comparison-parameter-4").fill("12");
+  await page.getByTestId("comparison-enabled-2").uncheck();
+  await page.getByTestId("comparison-enabled-3").uncheck();
+  await page.getByTestId("comparison-enabled-4").uncheck();
+  await expect(page.getByTestId("run-comparison")).toHaveText("Run 1 model comparison");
+  await expect(page.getByTestId("comparison-errors")).toContainText("Enable at least two model slots");
+  await expect(page.getByTestId("run-comparison")).toBeDisabled();
+  await page.getByTestId("comparison-enabled-2").check();
+  await expect(page.getByTestId("run-comparison")).toBeEnabled();
+  await page.getByTestId("run-comparison").click();
+  await expect(page.getByTestId("comparison-status")).toContainText("Comparison complete · 2 models", { timeout: 120_000 });
+  await expect(page.locator('[data-testid^="comparison-result-"]')).toHaveCount(2);
+  await expect(page.getByTestId("comparison-parameter-4")).toHaveValue("12");
+  await page.getByTestId("comparison-enabled-3").check();
+  await page.getByTestId("run-comparison").click();
+  await expect(page.getByTestId("comparison-status")).toContainText("Comparison complete · 3 models", { timeout: 120_000 });
+  await expect(page.locator('[data-testid^="comparison-result-"]')).toHaveCount(3);
+});
+
 test("a saved antenna can be snapshotted into a comparison slot and solved with standard models", async ({ page }) => {
   await page.goto("/");
   const changelog = page.getByRole("button", { name: "Got it" });

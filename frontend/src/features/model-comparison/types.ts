@@ -14,6 +14,8 @@ export interface ComparisonProjectSnapshot {
 
 export interface ComparisonSlotDefinition {
   id: string;
+  /** Whether this slot participates in the next comparison. Missing means enabled for older projects. */
+  enabled?: boolean;
   family: ComparisonFamily;
   parameterValue: number;
   source?: "builtin" | "saved-project";

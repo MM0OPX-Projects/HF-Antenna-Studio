@@ -57,6 +57,14 @@ export function ProjectActions({ onSave, className = "" }: ProjectActionsProps) 
     navigate("/projects");
   }, [navigate]);
 
+  const handleSaveAsClick = useCallback(() => {
+    // Preserve the live page state before leaving the workspace. Project
+    // Management will create a new record from this snapshot, never overwrite
+    // the active record while the Save As intent is in effect.
+    session.stageSaveAs(capture());
+    navigate("/projects?intent=save-as");
+  }, [capture, navigate, session]);
+
   const handleExport = useCallback(() => {
     void saveProjectAs(capture());
   }, [capture]);
@@ -98,7 +106,7 @@ export function ProjectActions({ onSave, className = "" }: ProjectActionsProps) 
         Save
       </button>
       <button
-        onClick={handleOpenClick}
+        onClick={handleSaveAsClick}
         className="flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-text-secondary bg-surface border border-border rounded hover:border-accent/50 hover:text-text-primary transition-colors"
         title="Open Save As in Project Management"
       >

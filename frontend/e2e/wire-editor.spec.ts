@@ -150,6 +150,14 @@ test("fixed 2D editor supports plane changes, right-click cancellation, drawing,
 
   await expect(page.getByTestId("wire-editor-2d")).toBeVisible();
   await expect(page.getByTestId("drawing-origin")).toContainText("ORIGIN 0,0");
+  const canvasBox = await page.getByTestId("wire-editor-2d-canvas").boundingBox();
+  const planePanelBox = await page.getByRole("group", { name: "Drawing plane" }).boundingBox();
+  const modeBox = await page.getByTestId("editor-mode-indicator").boundingBox();
+  expect(canvasBox).not.toBeNull();
+  expect(planePanelBox).not.toBeNull();
+  expect(modeBox).not.toBeNull();
+  expect(planePanelBox!.x).toBeGreaterThan(canvasBox!.x + 20);
+  expect(modeBox!.x).toBeGreaterThan(canvasBox!.x + 20);
   await page.getByRole("button", { name: "Side Y/Z" }).click();
   await expect(page.getByTestId("wire-editor-2d-canvas")).toHaveAttribute("aria-label", /Side Y\/Z/);
   await page.getByRole("button", { name: "Front X/Z" }).click();
@@ -180,6 +188,49 @@ test("fixed 2D editor supports plane changes, right-click cancellation, drawing,
   await expect(page.locator("canvas").first()).toHaveCSS("cursor", "crosshair");
   await page.getByTestId("editor-view-2d").click();
   await expect(page.getByTestId("wire-editor-2d")).toBeVisible();
+});
+
+test("New starts an isolated wire document and can be cancelled safely", async ({ page }) => {
+  await page.goto("/editor");
+  await dismissChangelog(page);
+  await page.getByTitle("Add wire mode (A)").click();
+  const canvas = page.getByTestId("wire-editor-2d-canvas");
+  const box = await canvas.boundingBox();
+  expect(box).not.toBeNull();
+  const draw = async (start: { x: number; y: number }, end: { x: number; y: number }) => {
+    await page.mouse.click(start.x, start.y);
+    await page.mouse.click(end.x, end.y);
+    await page.mouse.click(end.x + 16, end.y + 16, { button: "right" });
+  };
+  await draw(
+    { x: box!.x + box!.width * 0.3, y: box!.y + box!.height * 0.55 },
+    { x: box!.x + box!.width * 0.45, y: box!.y + box!.height * 0.45 },
+  );
+  await draw(
+    { x: box!.x + box!.width * 0.55, y: box!.y + box!.height * 0.55 },
+    { x: box!.x + box!.width * 0.7, y: box!.y + box!.height * 0.45 },
+  );
+  await expect(page.getByRole("heading", { name: /Antenna objects \(2 wires\)/i })).toBeVisible();
+
+  page.once("dialog", (dialog) => dialog.dismiss());
+  await page.getByTestId("new-wire-document").click();
+  await expect(page.getByRole("heading", { name: /Antenna objects \(2 wires\)/i })).toBeVisible();
+
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.getByTestId("new-wire-document").click();
+  await expect(page.getByRole("heading", { name: /Antenna objects \(0 wires\)/i })).toBeVisible();
+
+  await page.getByTitle("Add wire mode (A)").click();
+  await draw(
+    { x: box!.x + box!.width * 0.4, y: box!.y + box!.height * 0.6 },
+    { x: box!.x + box!.width * 0.6, y: box!.y + box!.height * 0.4 },
+  );
+  await expect(page.getByRole("heading", { name: /Antenna objects \(1 wire\)/i })).toBeVisible();
+  await expect(page.locator('aside [data-testid="antenna-object-list"] tbody tr').first()).toContainText("1");
+
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.keyboard.press("Control+N");
+  await expect(page.getByRole("heading", { name: /Antenna objects \(0 wires\)/i })).toBeVisible();
 });
 
 test("exact wire entry locks CAD length and angle with units in every drawing plane", async ({ page }) => {

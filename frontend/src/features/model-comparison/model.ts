@@ -13,7 +13,16 @@ export const FAMILY_PARAMETERS: Record<ComparisonFamily, { familyLabel: string; 
 };
 
 function slot(id: string, family: ComparisonFamily, parameterValue: number): ComparisonSlotDefinition {
-  return { id, family, parameterValue };
+  return { id, enabled: true, family, parameterValue };
+}
+
+/** Older saved comparison projects omitted enabled; treat those slots as active. */
+export function isComparisonSlotEnabled(definition: ComparisonSlotDefinition): boolean {
+  return definition.enabled !== false;
+}
+
+export function enabledComparisonSlots(definitions: ComparisonSlotDefinition[]): ComparisonSlotDefinition[] {
+  return definitions.filter(isComparisonSlotEnabled);
 }
 
 export const COMPARISON_PRESETS = {

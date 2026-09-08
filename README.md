@@ -2,7 +2,7 @@
 
 HF Antenna Studio is a local, open-source antenna-modelling application for Windows 11. It combines an original HTML/TypeScript interface with a pinned nec2c/WebAssembly NEC-2 engine. Normal calculations, projects, and imported measurement data remain on the user's computer and require no cloud account.
 
-Version 1.0.4 is the current maintenance release. The numerical validation scope remains the documented v1.0.0 campaign. It is engineering software, not a substitute for construction measurements or professional safety analysis.
+Version 1.0.5 is the current maintenance release. The numerical validation scope remains the documented v1.0.0 campaign. It is engineering software, not a substitute for construction measurements or professional safety analysis.
 
 ## Install HF Antenna Studio on Windows 11
 
@@ -23,9 +23,9 @@ The installer is an Actions artifact rather than a file in the repository, so it
 
 The application exposes many engineering workflows, but feature presence is not the same as numerical validation. See the scope below and the full [validation report](docs/VALIDATION_REPORT.md).
 
-## Unreleased development work
+## Ground-radial development scope
 
-The local `feature/ground-radial-systems` branch adds explicit near-surface radial-wire models for single and phased ground-mounted verticals. NEC-2 requires these wires to remain slightly above Sommerfeld/Norton ground; the application does not claim buried-wire or exact soil-contact modelling. See [Ground-radial systems](docs/GROUND_RADIAL_SYSTEMS.md) and the Unreleased changelog. This work is not part of the frozen v1.0.0 release claim until its later release workflow passes.
+The current development line includes explicit near-surface radial-wire models for single and phased ground-mounted verticals. NEC-2 requires these wires to remain slightly above Sommerfeld/Norton ground; the application does not claim buried-wire or exact soil-contact modelling. See [Ground-radial systems](docs/GROUND_RADIAL_SYSTEMS.md). This functionality does not expand the frozen v1.0.0 numerical-validation claim.
 
 ## Validated scope
 
@@ -49,7 +49,7 @@ Not validated for v1.0.0 include finite Sommerfeld/Norton ground as an independe
 1. Open the [Windows package workflow](https://github.com/MM0OPX-Projects/HF-Antenna-Studio/actions?query=workflow%3A%22Windows+package%22+branch%3Afeature%2Fground-radial-integration), open the newest successful run, and download its `*-windows-x64-test` artifact. Extract the x64 setup executable, `package-manifest.json`, and corresponding-source ZIP.
 2. Verify the installer's SHA-256 against the manifest.
 3. Run the per-user installer and launch **HF Antenna Studio** from the Start menu.
-4. Open **About** and confirm version `1.0.3`.
+4. Open **About** and confirm version `1.0.5`.
 5. Open the verified dipole example and run one calculation before relying on a saved design.
 
 The current installer is unsigned, so Microsoft Defender SmartScreen may display an unknown-publisher warning. Do not install a file whose checksum does not match the release manifest. Windows 11 normally includes Evergreen WebView2; a stripped machine may need a connection while the small installer obtains that prerequisite. Once installed, normal calculations work offline.
