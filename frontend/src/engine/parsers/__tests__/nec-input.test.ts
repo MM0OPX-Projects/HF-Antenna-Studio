@@ -144,6 +144,31 @@ describe("Excitations (EX cards)", () => {
     expect(exCards).toHaveLength(2);
     expect(exCards[1]).toContain("0.7070 0.7070");
   });
+
+  it("emits an equal-and-opposite pair for an explicit junction feed", () => {
+    const deck = buildCardDeck(makeDipole({
+      wires: [
+        { tag: 1, segments: 5, x1: 0, y1: 0, z1: 0, x2: 0, y2: 0, z2: 5, radius: 0.001 },
+        { tag: 2, segments: 5, x1: 0, y1: 0, z1: 0, x2: 0, y2: 0, z2: -5, radius: 0.001 },
+      ],
+      excitations: [{
+        wire_tag: 1,
+        segment: 1,
+        voltage_real: 1,
+        voltage_imag: 0,
+        position_ratio: 0,
+        feed_mode: "junction-differential",
+        junction_endpoints: [
+          { wire_tag: 1, segment: 1, endpoint: "start", polarity: 1 },
+          { wire_tag: 2, segment: 1, endpoint: "start", polarity: -1 },
+        ],
+      }],
+    }));
+    expect(findCards(deck, "EX")).toEqual([
+      "EX 0 1 1 0 0.5000 0.0000",
+      "EX 0 2 1 0 -0.5000 0.0000",
+    ]);
+  });
 });
 
 // ---------------------------------------------------------------------------

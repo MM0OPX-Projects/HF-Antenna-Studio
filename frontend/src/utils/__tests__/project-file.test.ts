@@ -121,6 +121,34 @@ describe("createEditorProject", () => {
     expect(project.editor!.junctions[0]!.endpoints[0]!.wireTag).toBe(1);
   });
 
+  it("preserves an explicit junction feed through save/load", () => {
+    const project = createEditorProject(
+      [
+        { tag: 1, segments: 5, x1: 0, y1: 0, z1: 0, x2: 0, y2: 0, z2: 5, radius: 0.001 },
+        { tag: 2, segments: 5, x1: 0, y1: 0, z1: 0, x2: 0, y2: 0, z2: -5, radius: 0.001 },
+      ],
+      [{
+        wire_tag: 1, segment: 1, voltage_real: 1, voltage_imag: 0, position_ratio: 0,
+        feed_mode: "junction-differential",
+        junction_endpoints: [
+          { wire_tag: 1, segment: 1, endpoint: "start", polarity: 1 },
+          { wire_tag: 2, segment: 1, endpoint: "start", polarity: -1 },
+        ],
+      }],
+      [], [], { type: "free_space" },
+      { start_mhz: 14, stop_mhz: 14, steps: 1 }, 14,
+      [{ id: 1, endpoints: [{ wireTag: 1, endpoint: "start" }, { wireTag: 2, endpoint: "start" }] }],
+    );
+    const restored = parseProjectText(JSON.stringify(project)).project;
+    expect(restored.editor?.excitations[0]).toMatchObject({
+      feed_mode: "junction-differential",
+      junction_endpoints: [
+        { wire_tag: 1, segment: 1, endpoint: "start", polarity: 1 },
+        { wire_tag: 2, segment: 1, endpoint: "start", polarity: -1 },
+      ],
+    });
+  });
+
   it("round-trips managed editor radial-system identity", () => {
     const wires = [
       { tag: 1, segments: 11, x1: 0, y1: 0, z1: 2, x2: 0, y2: 0, z2: 7, radius: 0.0005 },

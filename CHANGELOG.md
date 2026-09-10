@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.0.7] - 2026-09-10
+
+### Added
+
+- Added an explicit **Use symmetric junction feed** option for a source placed at a junction containing exactly two joined wire endpoints.
+- Added a balanced NEC representation that applies equal-and-opposite half-voltage sources to the two segments adjacent to the requested junction, without changing the antenna geometry.
+
+### Fixed
+
+- Corrected the avoidable pattern asymmetry produced when a geometrically symmetric loop was driven only from the first segment centre of one leg.
+- Preserved balanced-junction source identity, endpoint membership, polarity and segment mapping through Wire Editor project save/restore, backend execution and saved-project Model Comparison.
+- Kept existing endpoint-fed projects on their original single-segment NEC representation until the balanced junction option is explicitly selected and the project is saved again.
+
 ## [1.0.6] - 2026-09-08
 
 ### Added

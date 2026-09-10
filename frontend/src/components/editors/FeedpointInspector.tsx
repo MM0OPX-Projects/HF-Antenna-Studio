@@ -3,6 +3,7 @@ import { useEditorStore, type EditorWire } from "../../stores/editorStore";
 import { feedpointPlacement, wireLengthM } from "../../features/wire-editor/feedpoint";
 import { editorUnitDecimals, editorUnitToMetres, metresToEditorUnit, type EditorLengthUnit } from "../../features/wire-editor/units";
 import { connectedPolylinePath, polylineDistanceForRatio, polylinePositionAtDistance } from "../../features/wire-editor/polyline";
+import { findEndpointJunction, type WireEndpoint } from "../../utils/editor-junctions";
 import { NumberInput } from "../ui/NumberInput";
 
 interface FeedpointInspectorProps {
@@ -16,6 +17,7 @@ export function FeedpointInspector({ wire, unit }: FeedpointInspectorProps) {
   const junctions = useEditorStore((state) => state.junctions);
   const radialSystems = useEditorStore((state) => state.radialSystems);
   const setExcitationPosition = useEditorStore((state) => state.setExcitationPosition);
+  const setExcitationJunctionFeed = useEditorStore((state) => state.setExcitationJunctionFeed);
   const moveExcitationToPosition = useEditorStore((state) => state.moveExcitationToPosition);
   const updateExcitation = useEditorStore((state) => state.updateExcitation);
   const removeExcitation = useEditorStore((state) => state.removeExcitation);
@@ -32,6 +34,11 @@ export function FeedpointInspector({ wire, unit }: FeedpointInspectorProps) {
   const isPicking = pickingExcitationForTag === wire.tag;
   const magnitude = source ? Math.hypot(source.voltage_real, source.voltage_imag) : 1;
   const phase = source ? Math.atan2(source.voltage_imag, source.voltage_real) * 180 / Math.PI : 0;
+  const sourceEndpoint: WireEndpoint | null = source && placement
+    ? (placement.requestedRatio <= 0.5 ? "start" : "end")
+    : null;
+  const junction = sourceEndpoint ? findEndpointJunction(junctions, { wireTag: wire.tag, endpoint: sourceEndpoint }) : undefined;
+  const canUseJunctionFeed = Boolean(junction && junction.endpoints.length === 2 && sourceEndpoint && (placement?.requestedRatio === 0 || placement?.requestedRatio === 1));
 
   const setPolarVoltage = (nextMagnitude: number, nextPhase: number) => {
     const radians = nextPhase * Math.PI / 180;
@@ -119,6 +126,11 @@ export function FeedpointInspector({ wire, unit }: FeedpointInspectorProps) {
       <div>Actual NEC segment centre: {actualPercent.toFixed(2)}% ({metresToEditorUnit(placement.actualDistanceM, unit).toFixed(editorUnitDecimals(unit))} {unit})</div>
       <div>EX 0 {wire.tag} {source.segment} 0 {source.voltage_real.toFixed(4)} {source.voltage_imag.toFixed(4)}</div>
     </div>
+    {canUseJunctionFeed && source.feed_mode !== "junction-differential" && <div className="rounded border border-cyan-500/30 bg-cyan-500/5 p-2 text-[10px] leading-4 text-text-secondary" data-testid="junction-feed-option">
+      <p><b className="text-cyan-300">Joined endpoint detected.</b> Enable a balanced junction feed to model the source across both adjacent segments.</p>
+      <button type="button" onClick={() => setExcitationJunctionFeed(wire.tag)} className="mt-1 rounded bg-cyan-500/15 px-2 py-1 text-[10px] font-semibold text-cyan-300">Use symmetric junction feed</button>
+    </div>}
+    {source.feed_mode === "junction-differential" && <p className="rounded border border-cyan-500/30 bg-cyan-500/5 p-1.5 text-[10px] leading-4 text-cyan-200" data-testid="junction-feed-status"><b>Balanced junction feed enabled.</b> NEC receives equal-and-opposite half-voltage sources on the two adjacent segment centres; the saved geometry is unchanged.</p>}
     {placementFractionOfSegment > 0.35 && <p className="rounded border border-swr-warning/30 bg-swr-warning/10 p-1.5 text-[10px] leading-4 text-swr-warning">The requested point is noticeably displaced from the available segment centre. Increase segmentation if that placement accuracy matters.</p>}
     {(requestedPercent === 0 || requestedPercent === 100) && <p className="text-[10px] leading-4 text-text-secondary">At 0% or 100%, NEC excites the centre of the first or last segment—not the mathematical endpoint. An end-fed antenna also needs a physically meaningful return path or counterpoise.</p>}
 

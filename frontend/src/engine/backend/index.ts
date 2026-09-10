@@ -106,6 +106,8 @@ export class BackendEngine implements SimulationEngine {
         segment: e.segment,
         voltage_real: e.voltage_real,
         voltage_imag: e.voltage_imag,
+        ...(e.feed_mode ? { feed_mode: e.feed_mode } : {}),
+        ...(e.junction_endpoints ? { junction_endpoints: e.junction_endpoints } : {}),
       })),
       ground: buildGroundPayload(request.ground),
       ...(request.geometry_ground_flag !== undefined
@@ -250,6 +252,8 @@ export class BackendEngine implements SimulationEngine {
               segment: e.segment,
               voltage_real: e.voltage_real,
               voltage_imag: e.voltage_imag,
+              ...(e.feed_mode ? { feed_mode: e.feed_mode } : {}),
+              ...(e.junction_endpoints ? { junction_endpoints: e.junction_endpoints } : {}),
             })),
             ground: { ground_type: request.ground.type },
             frequency_start_mhz: request.frequency_start_mhz,

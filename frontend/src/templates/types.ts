@@ -77,6 +77,16 @@ export interface WireGeometry {
 }
 
 /** Excitation source definition */
+export interface JunctionFeedEndpoint {
+  /** Wire carrying the NEC segment adjacent to the physical junction. */
+  wire_tag: number;
+  /** 1-based segment immediately beside the junction. */
+  segment: number;
+  endpoint: "start" | "end";
+  /** Differential polarity relative to the source's requested voltage. */
+  polarity: 1 | -1;
+}
+
 export interface Excitation {
   wire_tag: number;
   segment: number;
@@ -88,6 +98,14 @@ export interface Excitation {
    * the editor remap the source predictably when segmentation changes.
    */
   position_ratio?: number;
+  /**
+   * Explicit opt-in representation for a two-wire junction feed. NEC2 cannot
+   * place an EX card at a mathematical endpoint, so the differential source
+   * is split equally across the two adjacent segment centres. Legacy sources
+   * omit this field and retain the historical single-segment behaviour.
+   */
+  feed_mode?: "junction-differential";
+  junction_endpoints?: JunctionFeedEndpoint[];
 }
 
 /** Frequency range for default sweep */

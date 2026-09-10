@@ -223,6 +223,38 @@ describe("wire-editor transforms", () => {
   });
 });
 
+describe("junction feed representation", () => {
+  beforeEach(reset);
+
+  it("opts into a balanced source only for a two-endpoint junction", () => {
+    useEditorStore.setState({
+      wires: [
+        { ...base, segments: 5, x1: 0, y1: 0, z1: 0, x2: 0, y2: 0, z2: 5 },
+        { ...base, tag: 2, segments: 5, x1: 0, y1: 0, z1: 0, x2: 0, y2: 0, z2: -5 },
+      ],
+      excitations: [{ wire_tag: 1, segment: 1, voltage_real: 1, voltage_imag: 0, position_ratio: 0 }],
+      junctions: [{ id: 1, endpoints: [{ wireTag: 1, endpoint: "start" }, { wireTag: 2, endpoint: "start" }] }],
+      nextTag: 3,
+      nextJunctionId: 2,
+    });
+
+    const result = useEditorStore.getState().setExcitationJunctionFeed(1);
+    expect(result.ok).toBe(true);
+    const source = useEditorStore.getState().excitations[0]!;
+    expect(source.feed_mode).toBe("junction-differential");
+    expect(source.junction_endpoints).toEqual([
+      { wire_tag: 1, segment: 1, endpoint: "start", polarity: 1 },
+      { wire_tag: 2, segment: 1, endpoint: "start", polarity: -1 },
+    ]);
+  });
+
+  it("does not enable junction mode for a lone endpoint", () => {
+    const result = useEditorStore.getState().setExcitationJunctionFeed(1);
+    expect(result.ok).toBe(false);
+    expect(useEditorStore.getState().excitations[0]?.feed_mode).toBeUndefined();
+  });
+});
+
 describe("reviewed module transfers", () => {
   beforeEach(reset);
 

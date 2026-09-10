@@ -260,6 +260,8 @@ interface EditorState {
   setPickingExcitationForTag: (tag: number | null) => void;
   setExcitation: (wireTag: number, segment: number) => void;
   setExcitationPosition: (wireTag: number, positionRatio: number) => void;
+  /** Opt into a balanced two-wire source at a connected endpoint junction. */
+  setExcitationJunctionFeed: (wireTag: number) => EditorActionResult;
   /** Move one existing source to another wire/position while preserving its voltage. */
   moveExcitationToPosition: (sourceWireTag: number, targetWireTag: number, positionRatio: number) => EditorActionResult;
   updateExcitation: (wireTag: number, updates: Pick<Partial<Excitation>, "voltage_real" | "voltage_imag">) => void;
@@ -418,6 +420,14 @@ function reconcileSegmentReferences(state: EditorState, wires: EditorWire[]) {
         if (!before || !after || before.segments === after.segments) return excitation.segment;
         return segmentForFeedRatio(requestedFeedRatio(excitation, before.segments), after.segments);
       })(),
+      junction_endpoints: excitation.junction_endpoints?.map((endpoint) => {
+        const wire = wires.find((candidate) => candidate.tag === endpoint.wire_tag);
+        if (!wire) return endpoint;
+        return {
+          ...endpoint,
+          segment: endpoint.endpoint === "start" ? 1 : wire.segments,
+        };
+      }),
     })),
     loads: state.loads.map((load) => ({
       ...load,
@@ -2087,7 +2097,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const existing = state.excitations.findIndex((e) => e.wire_tag === wireTag);
     const previous = existing >= 0 ? state.excitations[existing] : undefined;
     const exc: Excitation = previous
-      ? { ...previous, segment: selected, position_ratio: segmentCentreRatio(selected, wire.segments) }
+      ? { ...previous, segment: selected, position_ratio: segmentCentreRatio(selected, wire.segments), feed_mode: undefined, junction_endpoints: undefined }
       : { wire_tag: wireTag, segment: selected, voltage_real: 1, voltage_imag: 0, position_ratio: segmentCentreRatio(selected, wire.segments) };
     let newExcitations: Excitation[];
     if (existing >= 0) {
@@ -2112,12 +2122,45 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const segment = segmentForFeedRatio(ratio, wire.segments);
     const existing = state.excitations.findIndex((source) => source.wire_tag === wireTag);
     const source: Excitation = existing >= 0
-      ? { ...state.excitations[existing]!, segment, position_ratio: ratio }
+      ? { ...state.excitations[existing]!, segment, position_ratio: ratio, feed_mode: undefined, junction_endpoints: undefined }
       : { wire_tag: wireTag, segment, voltage_real: 1, voltage_imag: 0, position_ratio: ratio };
     const excitations = [...state.excitations];
     if (existing >= 0) excitations[existing] = source;
     else excitations.push(source);
     set({ ...geometryHistory(state), excitations });
+  },
+
+  setExcitationJunctionFeed: (wireTag) => {
+    const state = get();
+    const sourceIndex = state.excitations.findIndex((source) => source.wire_tag === wireTag);
+    const wire = state.wires.find((candidate) => candidate.tag === wireTag);
+    if (sourceIndex < 0 || !wire) return actionResult(false, "Select an existing feedpoint before enabling junction feed.");
+    const source = state.excitations[sourceIndex]!;
+    const ratio = requestedFeedRatio(source, wire.segments);
+    const endpoint: WireEndpoint = ratio <= 0.5 ? "start" : "end";
+    const junction = findEndpointJunction(state.junctions, { wireTag, endpoint });
+    if (!junction || junction.endpoints.length !== 2) {
+      return actionResult(false, "A symmetric junction feed requires exactly two joined wire endpoints.");
+    }
+    const partner = junction.endpoints.find((candidate) => candidate.wireTag !== wireTag);
+    if (!partner) return actionResult(false, "The joined endpoint could not be resolved.");
+    const partnerWire = state.wires.find((candidate) => candidate.tag === partner.wireTag);
+    if (!partnerWire) return actionResult(false, "The joined wire no longer exists.");
+    const primarySegment = endpoint === "start" ? 1 : wire.segments;
+    const partnerSegment = partner.endpoint === "start" ? 1 : partnerWire.segments;
+    const excitations = [...state.excitations];
+    excitations[sourceIndex] = {
+      ...source,
+      segment: primarySegment,
+      position_ratio: endpoint === "start" ? 0 : 1,
+      feed_mode: "junction-differential",
+      junction_endpoints: [
+        { wire_tag: wireTag, segment: primarySegment, endpoint, polarity: 1 },
+        { wire_tag: partner.wireTag, segment: partnerSegment, endpoint: partner.endpoint, polarity: -1 },
+      ],
+    };
+    set({ ...geometryHistory(state), excitations, lastEditorMessage: null });
+    return actionResult(true, `Enabled balanced junction feed across Wire ${wireTag} and Wire ${partner.wireTag}.`);
   },
 
   moveExcitationToPosition: (sourceWireTag, targetWireTag, positionRatio) => {
@@ -2138,6 +2181,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       wire_tag: targetWireTag,
       segment: segmentForFeedRatio(ratio, targetWire.segments),
       position_ratio: ratio,
+      feed_mode: undefined,
+      junction_endpoints: undefined,
     };
     set({ ...geometryHistory(state), excitations, lastEditorMessage: null });
     return actionResult(true, `Moved the feedpoint to Wire ${targetWireTag}.`);

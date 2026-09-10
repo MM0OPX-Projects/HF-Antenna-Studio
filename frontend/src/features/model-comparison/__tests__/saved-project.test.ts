@@ -26,6 +26,25 @@ describe("saved projects in controlled comparison", () => {
     expect(createSavedProjectComparisonRequest(project, createDefaultComparisonConditions()).portCount).toBe(2);
   });
 
+  it("treats a balanced junction source as a two-source comparison port", () => {
+    const template = getTemplate("dipole"); const params = getDefaultParams(template); const wires = template.generateGeometry(params);
+    const project = createSimulatorProject(template.id, params, template.defaultGround, null, template.defaultFrequencyRange(params), []);
+    project.mode = "editor"; project.simulator = undefined; project.editor = {
+      wires: [
+        { ...wires[0]!, tag: 1, segments: 5, x1: 0, y1: 0, z1: 0, x2: 0, y2: 0, z2: 5 },
+        { ...wires[0]!, tag: 2, segments: 5, x1: 0, y1: 0, z1: 0, x2: 0, y2: 0, z2: -5 },
+      ],
+      excitations: [{ wire_tag: 1, segment: 1, voltage_real: 1, voltage_imag: 0, position_ratio: 0, feed_mode: "junction-differential", junction_endpoints: [
+        { wire_tag: 1, segment: 1, endpoint: "start", polarity: 1 },
+        { wire_tag: 2, segment: 1, endpoint: "start", polarity: -1 },
+      ] }], loads: [], transmissionLines: [], junctions: [], radialSystems: [], ground: { type: "perfect" },
+      frequencyRange: { start_mhz: 14.1, stop_mhz: 14.1, steps: 1 }, frequencySegments: [], designFrequencyMhz: 14.1,
+    };
+    const prepared = createSavedProjectComparisonRequest(project, createDefaultComparisonConditions());
+    expect(prepared.portCount).toBe(2);
+    expect(prepared.run.deck.match(/^EX /gm)).toHaveLength(2);
+  });
+
   it("preserves an elevated Wire Editor loop's explicit GE flag and saved conditions", () => {
     const template = getTemplate("dipole"); const params = getDefaultParams(template);
     const project = createSimulatorProject(template.id, params, { type: "perfect" }, null, template.defaultFrequencyRange(params), []);

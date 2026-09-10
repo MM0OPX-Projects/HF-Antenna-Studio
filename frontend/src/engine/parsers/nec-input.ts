@@ -128,7 +128,30 @@ export function buildCardDeck(request: SimulateAdvancedRequest): string {
   }
 
   // EX cards (excitations)
+  const wireByTag = new Map(request.wires.map((wire) => [wire.tag, wire]));
   for (const ex of request.excitations) {
+    const endpoints = ex.junction_endpoints ?? [];
+    const validJunction = ex.feed_mode === "junction-differential"
+      && endpoints.length === 2
+      && new Set(endpoints.map((endpoint) => `${endpoint.wire_tag}:${endpoint.segment}`)).size === 2
+      && new Set(endpoints.map((endpoint) => endpoint.polarity)).size === 2
+      && endpoints.some((endpoint) => endpoint.polarity === 1)
+      && endpoints.some((endpoint) => endpoint.polarity === -1)
+      && endpoints.every((endpoint) => {
+        const wire = wireByTag.get(endpoint.wire_tag);
+        return wire !== undefined && endpoint.segment >= 1 && endpoint.segment <= wire.segments;
+      });
+    if (validJunction) {
+      for (const endpoint of endpoints) {
+        const real = ex.voltage_real * 0.5 * endpoint.polarity;
+        const imag = ex.voltage_imag * 0.5 * endpoint.polarity;
+        lines.push(
+          `EX 0 ${endpoint.wire_tag} ${endpoint.segment} 0 ` +
+            `${real.toFixed(4)} ${imag.toFixed(4)}`
+        );
+      }
+      continue;
+    }
     lines.push(
       `EX 0 ${ex.wire_tag} ${ex.segment} 0 ` +
         `${ex.voltage_real.toFixed(4)} ${ex.voltage_imag.toFixed(4)}`

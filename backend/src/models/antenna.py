@@ -2,6 +2,7 @@
 
 import math
 from enum import Enum
+from typing import Literal
 from pydantic import Field, model_validator
 
 from src.models.base import StrictModel
@@ -48,6 +49,13 @@ class Wire(StrictModel):
         return self
 
 
+class JunctionFeedEndpoint(StrictModel):
+    wire_tag: int = Field(ge=1, le=9999)
+    segment: int = Field(ge=1, le=200)
+    endpoint: Literal["start", "end"]
+    polarity: Literal[1, -1]
+
+
 class Excitation(StrictModel):
     """Voltage source excitation on a wire segment."""
 
@@ -55,6 +63,11 @@ class Excitation(StrictModel):
     segment: int = Field(ge=1, le=200, description="Segment number on the wire")
     voltage_real: float = Field(default=1.0, description="Real part of voltage (V)")
     voltage_imag: float = Field(default=0.0, description="Imaginary part of voltage (V)")
+    # Optional explicit two-wire junction representation. NEC2 applies EX at
+    # segment centres; this metadata lets the deck builder emit a balanced,
+    # equal-and-opposite pair while legacy payloads remain unchanged.
+    feed_mode: Literal["junction-differential"] | None = Field(default=None)
+    junction_endpoints: list[JunctionFeedEndpoint] | None = Field(default=None)
 
 
 # ---- V2: Lumped Loads ----

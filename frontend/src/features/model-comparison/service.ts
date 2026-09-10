@@ -121,7 +121,8 @@ export function createSavedProjectComparisonRequest(project: ProjectFile, condit
     // mode. Automatic GE is recomputed against whichever ground mode is active.
     const geometry_ground_flag = project.editor.geometryGroundFlag ?? resolveGeometryGroundFlag(project.editor.wires, ground, null);
     const request: SimulateAdvancedRequest = { wires: project.editor.wires, excitations: project.editor.excitations, loads: project.editor.loads, transmission_lines: project.editor.transmissionLines, ground, geometry_ground_flag, frequency, compute_currents: false, compute_pattern: true, pattern_step: 2, comment: "Saved Wire Editor project" };
-    return { run: parseForRequest(request), portCount: request.excitations.length, warnings: conditionMode === "saved" ? ["Saved Wire Editor frequency, ground, and GE geometry-ground flag are in use; this result is not a common-condition comparison."] : [] };
+    const hasBalancedJunction = request.excitations.some((excitation) => excitation.feed_mode === "junction-differential");
+    return { run: parseForRequest(request), portCount: hasBalancedJunction ? 2 : request.excitations.length, warnings: conditionMode === "saved" ? ["Saved Wire Editor frequency, ground, and GE geometry-ground flag are in use; this result is not a common-condition comparison."] : [] };
   }
   if (project.mode === "module" && project.module) {
     const state = project.module.state as Record<string, unknown>; const ground = conditions.ground.kind === "perfect" ? { kind: "perfect" as const } : { kind: "sommerfeld-norton" as const, ...realGround(conditions)! };

@@ -968,7 +968,7 @@ export function EditorScene({
         {excitations.length > 0 && <div data-testid="editor-feedpoint-legend"><div className="flex items-center gap-2 font-semibold text-amber-300"><span className="inline-block h-2.5 w-2.5 rounded-full bg-amber-500" />Feedpoint source</div>{excitations.map((source, index) => {
           const wire = wires.find((candidate) => candidate.tag === source.wire_tag);
           const placement = wire ? feedpointPlacement(source, wire) : null;
-          return <p key={`${source.wire_tag}:${index}`} className="mt-1 text-text-secondary">Source {index + 1} · Wire {source.wire_tag} · {placement ? `${(placement.requestedRatio * 100).toFixed(1)}% requested` : "position unavailable"} · NEC segment {source.segment}</p>;
+          return <p key={`${source.wire_tag}:${index}`} className="mt-1 text-text-secondary">Source {index + 1} · Wire {source.wire_tag} · {placement ? `${(placement.requestedRatio * 100).toFixed(1)}% requested` : "position unavailable"} · {source.feed_mode === "junction-differential" ? "balanced junction" : `NEC segment ${source.segment}`}</p>;
         })}</div>}
         {radialSystems.length > 0 && <div className={excitations.length > 0 ? "mt-2 border-t border-border pt-2" : undefined} data-testid="editor-radial-legend">
           <div className="flex items-center gap-2 font-semibold text-cyan-300"><span className="inline-block h-1 w-5 rounded bg-cyan-400" />Explicit NEC radial wires</div>

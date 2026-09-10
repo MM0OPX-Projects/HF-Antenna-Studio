@@ -21,7 +21,7 @@ export function SourceTree() {
         return <button key={`${source.wire_tag}:${index}`} type="button" onClick={() => { selectWire(source.wire_tag); setPickingExcitationForTag(null); }} className="grid w-full grid-cols-[1fr_auto] gap-x-2 rounded px-2 py-1 text-left text-[10px] hover:bg-surface-hover">
           <span className="font-semibold text-swr-warning">Source {index + 1} · wire {source.wire_tag}, segment {source.segment}</span>
           <span className="font-mono text-text-primary">{magnitude.toFixed(3)} ∠ {phase.toFixed(1)}°</span>
-          <span className="text-text-secondary">{placement ? `${(placement.requestedRatio * 100).toFixed(1)}% requested · ${(placement.actualRatio * 100).toFixed(1)}% actual` : "Referenced wire is missing"}</span>
+          <span className="text-text-secondary">{placement ? `${(placement.requestedRatio * 100).toFixed(1)}% requested · ${(placement.actualRatio * 100).toFixed(1)}% actual` : "Referenced wire is missing"}{source.feed_mode === "junction-differential" ? " · balanced junction" : " · segment-centre"}</span>
           <span className="text-accent">Inspect</span>
         </button>;
       })}

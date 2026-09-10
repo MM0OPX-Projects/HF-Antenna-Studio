@@ -97,8 +97,35 @@ def build_card_deck(request: SimulationRequest) -> str:
     else:
         lines.append("PT -1 0 0 0")  # Suppress current printout
 
-    # Excitation cards
+    # Excitation cards.  A junction-differential source is an explicit opt-in
+    # representation of a two-wire endpoint feed: NEC2 has no mathematical
+    # endpoint EX location, so each adjacent segment receives half the voltage
+    # with opposite polarity.  Invalid/legacy metadata falls back to the
+    # historical single segment-centre source rather than silently changing a
+    # saved model.
+    wire_by_tag = {wire.tag: wire for wire in request.wires}
     for ex in request.excitations:
+        endpoints = ex.junction_endpoints or []
+        valid_junction = (
+            ex.feed_mode == "junction-differential"
+            and len(endpoints) == 2
+            and len({(endpoint.wire_tag, endpoint.segment) for endpoint in endpoints}) == 2
+            and {endpoint.polarity for endpoint in endpoints} == {1, -1}
+            and all(
+                endpoint.wire_tag in wire_by_tag
+                and 1 <= endpoint.segment <= wire_by_tag[endpoint.wire_tag].segments
+                for endpoint in endpoints
+            )
+        )
+        if valid_junction:
+            for endpoint in endpoints:
+                real = ex.voltage_real * 0.5 * endpoint.polarity
+                imag = ex.voltage_imag * 0.5 * endpoint.polarity
+                lines.append(
+                    f"EX 0 {endpoint.wire_tag} {endpoint.segment} 0 "
+                    f"{real:.4f} {imag:.4f}"
+                )
+            continue
         lines.append(
             f"EX 0 {ex.wire_tag} {ex.segment} 0 "
             f"{ex.voltage_real:.4f} {ex.voltage_imag:.4f}"
