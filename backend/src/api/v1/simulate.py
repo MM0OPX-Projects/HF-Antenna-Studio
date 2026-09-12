@@ -7,7 +7,7 @@ import uuid
 from fastapi import APIRouter, HTTPException, Request
 
 from src.models.simulation import SimulationRequest
-from src.models.results import SimulationResult
+from src.models.results import InputImpedanceMode, SimulationResult
 from src.simulation.nec_input import build_card_deck
 from src.simulation.nec_runner import run_nec2c, NecExecutionError
 from src.simulation.nec_output import parse_nec_output, parse_near_field_output
@@ -92,6 +92,11 @@ async def simulate(request_body: SimulationRequest, request: Request) -> Simulat
                 phi_start=request_body.pattern.phi_start,
                 phi_step=request_body.pattern.phi_step,
                 compute_currents=request_body.compute_currents,
+                impedance_mode=(
+                    InputImpedanceMode.BALANCED_DIFFERENTIAL
+                    if any(ex.feed_mode == "junction-differential" for ex in request_body.excitations)
+                    else InputImpedanceMode.SINGLE_SEGMENT
+                ),
             )
         except Exception as e:
             logger.error("Output parsing failed for %s: %s", sim_id, e)

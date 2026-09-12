@@ -38,7 +38,7 @@ function format(value: number): string {
   return Number(value.toPrecision(10)).toString();
 }
 
-export function buildComparisonSweepRequest(deck: string, totalSegments: number, config: SweepConfig): NecDeckRunRequest {
+export function buildComparisonSweepRequest(deck: string, totalSegments: number, config: SweepConfig, impedanceMode: "single-segment" | "balanced-differential" = "single-segment"): NecDeckRunRequest {
   const errors = validateSweepConfig(config);
   if (errors.length) throw new Error(errors.join(" "));
   if (!Number.isInteger(totalSegments) || totalSegments < 1) throw new Error("A positive segment count is required for a comparison sweep.");
@@ -47,7 +47,7 @@ export function buildComparisonSweepRequest(deck: string, totalSegments: number,
   const lines = sourceLines.filter((line) => !/^(FR|RP|XQ|EN)(\s|$)/i.test(line));
   const step = (config.stopMhz - config.startMhz) / (config.points - 1);
   lines.push(`FR 0 ${config.points} 0 0 ${format(config.startMhz)} ${format(step)}`, "XQ 0", "EN");
-  return { deck: `${lines.join("\n")}\n`, parse: { nTheta: 1, nPhi: 1, thetaStart: 0, thetaStep: 1, phiStart: 0, phiStep: 1, computeCurrents: false, totalSegments } };
+  return { deck: `${lines.join("\n")}\n`, parse: { nTheta: 1, nPhi: 1, thetaStart: 0, thetaStep: 1, phiStart: 0, phiStep: 1, computeCurrents: false, totalSegments, impedanceMode } };
 }
 
 export function maximumSegmentWavelengthsAtFrequency(deck: string, frequencyMhz: number): number {
@@ -61,8 +61,8 @@ export function maximumSegmentWavelengthsAtFrequency(deck: string, frequencyMhz:
   return Math.max(0, ...segmentRatios);
 }
 
-async function runSweep(deck: string, totalSegments: number, config: SweepConfig, label: string, color: string, signal?: AbortSignal, solver?: (request: NecDeckRunRequest, signal?: AbortSignal) => Promise<SimulationResult>): Promise<AnalyserSweep> {
-  const request = buildComparisonSweepRequest(deck, totalSegments, config);
+async function runSweep(deck: string, totalSegments: number, config: SweepConfig, label: string, color: string, signal?: AbortSignal, solver?: (request: NecDeckRunRequest, signal?: AbortSignal) => Promise<SimulationResult>, impedanceMode: "single-segment" | "balanced-differential" = "single-segment"): Promise<AnalyserSweep> {
+  const request = buildComparisonSweepRequest(deck, totalSegments, config, impedanceMode);
   const simulation = await (solver ?? ((candidate, abortSignal) => sweepEngine.runDeck(candidate, 120_000, abortSignal)))(request, signal);
   if (simulation.frequency_data.length !== config.points) throw new Error(`Expected ${config.points} sweep points, received ${simulation.frequency_data.length}.`);
   if (simulation.frequency_data.some((point) => !Number.isFinite(point.impedance.real) || !Number.isFinite(point.impedance.imag))) throw new Error("The comparison sweep contains non-finite impedance values.");
@@ -97,7 +97,7 @@ function comparisonGround(conditions: ComparisonConditions): SimulateAdvancedReq
 function parseForRequest(request: SimulateAdvancedRequest): NecDeckRunRequest {
   const step = request.pattern_step ?? 2;
   const free = request.ground.type === "free_space";
-  return { deck: buildCardDeck(request), parse: { nTheta: Math.floor((free ? 360 : 180) / step) + 1, nPhi: Math.floor(360 / step), thetaStart: free ? -180 : -90, thetaStep: step, phiStart: 0, phiStep: step, computeCurrents: false, totalSegments: request.wires.reduce((sum, wire) => sum + wire.segments, 0) } };
+  return { deck: buildCardDeck(request), parse: { nTheta: Math.floor((free ? 360 : 180) / step) + 1, nPhi: Math.floor(360 / step), thetaStart: free ? -180 : -90, thetaStep: step, phiStart: 0, phiStep: step, computeCurrents: false, totalSegments: request.wires.reduce((sum, wire) => sum + wire.segments, 0), impedanceMode: request.excitations.some((excitation) => excitation.feed_mode === "junction-differential") ? "balanced-differential" : "single-segment" } };
 }
 
 export function createSavedProjectComparisonRequest(project: ProjectFile, conditions: ComparisonConditions, conditionMode: SavedProjectConditionMode = "common"): { run: NecDeckRunRequest; portCount: number; warnings: string[] } {
@@ -122,7 +122,7 @@ export function createSavedProjectComparisonRequest(project: ProjectFile, condit
     const geometry_ground_flag = project.editor.geometryGroundFlag ?? resolveGeometryGroundFlag(project.editor.wires, ground, null);
     const request: SimulateAdvancedRequest = { wires: project.editor.wires, excitations: project.editor.excitations, loads: project.editor.loads, transmission_lines: project.editor.transmissionLines, ground, geometry_ground_flag, frequency, compute_currents: false, compute_pattern: true, pattern_step: 2, comment: "Saved Wire Editor project" };
     const hasBalancedJunction = request.excitations.some((excitation) => excitation.feed_mode === "junction-differential");
-    return { run: parseForRequest(request), portCount: hasBalancedJunction ? 2 : request.excitations.length, warnings: conditionMode === "saved" ? ["Saved Wire Editor frequency, ground, and GE geometry-ground flag are in use; this result is not a common-condition comparison."] : [] };
+    return { run: parseForRequest(request), portCount: hasBalancedJunction ? 1 : request.excitations.length, warnings: conditionMode === "saved" ? ["Saved Wire Editor frequency, ground, and GE geometry-ground flag are in use; this result is not a common-condition comparison."] : [] };
   }
   if (project.mode === "module" && project.module) {
     const state = project.module.state as Record<string, unknown>; const ground = conditions.ground.kind === "perfect" ? { kind: "perfect" as const } : { kind: "sommerfeld-norton" as const, ...realGround(conditions)! };
@@ -172,6 +172,8 @@ export async function runComparisonSlot(
   let warnings: string[];
   let totalSegments = 0;
   let sweepUnavailableReason: string | null = null;
+  let impedanceMode: ComparisonResult["impedanceMode"];
+  let inputImpedances: ComparisonResult["inputImpedances"];
 
   if (definition.source === "saved-project") {
     const project = migrateProjectFile(definition.savedProject!.project).project;
@@ -186,7 +188,11 @@ export async function runComparisonSlot(
     } else {
       const saved = await runSavedProject(definition, conditions, { signal: options.signal });
       metrics = saved.metrics; radiationPattern = saved.data.pattern!; generatedNec = saved.prepared.run.deck; engine = saved.simulation.engine; warnings = [...saved.prepared.warnings, ...saved.simulation.warnings]; totalSegments = saved.prepared.run.parse.totalSegments;
-      if (saved.prepared.portCount !== 1) sweepUnavailableReason = "This saved model has multiple enforced sources and no unambiguous single physical input port; R, X, SWR and the impedance sweep are intentionally not reported.";
+      impedanceMode = saved.data.impedance_mode;
+      inputImpedances = saved.data.input_impedances;
+      if (saved.prepared.portCount !== 1 && impedanceMode !== "balanced-differential") {
+        sweepUnavailableReason = "This saved model has multiple enforced sources and no unambiguous single physical input port; R, X, SWR and the impedance sweep are intentionally not reported.";
+      }
     }
   } else if (definition.family === "dipole") {
     const lambda = SPEED_OF_LIGHT_M_PER_S / frequencyHz;
@@ -229,11 +235,11 @@ export async function runComparisonSlot(
   const cuts = extractComparisonCuts(radiationPattern, conditions.azimuthElevationDeg, requestedElevationBearingDeg);
   if (Math.abs(cuts.actualAzimuthElevationDeg - conditions.azimuthElevationDeg) > 0.001) warnings = [...warnings, `Azimuth comparison uses the nearest solved elevation (${cuts.actualAzimuthElevationDeg.toFixed(1)}°).`];
   if (bearingMode === "common" && Math.abs(cuts.actualElevationBearingDeg - requestedElevationBearingDeg) > 0.001) warnings = [...warnings, `Elevation comparison uses the nearest solved compass bearing (${cuts.actualElevationBearingDeg.toFixed(1)}°).`];
-  const sweep = sweepUnavailableReason ? null : await runSweep(generatedNec, totalSegments, sweepConfig, label, color, options.signal, options.sweepSolver);
+  const sweep = sweepUnavailableReason ? null : await runSweep(generatedNec, totalSegments, sweepConfig, label, color, options.signal, options.sweepSolver, impedanceMode);
   return {
     slotId: definition.id, label, color, family: definition.source === "saved-project" ? "saved-project" : definition.family, definitionKey: comparisonDefinitionKey(definition), conditionKey: comparisonConditionKey(conditions, sweepConfig),
     conditions: structuredClone(conditions), elevationBearingDeg: cuts.actualElevationBearingDeg, elevationBearingMode: bearingMode, savedConditionMode: definition.source === "saved-project" ? savedProjectConditionMode(definition) : "common", sweepConfig: { ...sweepConfig }, metrics, azimuthPattern: cuts.azimuth, elevationPattern: cuts.elevation,
-    radiationPattern, sweep, sweepUnavailableReason, generatedNec, engine, warnings: [...new Set([...warnings, ...(sweep?.warnings ?? [])])],
+    radiationPattern, sweep, sweepUnavailableReason, generatedNec, engine, impedanceMode, inputImpedances, warnings: [...new Set([...warnings, ...(sweep?.warnings ?? [])])],
   };
 }
 

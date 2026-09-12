@@ -262,6 +262,8 @@ interface EditorState {
   setExcitationPosition: (wireTag: number, positionRatio: number) => void;
   /** Opt into a balanced two-wire source at a connected endpoint junction. */
   setExcitationJunctionFeed: (wireTag: number) => EditorActionResult;
+  /** Return a balanced junction source to its ordinary single-segment feed. */
+  clearExcitationJunctionFeed: (wireTag: number) => EditorActionResult;
   /** Move one existing source to another wire/position while preserving its voltage. */
   moveExcitationToPosition: (sourceWireTag: number, targetWireTag: number, positionRatio: number) => EditorActionResult;
   updateExcitation: (wireTag: number, updates: Pick<Partial<Excitation>, "voltage_real" | "voltage_imag">) => void;
@@ -2161,6 +2163,26 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     };
     set({ ...geometryHistory(state), excitations, lastEditorMessage: null });
     return actionResult(true, `Enabled balanced junction feed across Wire ${wireTag} and Wire ${partner.wireTag}.`);
+  },
+
+  clearExcitationJunctionFeed: (wireTag) => {
+    const state = get();
+    const sourceIndex = state.excitations.findIndex((source) => source.wire_tag === wireTag);
+    const wire = state.wires.find((candidate) => candidate.tag === wireTag);
+    if (sourceIndex < 0 || !wire) return actionResult(false, "Select an existing feedpoint before disabling junction feed.");
+    const source = state.excitations[sourceIndex]!;
+    if (source.feed_mode !== "junction-differential") return actionResult(false, "The selected feedpoint is already using a single-segment source.");
+    const ratio = requestedFeedRatio(source, wire.segments);
+    const excitations = [...state.excitations];
+    excitations[sourceIndex] = {
+      ...source,
+      segment: segmentForFeedRatio(ratio, wire.segments),
+      position_ratio: ratio,
+      feed_mode: undefined,
+      junction_endpoints: undefined,
+    };
+    set({ ...geometryHistory(state), excitations, lastEditorMessage: null });
+    return actionResult(true, `Disabled balanced junction feed on Wire ${wireTag}.`);
   },
 
   moveExcitationToPosition: (sourceWireTag, targetWireTag, positionRatio) => {

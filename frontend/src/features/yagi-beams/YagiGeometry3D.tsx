@@ -1,6 +1,8 @@
 import { Grid, Line, OrbitControls } from "@react-three/drei";
 import { useMemo } from "react";
+import { MOUSE } from "three";
 import { SafeCanvas } from "../../components/three/SafeCanvas";
+import { preventViewportAutoScroll, preventViewportScroll } from "../../components/three/viewportEvents";
 import type { YagiWire } from "./schema";
 
 function Scene({ wires }: { wires: YagiWire[] }) {
@@ -25,14 +27,14 @@ function Scene({ wires }: { wires: YagiWire[] }) {
     {wires.map((wire) => <Line key={wire.id} points={[map(wire.startM), map(wire.endM)]} color={colour(wire.family)} lineWidth={wire.family === "driven" ? 5 : 3} />)}
     <mesh position={map(wires.find((wire) => wire.family === "driven")!.startM).map((value, index) => index === 0 ? 0 : value) as [number, number, number]}><sphereGeometry args={[0.12, 18, 18]} /><meshStandardMaterial color="#60a5fa" emissive="#1d4ed8" emissiveIntensity={0.5} /></mesh>
     <Line points={[[0, 2.5, boomEnd[2] - 0.6], [0, 2.5, boomEnd[2]]]} color="#facc15" lineWidth={4} />
-    <OrbitControls makeDefault enablePan={false} minDistance={3} maxDistance={13} />
+    <OrbitControls makeDefault target={[0, 2.5, 0]} enablePan screenSpacePanning mouseButtons={{ LEFT: MOUSE.ROTATE, MIDDLE: MOUSE.PAN, RIGHT: MOUSE.PAN }} minDistance={0.2} maxDistance={30} />
   </>;
 }
 
 export function YagiGeometry3D({ wires, modelKey }: { wires: YagiWire[]; modelKey: string }) {
-  return <div className="relative h-80 overflow-hidden rounded-md bg-[#07111f]" data-testid="yagi-geometry-3d" data-model-key={modelKey} data-wire-count={wires.length}>
-    <span className="sr-only">Interactive Yagi geometry. Purple is the reflector, orange is the driven element, cyan marks directors, and yellow shows the intended forward direction.</span>
+  return <div className="relative h-80 overflow-hidden rounded-md bg-[#07111f]" onWheel={preventViewportScroll} onAuxClick={preventViewportAutoScroll} data-testid="yagi-geometry-3d" data-model-key={modelKey} data-wire-count={wires.length}>
+    <span className="sr-only">Interactive Yagi geometry. Purple is the reflector, orange is the driven element, cyan marks directors, and yellow shows the intended forward direction. Drag to orbit, scroll to zoom, and middle/right-drag to pan.</span>
     <SafeCanvas camera={{ position: [7, 6, 7], fov: 43 }} dpr={[1, 1.5]}><Scene wires={wires} /></SafeCanvas>
-    <div className="pointer-events-none absolute bottom-2 left-2 rounded bg-black/60 px-2 py-1 text-[10px] text-slate-200">Reflector: purple · driven: orange · directors: cyan · forward +Y: yellow</div>
+    <div className="pointer-events-none absolute bottom-2 left-2 rounded bg-black/60 px-2 py-1 text-[10px] text-slate-200">Reflector: purple · driven: orange · directors: cyan · forward +Y: yellow · orbit · scroll zoom · middle/right-drag pan</div>
   </div>;
 }

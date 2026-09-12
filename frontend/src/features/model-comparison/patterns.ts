@@ -36,22 +36,38 @@ function nearestIndex(start: number, step: number, count: number, target: number
   return selected;
 }
 
+function interpolatedThetaGain(pattern: PatternData, requestedTheta: number, phiIndex: number): number {
+  const rows = Array.from({ length: pattern.theta_count }, (_, index) => ({
+    index,
+    theta: pattern.theta_start + index * pattern.theta_step,
+  })).filter((row) => row.theta >= -1e-6 && row.theta <= 90 + 1e-6);
+  const exact = rows.find((row) => Math.abs(row.theta - requestedTheta) <= 1e-6);
+  if (exact) return pattern.gain_dbi[exact.index]?.[phiIndex] ?? -999.99;
+  const upper = rows.find((row) => row.theta > requestedTheta);
+  const lower = upper ? rows[rows.indexOf(upper) - 1] : undefined;
+  if (!lower || !upper) return pattern.gain_dbi[nearestIndex(pattern.theta_start, pattern.theta_step, pattern.theta_count, requestedTheta, false)]?.[phiIndex] ?? -999.99;
+  const lowerGain = pattern.gain_dbi[lower.index]?.[phiIndex] ?? -999.99;
+  const upperGain = pattern.gain_dbi[upper.index]?.[phiIndex] ?? -999.99;
+  if (!Number.isFinite(lowerGain) || !Number.isFinite(upperGain) || lowerGain <= -900 || upperGain <= -900) return -999.99;
+  const fraction = (requestedTheta - lower.theta) / (upper.theta - lower.theta);
+  return lowerGain + (upperGain - lowerGain) * fraction;
+}
+
 /** Extract matching cuts in compass coordinates: 0° north/+Y, 90° east/+X. */
 export function extractComparisonCuts(pattern: PatternData, azimuthElevationDeg: number, elevationBearingDeg: number): { azimuth: ComparisonPatternPoint[]; elevation: ComparisonPatternPoint[]; actualAzimuthElevationDeg: number; actualElevationBearingDeg: number } {
   const requestedTheta = 90 - azimuthElevationDeg;
-  const thetaIndex = nearestIndex(pattern.theta_start, pattern.theta_step, pattern.theta_count, requestedTheta, false);
   const requestedPhi = phiForCompassBearing(elevationBearingDeg);
   const phiIndex = nearestIndex(pattern.phi_start, pattern.phi_step, pattern.phi_count, requestedPhi, true);
   const azimuth = normalize(Array.from({ length: pattern.phi_count }, (_, index) => ({
     angleDeg: normalizeBearing(90 - (pattern.phi_start + index * pattern.phi_step)),
-    gainDbi: pattern.gain_dbi[thetaIndex]?.[index] ?? -999.99,
+    gainDbi: interpolatedThetaGain(pattern, requestedTheta, index),
   })).sort((a, b) => a.angleDeg - b.angleDeg));
   const actualPhiDeg = pattern.phi_start + phiIndex * pattern.phi_step;
   const elevation = normalize(extractFullElevationCut(pattern, actualPhiDeg));
   return {
     azimuth,
     elevation,
-    actualAzimuthElevationDeg: 90 - (pattern.theta_start + thetaIndex * pattern.theta_step),
+    actualAzimuthElevationDeg: Math.max(0, Math.min(90, azimuthElevationDeg)),
     actualElevationBearingDeg: compassBearingForPhi(pattern.phi_start + phiIndex * pattern.phi_step),
   };
 }

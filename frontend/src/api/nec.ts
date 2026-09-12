@@ -31,6 +31,9 @@ export interface Impedance {
   imag: number;
 }
 
+/** How the NEC input rows are interpreted at the physical feed port. */
+export type ImpedanceMode = "single-segment" | "balanced-differential";
+
 /** Pattern data for a single frequency */
 export interface PatternData {
   theta_start: number;
@@ -113,6 +116,10 @@ export interface TransmissionLine {
 export interface FrequencyResult {
   frequency_mhz: number;
   impedance: Impedance;
+  /** Physical-port interpretation of the reported impedance. */
+  impedance_mode?: ImpedanceMode;
+  /** Individual NEC input-row impedances retained for balanced-feed diagnostics. */
+  input_impedances?: Impedance[];
   swr_50: number;
   gain_max_dbi: number;
   gain_max_theta: number;

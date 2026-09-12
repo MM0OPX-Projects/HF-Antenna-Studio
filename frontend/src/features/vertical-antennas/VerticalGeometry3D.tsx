@@ -1,6 +1,8 @@
 import { Grid, Line, OrbitControls } from "@react-three/drei";
 import { useMemo } from "react";
+import { MOUSE } from "three";
 import { SafeCanvas } from "../../components/three/SafeCanvas";
+import { preventViewportAutoScroll, preventViewportScroll } from "../../components/three/viewportEvents";
 import type { VerticalWire } from "./schema";
 
 function Scene({ wires }: { wires: VerticalWire[] }) {
@@ -26,14 +28,14 @@ function Scene({ wires }: { wires: VerticalWire[] }) {
     <Grid args={[11, 11]} cellColor="#2dd4bf" sectionColor="#0f766e" fadeDistance={11} />
     {wires.map((wire) => <Line key={wire.id} points={[map(wire.startM), map(wire.endM)]} color={wire.family === "radiator" ? "#fb923c" : "#22d3ee"} lineWidth={wire.family === "radiator" ? 5 : 2.5} />)}
     <mesh position={map(wires[0]!.startM)}><sphereGeometry args={[0.13, 18, 18]} /><meshStandardMaterial color="#60a5fa" emissive="#1d4ed8" emissiveIntensity={0.55} /></mesh>
-    <OrbitControls makeDefault enablePan={false} minDistance={3} maxDistance={13} />
+    <OrbitControls makeDefault target={[0, 2.5, 0]} enablePan screenSpacePanning mouseButtons={{ LEFT: MOUSE.ROTATE, MIDDLE: MOUSE.PAN, RIGHT: MOUSE.PAN }} minDistance={0.2} maxDistance={30} />
   </>;
 }
 
 export function VerticalGeometry3D({ wires, modelKey }: { wires: VerticalWire[]; modelKey: string }) {
-  return <div className="relative h-80 overflow-hidden rounded-md bg-[#07111f]" data-testid="vertical-geometry-3d" data-model-key={modelKey} data-wire-count={wires.length}>
-    <span className="sr-only">Interactive vertical antenna geometry. Orange is the radiator, cyan marks explicit radial wires, and blue marks the feed.</span>
+  return <div className="relative h-80 overflow-hidden rounded-md bg-[#07111f]" onWheel={preventViewportScroll} onAuxClick={preventViewportAutoScroll} data-testid="vertical-geometry-3d" data-model-key={modelKey} data-wire-count={wires.length}>
+    <span className="sr-only">Interactive vertical antenna geometry. Orange is the radiator, cyan marks explicit radial wires, and blue marks the feed. Drag to orbit, scroll to zoom, and middle/right-drag to pan.</span>
     <SafeCanvas camera={{ position: [6, 4.5, 7], fov: 43 }} dpr={[1, 1.5]}><Scene wires={wires} /></SafeCanvas>
-    <div className="pointer-events-none absolute bottom-2 left-2 rounded bg-black/60 px-2 py-1 text-[10px] text-slate-200">Orange: radiator · cyan: explicit radials · blue: feed · drag to orbit</div>
+    <div className="pointer-events-none absolute bottom-2 left-2 rounded bg-black/60 px-2 py-1 text-[10px] text-slate-200">Orange: radiator · cyan: explicit radials · blue: feed · orbit · scroll zoom · middle/right-drag pan</div>
   </div>;
 }

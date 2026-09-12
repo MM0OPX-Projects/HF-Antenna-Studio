@@ -34,4 +34,18 @@ describe("comparison HTML report", () => {
     expect(html).toContain("230.0° strongest");
     expect(html).toContain("saved model conditions");
   });
+
+  it("identifies balanced raw impedance and the separate post-transform boundary", () => {
+    const balanced: ComparisonResult = {
+      ...result,
+      impedanceMode: "balanced-differential",
+      inputImpedances: [{ real: 103.43, imag: -92.57 }, { real: 103.43, imag: -92.57 }],
+      metrics: { ...result.metrics, resistanceOhm: 206.86, reactanceOhm: -185.13 },
+    };
+    const html = buildComparisonHtml([balanced], config, []);
+    expect(html).toContain("raw balanced antenna impedance");
+    expect(html).toContain("NEC row 1");
+    expect(html).toContain("no transformer is applied by Model Comparison");
+    expect(html).toContain("Raw R");
+  });
 });

@@ -1,5 +1,7 @@
 import { Grid, OrbitControls } from "@react-three/drei";
 import { SafeCanvas } from "../../components/three/SafeCanvas";
+import { preventViewportAutoScroll, preventViewportScroll } from "../../components/three/viewportEvents";
+import { MOUSE } from "three";
 
 interface HeightGeometry3DProps {
   heightWavelengths: number;
@@ -24,19 +26,19 @@ function Geometry({ heightWavelengths }: HeightGeometry3DProps) {
         <cylinderGeometry args={[0.014, 0.014, displayHeight, 10]} />
         <meshStandardMaterial color="#94a3b8" transparent opacity={0.55} />
       </mesh>
-      <OrbitControls makeDefault enablePan={false} minDistance={3.5} maxDistance={10} />
+      <OrbitControls makeDefault target={[0, displayHeight, 0]} enablePan screenSpacePanning mouseButtons={{ LEFT: MOUSE.ROTATE, MIDDLE: MOUSE.PAN, RIGHT: MOUSE.PAN }} minDistance={0.2} maxDistance={30} />
     </>
   );
 }
 
 export function HeightGeometry3D(props: HeightGeometry3DProps) {
   return (
-    <div className="relative h-64 overflow-hidden rounded-md bg-[#07111f]" data-testid="geometry-3d" data-height-wavelengths={props.heightWavelengths.toFixed(2)}>
-      <span className="sr-only">Interactive three-dimensional dipole geometry. Drag to orbit and scroll to zoom.</span>
+    <div className="relative h-64 overflow-hidden rounded-md bg-[#07111f]" onWheel={preventViewportScroll} onAuxClick={preventViewportAutoScroll} data-testid="geometry-3d" data-height-wavelengths={props.heightWavelengths.toFixed(2)}>
+      <span className="sr-only">Interactive three-dimensional dipole geometry. Drag to orbit, scroll to zoom, and middle/right-drag to pan.</span>
       <SafeCanvas camera={{ position: [4.8, 3.1, 5.2], fov: 42 }} dpr={[1, 1.5]}>
         <Geometry {...props} />
       </SafeCanvas>
-      <div className="pointer-events-none absolute bottom-2 left-2 rounded bg-black/55 px-2 py-1 text-[10px] text-slate-200">Drag to orbit · scroll to zoom · geometry updates immediately</div>
+      <div className="pointer-events-none absolute bottom-2 left-2 rounded bg-black/55 px-2 py-1 text-[10px] text-slate-200">Drag to orbit · scroll to zoom · middle/right-drag to pan · geometry updates immediately</div>
     </div>
   );
 }

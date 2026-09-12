@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.0.8] - 2026-09-12
+
+### Added
+
+- Added consistent elevation-cut interpolation so requested angles use the same NEC samples and interpolation rules across Wire Editor, antenna modules, and Model Comparison.
+- Added an optional same-bearing control for paired azimuth/elevation result views so directional readings can be compared on one explicit compass plane.
+
+### Fixed
+
+- Corrected cross-module radiation-cut readouts so non-sampled elevation angles are reported as interpolated values with their source NEC bounds, instead of silently using a different row.
+- Kept 2D result plots, comparison rows, and exported summaries aligned with the selected cut angle and bearing.
+
 ## [1.0.7] - 2026-09-10
 
 ### Added

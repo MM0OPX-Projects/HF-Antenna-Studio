@@ -17,6 +17,9 @@ export interface AzimuthCutSample {
   requestedElevationDeg: number;
   actualElevationDeg: number;
   thetaIndex: number;
+  method: "exact" | "interpolated";
+  lowerElevationDeg: number;
+  upperElevationDeg: number;
   /** Bearing of the strongest valid sample in this selected cut. */
   peakBearingDeg: number | null;
   peakGainDbi: number | null;
@@ -101,7 +104,28 @@ function physicalPhiDeg(thetaDeg: number, phiDeg: number): number {
   return thetaDeg < -1e-6 ? phiDeg + 180 : phiDeg;
 }
 
-/** Select one real NEC theta row and expose it as a complete 360° cut. */
+function interpolatedThetaGain(pattern: PatternData, requestedThetaDeg: number, phiIndex: number): number | null {
+  const rows = Array.from({ length: pattern.theta_count }, (_, index) => ({
+    index,
+    theta: pattern.theta_start + index * pattern.theta_step,
+  })).filter((row) => row.theta >= -1e-6 && row.theta <= 90 + 1e-6);
+  if (rows.length === 0) return null;
+  const exact = rows.find((row) => Math.abs(row.theta - requestedThetaDeg) <= 1e-6);
+  if (exact) {
+    const gain = pattern.gain_dbi[exact.index]?.[phiIndex] ?? -999.99;
+    return validGain(gain) ? gain : null;
+  }
+  const upper = rows.find((row) => row.theta > requestedThetaDeg);
+  const lower = upper ? rows[rows.indexOf(upper) - 1] : undefined;
+  if (!lower || !upper) return null;
+  const lowerGain = pattern.gain_dbi[lower.index]?.[phiIndex] ?? -999.99;
+  const upperGain = pattern.gain_dbi[upper.index]?.[phiIndex] ?? -999.99;
+  if (!validGain(lowerGain) || !validGain(upperGain)) return null;
+  const fraction = (requestedThetaDeg - lower.theta) / (upper.theta - lower.theta);
+  return lowerGain + (upperGain - lowerGain) * fraction;
+}
+
+/** Select/interpolate a NEC theta row and expose it as a complete 360° cut. */
 export function azimuthCutFromPattern(
   pattern: PatternData,
   requestedElevationDeg?: number,
@@ -112,21 +136,54 @@ export function azimuthCutFromPattern(
   const requested = requestedElevationDeg === undefined
     ? Math.max(0, Math.min(90, 90 - Math.abs(pattern.theta_start + strongest.thetaIndex * pattern.theta_step)))
     : Math.max(0, Math.min(90, requestedElevationDeg));
-  const thetaIndex = nearestCanonicalThetaIndex(pattern, 90 - requested);
+  const requestedThetaDeg = 90 - requested;
+  const thetaIndex = nearestCanonicalThetaIndex(pattern, requestedThetaDeg);
   const theta = pattern.theta_start + thetaIndex * pattern.theta_step;
+  const exactRow = Math.abs(theta - requestedThetaDeg) <= 1e-6;
+  const surroundingRows = Array.from({ length: pattern.theta_count }, (_, index) => pattern.theta_start + index * pattern.theta_step)
+    .filter((value) => value >= -1e-6 && value <= 90 + 1e-6)
+    .sort((left, right) => left - right);
+  const lowerRows = surroundingRows.filter((value) => value <= requestedThetaDeg + 1e-6);
+  const lowerTheta = lowerRows[lowerRows.length - 1] ?? theta;
+  const upperTheta = surroundingRows.find((value) => value >= requestedThetaDeg - 1e-6) ?? theta;
+  const method = requestedElevationDeg !== undefined && !exactRow && surroundingRows.length > 0 && Math.abs(lowerTheta - upperTheta) > 1e-6 ? "interpolated" : "exact";
+  const rowTheta = method === "interpolated" ? requestedThetaDeg : theta;
+  const interpolation = method === "interpolated";
   const points = normalize(Array.from({ length: pattern.phi_count }, (_, phiIndex) => ({
-    angleDeg: bearingForPhi(physicalPhiDeg(theta, pattern.phi_start + phiIndex * pattern.phi_step), convention),
-    gainDbi: pattern.gain_dbi[thetaIndex]?.[phiIndex] ?? -999.99,
+    angleDeg: bearingForPhi(physicalPhiDeg(rowTheta, pattern.phi_start + phiIndex * pattern.phi_step), convention),
+    gainDbi: interpolation
+      ? interpolatedThetaGain(pattern, requestedThetaDeg, phiIndex) ?? -999.99
+      : pattern.gain_dbi[thetaIndex]?.[phiIndex] ?? -999.99,
   })).sort((left, right) => left.angleDeg - right.angleDeg));
   const peak = points.reduce<NormalizedPatternPoint | null>((best, point) => !best || point.gainDbi > best.gainDbi ? point : best, null);
   return {
     points,
     requestedElevationDeg: requested,
-    actualElevationDeg: Math.max(0, Math.min(90, 90 - Math.abs(theta))),
+    actualElevationDeg: method === "interpolated" ? requested : Math.max(0, Math.min(90, 90 - Math.abs(theta))),
     thetaIndex,
+    method,
+    lowerElevationDeg: 90 - upperTheta,
+    upperElevationDeg: 90 - lowerTheta,
     peakBearingDeg: peak?.angleDeg ?? null,
     peakGainDbi: peak?.gainDbi ?? null,
   };
+}
+
+/** Convert a displayed compass bearing to the NEC phi convention used by the cuts. */
+export function necPhiForBearing(bearingDeg: number, convention: AzimuthBearingConvention = "legacy-compass"): number {
+  const normalized = ((bearingDeg % 360) + 360) % 360;
+  if (convention === "nec-phi") return normalized;
+  if (convention === "compass") return ((90 - normalized) % 360 + 360) % 360;
+  return ((-90 - normalized) % 360 + 360) % 360;
+}
+
+/** Build a normalised vertical cut through a requested displayed bearing. */
+export function elevationCutFromPattern(
+  pattern: PatternData,
+  bearingDeg: number,
+  convention: AzimuthBearingConvention = "legacy-compass",
+): NormalizedPatternPoint[] {
+  return normalize(extractFullElevationCut(pattern, necPhiForBearing(bearingDeg, convention)));
 }
 
 /**

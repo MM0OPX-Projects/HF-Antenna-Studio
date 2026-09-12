@@ -6,6 +6,7 @@ import logging
 
 from src.models.results import (
     Impedance,
+    InputImpedanceMode,
     PatternData,
     FrequencyResult,
     SegmentCurrent,
@@ -13,6 +14,44 @@ from src.models.results import (
 )
 
 logger = logging.getLogger("antsim.nec_output")
+
+
+def _resolve_input_impedance(
+    rows: list[tuple[Impedance, Impedance, Impedance]],
+    mode: InputImpedanceMode,
+) -> tuple[Impedance, list[Impedance] | None]:
+    """Resolve NEC input rows into one physical-port impedance."""
+    if not rows:
+        raise ValueError("NEC returned no antenna input rows")
+    if mode != InputImpedanceMode.BALANCED_DIFFERENTIAL:
+        return rows[0][2], None
+    if len(rows) != 2:
+        raise ValueError(f"Balanced junction feed expected two NEC input rows, received {len(rows)}")
+    positive, negative = rows
+    current_error = math.hypot(
+        positive[1].real + negative[1].real,
+        positive[1].imag + negative[1].imag,
+    )
+    current_scale = max(
+        1e-12,
+        math.hypot(positive[1].real, positive[1].imag),
+        math.hypot(negative[1].real, negative[1].imag),
+    )
+    if current_error / current_scale > 1e-3:
+        raise ValueError("Balanced junction feed returned non-opposite NEC source currents")
+    voltage = Impedance(
+        real=positive[0].real - negative[0].real,
+        imag=positive[0].imag - negative[0].imag,
+    )
+    current = positive[1]
+    denominator = current.real * current.real + current.imag * current.imag
+    if denominator < 1e-30:
+        raise ValueError("NEC returned a zero balanced-feed current")
+    differential = Impedance(
+        real=(voltage.real * current.real + voltage.imag * current.imag) / denominator,
+        imag=(voltage.imag * current.real - voltage.real * current.imag) / denominator,
+    )
+    return differential, [rows[0][2], rows[1][2]]
 
 # Floating point in scientific notation: matches 1.4000E+01, -3.7469E+01, etc.
 _SCI = r"[+-]?\d+\.\d+E[+-]\d+"
@@ -310,13 +349,14 @@ def parse_nec_output(
     phi_start: float,
     phi_step: float,
     compute_currents: bool = False,
+    impedance_mode: InputImpedanceMode = InputImpedanceMode.SINGLE_SEGMENT,
 ) -> list[FrequencyResult]:
     """Parse the complete nec2c stdout into a list of FrequencyResult."""
     results: list[FrequencyResult] = []
     lines = output.splitlines()
 
     current_freq: float | None = None
-    current_impedance: Impedance | None = None
+    current_input_rows: list[tuple[Impedance, Impedance, Impedance]] = []
     current_pattern_data: list[tuple[float, float, float]] = []
     current_power_radiated: float | None = None
     current_power_input: float | None = None
@@ -331,17 +371,19 @@ def parse_nec_output(
         freq_match = _FREQUENCY_RE.search(line)
         if freq_match:
             # Save previous frequency data
-            if current_freq is not None and current_impedance is not None:
+            if current_freq is not None and current_input_rows:
+                impedance, input_impedances = _resolve_input_impedance(current_input_rows, impedance_mode)
                 result = _build_frequency_result(
-                    current_freq, current_impedance, current_pattern_data,
+                    current_freq, impedance, current_pattern_data,
                     n_theta, n_phi, theta_start, theta_step, phi_start, phi_step,
                     current_power_radiated, current_power_input,
                     current_currents if compute_currents else None,
+                    impedance_mode, input_impedances,
                 )
                 results.append(result)
 
             current_freq = float(freq_match.group(1))
-            current_impedance = None
+            current_input_rows = []
             current_pattern_data = []
             current_power_radiated = None
             current_power_input = None
@@ -368,8 +410,10 @@ def parse_nec_output(
             if imp_match:
                 z_real = float(imp_match.group(7))
                 z_imag = float(imp_match.group(8))
-                current_impedance = Impedance(real=round(z_real, 4), imag=round(z_imag, 4))
-                in_input_params = False
+                voltage = Impedance(real=float(imp_match.group(3)), imag=float(imp_match.group(4)))
+                current = Impedance(real=float(imp_match.group(5)), imag=float(imp_match.group(6)))
+                row_impedance = Impedance(real=round(z_real, 4), imag=round(z_imag, 4))
+                current_input_rows.append((voltage, current, row_impedance))
                 continue
             # If we hit a blank line or non-matching line, stop looking
             if line.strip() == "":
@@ -456,12 +500,14 @@ def parse_nec_output(
             continue
 
     # Don't forget the last frequency
-    if current_freq is not None and current_impedance is not None:
+    if current_freq is not None and current_input_rows:
+        impedance, input_impedances = _resolve_input_impedance(current_input_rows, impedance_mode)
         result = _build_frequency_result(
-            current_freq, current_impedance, current_pattern_data,
+            current_freq, impedance, current_pattern_data,
             n_theta, n_phi, theta_start, theta_step, phi_start, phi_step,
             current_power_radiated, current_power_input,
             current_currents if compute_currents else None,
+            impedance_mode, input_impedances,
         )
         results.append(result)
 
@@ -481,6 +527,8 @@ def _build_frequency_result(
     power_radiated: float | None = None,
     power_input: float | None = None,
     currents: list[SegmentCurrent] | None = None,
+    impedance_mode: InputImpedanceMode = InputImpedanceMode.SINGLE_SEGMENT,
+    input_impedances: list[Impedance] | None = None,
 ) -> FrequencyResult:
     """Build a FrequencyResult from parsed data."""
     swr = compute_swr(impedance.real, impedance.imag)
@@ -562,6 +610,8 @@ def _build_frequency_result(
     return FrequencyResult(
         frequency_mhz=round(freq_mhz, 6),
         impedance=impedance,
+        impedance_mode=impedance_mode,
+        input_impedances=input_impedances,
         swr_50=swr,
         gain_max_dbi=round(gain_max_dbi, 2) if gain_max_dbi > -999.0 else -999.99,
         gain_max_theta=gain_max_theta,

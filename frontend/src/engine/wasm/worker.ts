@@ -15,6 +15,8 @@ export interface NecDeckParseConfig {
   phiStep: number;
   computeCurrents: boolean;
   totalSegments: number;
+  /** Explicit physical-port interpretation for generated balanced feeds. */
+  impedanceMode?: "single-segment" | "balanced-differential";
 }
 
 export interface NecDeckRunRequest {
@@ -152,6 +154,7 @@ async function executeDeck(
     parse.phiStart,
     parse.phiStep,
     parse.computeCurrents,
+    parse.impedanceMode,
   );
   if (frequencyData.length === 0) {
     throw new Error("No frequency data parsed from nec2c output. Check antenna geometry.");
@@ -186,6 +189,7 @@ async function runSimulationAsync(request: SimulateAdvancedRequest): Promise<Sim
     phiStep: patternStep,
     computeCurrents: request.compute_currents ?? true,
     totalSegments: request.wires.reduce((sum, wire) => sum + wire.segments, 0),
+    impedanceMode: request.excitations.some((excitation) => excitation.feed_mode === "junction-differential") ? "balanced-differential" : "single-segment",
   };
   const executed = await executeDeck(buildCardDeck(request), parse);
 

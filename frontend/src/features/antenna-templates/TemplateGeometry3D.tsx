@@ -1,6 +1,8 @@
 import { Grid, Line, OrbitControls } from "@react-three/drei";
 import { useMemo } from "react";
+import { MOUSE } from "three";
 import { SafeCanvas } from "../../components/three/SafeCanvas";
+import { preventViewportAutoScroll, preventViewportScroll } from "../../components/three/viewportEvents";
 import type { TemplateAntennaModel } from "./schema";
 import { feedPointCoordinates } from "./model";
 
@@ -28,7 +30,7 @@ function Geometry({ model }: { model: TemplateAntennaModel }) {
     <Grid args={[10, 10]} cellColor="#2dd4bf" sectionColor="#0f766e" fadeDistance={10} />
     {model.wires.map((wire) => <Line key={wire.id} points={[mapPoint(wire.startM), mapPoint(wire.endM)]} color="#fb923c" lineWidth={4} />)}
     <mesh position={mapPoint(geometry.feed)}><sphereGeometry args={[0.13, 18, 18]} /><meshStandardMaterial color="#60a5fa" emissive="#1d4ed8" emissiveIntensity={0.5} /></mesh>
-    <OrbitControls makeDefault enablePan={false} minDistance={3} maxDistance={12} />
+    <OrbitControls makeDefault target={[0, 2.4, 0]} enablePan screenSpacePanning mouseButtons={{ LEFT: MOUSE.ROTATE, MIDDLE: MOUSE.PAN, RIGHT: MOUSE.PAN }} minDistance={0.2} maxDistance={30} />
   </>;
 }
 
@@ -38,9 +40,9 @@ export function TemplateGeometry3D({ model }: { model: TemplateAntennaModel }) {
     wire.endM.y - wire.startM.y,
     wire.endM.z - wire.startM.z,
   ), 0);
-  return <div className="relative h-80 overflow-hidden rounded-md bg-[#07111f]" data-testid="template-geometry-3d" data-template-id={model.template.id} data-total-wire-length-m={totalWireLengthM.toFixed(4)}>
-    <span className="sr-only">Interactive three-dimensional geometry for {model.name}. The blue marker is the feed point.</span>
+  return <div className="relative h-80 overflow-hidden rounded-md bg-[#07111f]" onWheel={preventViewportScroll} onAuxClick={preventViewportAutoScroll} data-testid="template-geometry-3d" data-template-id={model.template.id} data-total-wire-length-m={totalWireLengthM.toFixed(4)}>
+    <span className="sr-only">Interactive three-dimensional geometry for {model.name}. The blue marker is the feed point. Drag to orbit, scroll to zoom, and middle/right-drag to pan.</span>
     <SafeCanvas camera={{ position: [5, 4, 6], fov: 43 }} dpr={[1, 1.5]}><Geometry model={model} /></SafeCanvas>
-    <div className="pointer-events-none absolute bottom-2 left-2 rounded bg-black/55 px-2 py-1 text-[10px] text-slate-200">Orange: wire · blue: feed · drag to orbit</div>
+    <div className="pointer-events-none absolute bottom-2 left-2 rounded bg-black/55 px-2 py-1 text-[10px] text-slate-200">Orange: wire · blue: feed · orbit · scroll zoom · middle/right-drag pan</div>
   </div>;
 }

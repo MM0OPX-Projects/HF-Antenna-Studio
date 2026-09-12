@@ -15,7 +15,7 @@ import { MatchingPanel } from "./MatchingPanel";
 import { ChartExpandable } from "../ui/ChartPopup";
 import { useSimulationStore } from "../../stores/simulationStore";
 import { useUIStore, type ResultsTab } from "../../stores/uiStore";
-import { formatSwr, formatImpedance, formatGain, swrColorClass, applyMatching } from "../../utils/units";
+import { formatSwr, formatImpedance, formatGain, swrColorClass, applyMatching, computeSwr } from "../../utils/units";
 import { parseS1P } from "../../utils/s1p-parser";
 import { downloadResultsS1P } from "../../utils/s1p-export";
 
@@ -182,6 +182,12 @@ export function ResultsPanel({ showSummary = true, compactRadiationCuts = false 
                       {formatImpedance(m.real, m.imag)}
                     </div>
                   </div>
+                  {selectedFreqResult.impedance_mode === "balanced-differential" && <div className="bg-cyan-500/5 border border-cyan-500/30 rounded-md p-2 col-span-2 text-[10px] text-text-secondary">
+                    <div className="font-semibold text-cyan-300">Balanced junction feed · 1 differential port</div>
+                    <div className="mt-1">Raw antenna {formatImpedance(selectedFreqResult.impedance.real, selectedFreqResult.impedance.imag)} · SWR {formatSwr(computeSwr(selectedFreqResult.impedance.real, selectedFreqResult.impedance.imag, matching.feedlineZ0))} at {matching.feedlineZ0} Ω</div>
+                    {matching.ratio !== 1 && <div>After {matching.ratio}:1 {matching.type}: {formatImpedance(m.real, m.imag)} · feedline SWR {formatSwr(m.swr)}</div>}
+                    <div className="mt-1">NEC representation: two equal-and-opposite segment-centre sources.</div>
+                  </div>}
                   <button
                     onClick={handleS1PExport}
                     className="col-span-2 text-[10px] px-1.5 py-1 rounded border border-border text-text-secondary hover:text-text-primary hover:border-accent/50 transition-colors"

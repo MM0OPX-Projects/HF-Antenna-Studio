@@ -26,7 +26,7 @@ describe("saved projects in controlled comparison", () => {
     expect(createSavedProjectComparisonRequest(project, createDefaultComparisonConditions()).portCount).toBe(2);
   });
 
-  it("treats a balanced junction source as a two-source comparison port", () => {
+  it("treats a balanced junction source as one differential comparison port", () => {
     const template = getTemplate("dipole"); const params = getDefaultParams(template); const wires = template.generateGeometry(params);
     const project = createSimulatorProject(template.id, params, template.defaultGround, null, template.defaultFrequencyRange(params), []);
     project.mode = "editor"; project.simulator = undefined; project.editor = {
@@ -41,7 +41,7 @@ describe("saved projects in controlled comparison", () => {
       frequencyRange: { start_mhz: 14.1, stop_mhz: 14.1, steps: 1 }, frequencySegments: [], designFrequencyMhz: 14.1,
     };
     const prepared = createSavedProjectComparisonRequest(project, createDefaultComparisonConditions());
-    expect(prepared.portCount).toBe(2);
+    expect(prepared.portCount).toBe(1);
     expect(prepared.run.deck.match(/^EX /gm)).toHaveLength(2);
   });
 

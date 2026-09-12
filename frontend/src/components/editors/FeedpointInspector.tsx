@@ -18,6 +18,7 @@ export function FeedpointInspector({ wire, unit }: FeedpointInspectorProps) {
   const radialSystems = useEditorStore((state) => state.radialSystems);
   const setExcitationPosition = useEditorStore((state) => state.setExcitationPosition);
   const setExcitationJunctionFeed = useEditorStore((state) => state.setExcitationJunctionFeed);
+  const clearExcitationJunctionFeed = useEditorStore((state) => state.clearExcitationJunctionFeed);
   const moveExcitationToPosition = useEditorStore((state) => state.moveExcitationToPosition);
   const updateExcitation = useEditorStore((state) => state.updateExcitation);
   const removeExcitation = useEditorStore((state) => state.removeExcitation);
@@ -130,7 +131,7 @@ export function FeedpointInspector({ wire, unit }: FeedpointInspectorProps) {
       <p><b className="text-cyan-300">Joined endpoint detected.</b> Enable a balanced junction feed to model the source across both adjacent segments.</p>
       <button type="button" onClick={() => setExcitationJunctionFeed(wire.tag)} className="mt-1 rounded bg-cyan-500/15 px-2 py-1 text-[10px] font-semibold text-cyan-300">Use symmetric junction feed</button>
     </div>}
-    {source.feed_mode === "junction-differential" && <p className="rounded border border-cyan-500/30 bg-cyan-500/5 p-1.5 text-[10px] leading-4 text-cyan-200" data-testid="junction-feed-status"><b>Balanced junction feed enabled.</b> NEC receives equal-and-opposite half-voltage sources on the two adjacent segment centres; the saved geometry is unchanged.</p>}
+    {source.feed_mode === "junction-differential" && <div className="rounded border border-cyan-500/30 bg-cyan-500/5 p-2 text-[10px] leading-4 text-cyan-200" data-testid="junction-feed-status"><p><b>Balanced junction feed enabled.</b> NEC receives equal-and-opposite half-voltage sources on the two adjacent segment centres; the saved geometry is unchanged.</p><button type="button" onClick={() => clearExcitationJunctionFeed(wire.tag)} className="mt-1 rounded bg-cyan-500/15 px-2 py-1 font-semibold text-cyan-300 hover:bg-cyan-500/25">Disable symmetric junction feed</button></div>}
     {placementFractionOfSegment > 0.35 && <p className="rounded border border-swr-warning/30 bg-swr-warning/10 p-1.5 text-[10px] leading-4 text-swr-warning">The requested point is noticeably displaced from the available segment centre. Increase segmentation if that placement accuracy matters.</p>}
     {(requestedPercent === 0 || requestedPercent === 100) && <p className="text-[10px] leading-4 text-text-secondary">At 0% or 100%, NEC excites the centre of the first or last segment—not the mathematical endpoint. An end-fed antenna also needs a physically meaningful return path or counterpoise.</p>}
 

@@ -26,17 +26,20 @@ describe("shared radiation-cut extraction", () => {
     expect(radiationCutSeriesFromPattern(pattern).azimuth).toEqual([]);
   });
 
-  it("selects the nearest real NEC row for a requested 0–90° azimuth elevation", () => {
+  it("interpolates an explicit 0–90° azimuth elevation between NEC rows", () => {
     const pattern: PatternData = {
       theta_start: 0, theta_step: 10, theta_count: 10,
       phi_start: 0, phi_step: 90, phi_count: 4,
       gain_dbi: Array.from({ length: 10 }, (_, theta) => Array.from({ length: 4 }, (_, phi) => theta * 10 + phi)),
     };
     const cut = azimuthCutFromPattern(pattern, 32);
-    expect(cut?.actualElevationDeg).toBe(30);
+    expect(cut?.actualElevationDeg).toBe(32);
     expect(cut?.thetaIndex).toBe(6);
+    expect(cut?.method).toBe("interpolated");
+    expect(cut?.lowerElevationDeg).toBe(30);
+    expect(cut?.upperElevationDeg).toBe(40);
     expect(cut?.points.map((point) => point.angleDeg)).toEqual([0, 90, 180, 270]);
-    expect(cut?.points.map((point) => point.gainDbi)).toEqual([60, 61, 62, 63]);
+    expect(cut?.points.map((point) => point.gainDbi)).toEqual([58, 59, 60, 61]);
   });
 
   it("supports compass-coordinate cuts without changing NEC gain samples", () => {

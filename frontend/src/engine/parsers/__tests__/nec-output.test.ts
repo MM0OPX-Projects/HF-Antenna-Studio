@@ -176,6 +176,27 @@ describe("parseNecOutput — fixture", () => {
   });
 });
 
+describe("parseNecOutput — balanced differential input", () => {
+  it("combines equal-and-opposite NEC rows into one physical port", () => {
+    const output = `
+ FREQUENCY : 1.4092E+01 MHz
+ ***ANTENNA INPUT PARAMETERS***
+ TAG SEG VOLTAGE (VOLTS) CURRENT (AMPS) IMPEDANCE (OHMS) ADMITTANCE (MHOS) POWER
+ NO NO REAL IMAG REAL IMAG REAL IMAG REAL IMAG (WATTS)
+ 1 1 5.0000E-01 0.0000E+00 2.6842E-03 2.4022E-03 1.0343E+02 -9.2566E+01 0.0000E+00 0.0000E+00 0.0000E+00
+ 2 6 -5.0000E-01 0.0000E+00 -2.6842E-03 -2.4022E-03 1.0343E+02 -9.2566E+01 0.0000E+00 0.0000E+00 0.0000E+00
+
+ ***RADIATION PATTERNS***
+`;
+    const result = parseNecOutput(output, 1, 1, 0, 1, 0, 1, false, "balanced-differential")[0]!;
+    expect(result.impedance_mode).toBe("balanced-differential");
+    expect(result.input_impedances).toHaveLength(2);
+    expect(result.impedance.real).toBeCloseTo(206.86, 1);
+    expect(result.impedance.imag).toBeCloseTo(-185.13, 1);
+    expect(result.swr_50).toBeGreaterThan(7);
+  });
+});
+
 // ---------------------------------------------------------------------------
 // Efficiency integration — direct unit tests with synthetic pattern data.
 // These test the buildFrequencyResult integration math, not NEC2 parsing.

@@ -1,10 +1,12 @@
 import { OrbitControls } from "@react-three/drei";
 import { useEffect, useMemo } from "react";
 import * as THREE from "three";
+import { MOUSE } from "three";
 import type { PatternData } from "../../api/nec";
 import { normaliseGainGrid } from "./metrics";
 import type { PatternDisplayMode } from "./types";
 import { SafeCanvas } from "../../components/three/SafeCanvas";
+import { preventViewportAutoScroll, preventViewportScroll } from "../../components/three/viewportEvents";
 
 interface HeightRadiation3DProps {
   pattern: PatternData | null;
@@ -66,16 +68,16 @@ function PatternSurface({ pattern, mode }: { pattern: PatternData; mode: Pattern
 
 export function HeightRadiation3D({ pattern, mode, pending }: HeightRadiation3DProps) {
   return (
-    <div className="relative h-80 overflow-hidden rounded-md bg-[#07111f]" data-testid="radiation-pattern-3d">
+    <div className="relative h-80 overflow-hidden rounded-md bg-[#07111f]" onWheel={preventViewportScroll} onAuxClick={preventViewportAutoScroll} data-testid="radiation-pattern-3d">
       {pattern ? <SafeCanvas camera={{ position: [3.2, 2.5, 3.6], fov: 45 }} dpr={[1, 1.5]}>
         <ambientLight intensity={1.3} />
         <directionalLight position={[4, 6, 3]} intensity={2.1} />
         <PatternSurface pattern={pattern} mode={mode} />
         <axesHelper args={[2.2]} />
-        <OrbitControls makeDefault enablePan={false} minDistance={2.7} maxDistance={8} />
+        <OrbitControls makeDefault target={[0, 0, 0]} enablePan screenSpacePanning mouseButtons={{ LEFT: MOUSE.ROTATE, MIDDLE: MOUSE.PAN, RIGHT: MOUSE.PAN }} minDistance={0.2} maxDistance={30} />
       </SafeCanvas> : <div className="grid h-full place-items-center px-5 text-center text-sm text-slate-300">{pending ? "Pattern withheld while NEC calculates this height…" : "Radiation pattern appears after the first NEC calculation."}</div>}
-      <span className="sr-only">Interactive three-dimensional radiation pattern. Drag to orbit and scroll to zoom.</span>
-      <div className="pointer-events-none absolute bottom-2 left-2 rounded bg-black/55 px-2 py-1 text-[10px] text-slate-200">3D {mode === "absolute" ? "absolute gain (dBi)" : "relative pattern (dB; peak = 0)"} · drag to orbit</div>
+      <span className="sr-only">Interactive three-dimensional radiation pattern. Drag to orbit, scroll to zoom, and middle/right-drag to pan.</span>
+      <div className="pointer-events-none absolute bottom-2 left-2 rounded bg-black/55 px-2 py-1 text-[10px] text-slate-200">3D {mode === "absolute" ? "absolute gain (dBi)" : "relative pattern (dB; peak = 0)"} · orbit · scroll zoom · middle/right-drag pan</div>
     </div>
   );
 }

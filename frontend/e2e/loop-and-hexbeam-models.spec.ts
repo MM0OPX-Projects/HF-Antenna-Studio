@@ -33,6 +33,17 @@ test("four-element quad and every hex construction-band preset regenerate connec
   await expect(page.getByTestId("elevation-angle-inspector-context-current")).toHaveText("Cut peak is 0.00 dB in this view");
 });
 
+test("multiband hexbeam nests selected 20–6 m pairs and keeps one active feed bridge", async ({ page }) => {
+  await openLab(page); await page.getByTestId("loop-type-multiband-hexbeam").click();
+  await expect(page.getByTestId("multiband-band-6m")).toBeChecked(); await expect(page.getByTestId("loop-wire-count")).toHaveText("55"); await expect(page.getByTestId("loop-errors")).toHaveCount(0); await expect(page.getByTestId("multiband-active-band")).toHaveValue("auto");
+  await expect(page.getByTestId("multiband-stack-spacing")).toHaveValue("0.1");
+  await expect(page.getByTestId("multiband-longest-band-spacing")).toHaveValue("0.1");
+  const deck = await page.getByTestId("loop-generated-nec").textContent(); expect(deck?.match(/^GW /gm)).toHaveLength(55); expect(deck?.match(/^EX /gm)).toHaveLength(1); expect(deck).toContain("CM Selected bands 20m, 17m, 15m, 12m, 10m, 6m");
+  expect(deck).toContain("additional 17-20 spacing 0.1 m");
+  await page.getByTestId("multiband-stack-spacing").fill("0.2"); await expect(page.getByTestId("loop-errors")).toHaveCount(0); expect(await page.getByTestId("loop-generated-nec").textContent()).toContain("centre spacing 0.2 m");
+  await page.getByTestId("multiband-active-band").selectOption("6m"); await expect(page.getByTestId("loop-wire-count")).toHaveText("55"); await expect(page.getByTestId("loop-errors")).toHaveCount(0);
+});
+
 test("rapid edits withhold stale patterns until the latest exact model solves", async ({ page }) => {
   await openLab(page); await waitForSolved(page); const geometry = page.getByTestId("loop-beam-geometry-3d"); const before = await geometry.getAttribute("data-model-key"); await page.getByTestId("square-height").fill("7"); await page.getByTestId("square-height").fill("9"); await page.getByTestId("square-side").fill("5.2"); await expect(page.getByTestId("loop-results")).toHaveCount(0); await expect(page.getByTestId("loop-calculation-status")).toContainText("waiting for stable input"); expect(await geometry.getAttribute("data-model-key")).not.toBe(before); await waitForSolved(page); await expect(page.getByTestId("loop-calculation-status")).toContainText("Calculation complete");
 });

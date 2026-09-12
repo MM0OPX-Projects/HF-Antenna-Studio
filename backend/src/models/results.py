@@ -1,5 +1,7 @@
 """Simulation result models."""
 
+from enum import Enum
+
 from pydantic import BaseModel, Field
 
 
@@ -8,6 +10,13 @@ class Impedance(BaseModel):
 
     real: float = Field(description="Resistance (Ohms)")
     imag: float = Field(description="Reactance (Ohms)")
+
+
+class InputImpedanceMode(str, Enum):
+    """Physical-port interpretation of NEC input rows."""
+
+    SINGLE_SEGMENT = "single-segment"
+    BALANCED_DIFFERENTIAL = "balanced-differential"
 
 
 class PatternData(BaseModel):
@@ -43,6 +52,8 @@ class FrequencyResult(BaseModel):
 
     frequency_mhz: float
     impedance: Impedance
+    impedance_mode: InputImpedanceMode = Field(default=InputImpedanceMode.SINGLE_SEGMENT)
+    input_impedances: list[Impedance] | None = Field(default=None)
     swr_50: float = Field(description="SWR relative to 50 ohms")
     gain_max_dbi: float = Field(description="Maximum gain in dBi")
     gain_max_theta: float = Field(description="Theta of maximum gain (degrees)")

@@ -14,6 +14,17 @@ describe("compatible pattern cuts", () => {
     expect(cuts.elevation.map((point) => point.gainDbi)).toEqual([96, 86, 76, 66, 56, 46, 36, 26, 16, 6, 12, 22, 32, 42, 52, 62, 72, 82, 92]);
   });
 
+  it("interpolates the common azimuth elevation between solved NEC rows", () => {
+    const pattern: PatternData = {
+      theta_start: 0, theta_step: 10, theta_count: 10,
+      phi_start: 0, phi_step: 90, phi_count: 4,
+      gain_dbi: Array.from({ length: 10 }, (_, theta) => Array.from({ length: 4 }, (_, phi) => theta * 10 + phi)),
+    };
+    const cuts = extractComparisonCuts(pattern, 32, 0);
+    expect(cuts.actualAzimuthElevationDeg).toBe(32);
+    expect(cuts.azimuth.map((point) => point.gainDbi)).toEqual([59, 58, 61, 60]);
+  });
+
   it("finds the strongest solved compass bearing using the Wire Editor compass convention", () => {
     const pattern: PatternData = { theta_start: 0, theta_step: 10, theta_count: 2, phi_start: 0, phi_step: 90, phi_count: 4, gain_dbi: [[1, 2, 3, 4], [5, 6, 7, 11]] };
     // NEC phi 270° is north (0°) in the shared Wire Editor compass convention.

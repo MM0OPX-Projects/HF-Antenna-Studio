@@ -48,7 +48,13 @@ export interface CubicalQuadModel extends CommonModel {
   centreHeightM: number;
 }
 
-export type HexBand = "20m" | "17m" | "15m" | "12m" | "10m";
+export type HexBand = "20m" | "17m" | "15m" | "12m" | "10m" | "6m";
+
+export interface HexbeamBandDimensions {
+  drivenHalfLengthM: number;
+  reflectorTotalLengthM: number;
+  endSpacingM: number;
+}
 
 export interface HexbeamModel extends CommonModel {
   kind: "hexbeam";
@@ -59,12 +65,32 @@ export interface HexbeamModel extends CommonModel {
   heightM: number;
 }
 
-export type LoopBeamModel = SquareLoopModel | DeltaLoopModel | DiamondLoopModel | CubicalQuadModel | HexbeamModel;
+/**
+ * A K4KIO-style nested multiband beam. Each selected band has its own
+ * driven/reflector wire pair on the shared six-arm support frame. The active
+ * band is the only pair with a NEC source bridge; other driven elements remain
+ * physically open at their feed gaps and are solved as coupled parasitic wires.
+ */
+export interface MultibandHexbeamModel extends CommonModel {
+  kind: "multiband-hexbeam";
+  bands: HexBand[];
+  activeBand: HexBand | "auto";
+  bandDimensions: Partial<Record<HexBand, HexbeamBandDimensions>>;
+  /** Height of the lowest selected band above the ground plane. */
+  heightM: number;
+  /** Vertical centre-to-centre spacing between adjacent band planes (optional on legacy saves; defaults to 0.1 m). */
+  stackSpacingM?: number;
+  /** Additional spacing applied only between the 17 m and 20 m planes. */
+  longestBandExtraSpacingM?: number;
+}
+
+export type LoopBeamModel = SquareLoopModel | DeltaLoopModel | DiamondLoopModel | CubicalQuadModel | HexbeamModel | MultibandHexbeamModel;
 export type LoopBeamFamily = "driven" | "reflector" | "director";
 export interface LoopBeamPoint3M { x: number; y: number; z: number }
 export interface LoopBeamWire {
   id: string;
   family: LoopBeamFamily;
+  band?: HexBand;
   startM: LoopBeamPoint3M;
   endM: LoopBeamPoint3M;
   diameterM: number;

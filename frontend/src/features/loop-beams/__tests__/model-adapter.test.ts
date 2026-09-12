@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { useUIStore } from "../../../stores/uiStore";
 import { LEGACY_CONDUCTOR } from "../../../engine/conductor";
 import { adaptLoopBeamToNec, segmentLoopBeamWires } from "../nec-adapter";
-import { generateLoopBeamModel, loopBeamWavelengthM, resizeCubicalQuad, startingCubicalQuadModel, startingDeltaLoopModel, startingDiamondLoopModel, startingHexbeamModel, startingSquareLoopModel, validateLoopBeamModel } from "../model";
+import { generateLoopBeamModel, loopBeamWavelengthM, multibandLongestBandExtraSpacingM, multibandStackSpacingM, resizeCubicalQuad, startingCubicalQuadModel, startingDeltaLoopModel, startingDiamondLoopModel, startingHexbeamModel, startingMultibandHexbeamModel, startingSquareLoopModel, validateLoopBeamModel } from "../model";
 import type { LoopBeamWire } from "../schema";
 
 beforeEach(() => useUIStore.getState().setConductor(LEGACY_CONDUCTOR));
@@ -13,7 +13,7 @@ function total(wires: LoopBeamWire[], family: LoopBeamWire["family"]): number { 
 
 describe("typed loop, quad, and hexbeam models", () => {
   it("starts every wire-family model with a 1 mm conductor", () => {
-    for (const model of [startingSquareLoopModel(), startingDeltaLoopModel(), startingDiamondLoopModel(), startingCubicalQuadModel(), startingHexbeamModel()]) {
+    for (const model of [startingSquareLoopModel(), startingDeltaLoopModel(), startingDiamondLoopModel(), startingCubicalQuadModel(), startingHexbeamModel(), startingMultibandHexbeamModel()]) {
       expect(model.elementDiameterM, model.kind).toBe(0.001);
     }
   });
@@ -52,7 +52,7 @@ describe("typed loop, quad, and hexbeam models", () => {
   });
 
   it("builds the canonical G3TXQ broadband paths and preserves element dimensions", () => {
-    for (const band of ["20m", "17m", "15m", "12m", "10m"] as const) {
+    for (const band of ["20m", "17m", "15m", "12m", "10m", "6m"] as const) {
       const model = startingHexbeamModel(band); const generated = generateLoopBeamModel(model);
       expect(generated.issues.filter((issue) => issue.severity === "error"), band).toEqual([]);
       expect(generated.supports, band).toHaveLength(12);
@@ -68,6 +68,56 @@ describe("typed loop, quad, and hexbeam models", () => {
     const shifted = startingHexbeamModel("20m", 15_000_000);
     expect(shifted.frequencyHz).toBe(15_000_000);
     expect(shifted.drivenHalfLengthM / loopBeamWavelengthM(shifted.frequencyHz)).toBeCloseTo(startingHexbeamModel("20m").drivenHalfLengthM / loopBeamWavelengthM(startingHexbeamModel("20m").frequencyHz), 10);
+  });
+
+  it("builds nested multiband pairs with only the active driver bridged", () => {
+    const model = startingMultibandHexbeamModel(["20m", "17m", "10m", "6m"]);
+    expect(multibandStackSpacingM(model)).toBeCloseTo(0.1, 10);
+    expect(multibandLongestBandExtraSpacingM(model)).toBeCloseTo(0.1, 10);
+    expect(model.bandDimensions["20m"]?.drivenHalfLengthM).toBeCloseTo(214 * 0.0254, 10);
+    expect(model.bandDimensions["20m"]?.reflectorTotalLengthM).toBeCloseTo(404 * 0.0254, 10);
+    const generated = generateLoopBeamModel(model);
+    expect(generated.issues.filter((issue) => issue.severity === "error")).toEqual([]);
+    expect(generated.wires.filter((wire) => wire.source)).toHaveLength(1);
+    expect(generated.wires.filter((wire) => wire.band === "20m")).toHaveLength(10);
+    expect(generated.wires.filter((wire) => wire.band !== "20m")).toHaveLength(27);
+    expect(generated.feedWireId).toBe("20m-driven-feed");
+    expect(generated.wires.find((wire) => wire.source)?.band).toBe("20m");
+    expect(generated.supports).toHaveLength(4 * 12 + 3);
+    const bandHeight = (band: string) => generated.wires.find((wire) => wire.band === band)!.startM.z;
+    expect(bandHeight("6m")).toBeCloseTo(model.heightM, 10);
+    expect(bandHeight("10m")).toBeCloseTo(model.heightM + multibandStackSpacingM(model), 10);
+    expect(bandHeight("17m")).toBeCloseTo(model.heightM + multibandStackSpacingM(model) * 2, 10);
+    expect(bandHeight("20m")).toBeCloseTo(model.heightM + multibandStackSpacingM(model) * 3 + multibandLongestBandExtraSpacingM(model), 10);
+    const openEnds = new Map<string, number>();
+    const endpoint = (point: LoopBeamWire["startM"]) => `${point.x.toFixed(8)}|${point.y.toFixed(8)}|${point.z.toFixed(8)}`;
+    for (const wire of generated.wires) { openEnds.set(endpoint(wire.startM), (openEnds.get(endpoint(wire.startM)) ?? 0) + 1); openEnds.set(endpoint(wire.endM), (openEnds.get(endpoint(wire.endM)) ?? 0) + 1); }
+    expect([...openEnds.values()].filter((value) => value === 1)).toHaveLength(4 + 3 * 6);
+    const adapted = adaptLoopBeamToNec(generated);
+    expect(adapted.deck.match(/^GW /gm)).toHaveLength(37);
+    expect(adapted.deck).toContain("EX 0 1 1 0 1 0");
+    expect(adapted.deck).toContain("CM Vertical stack:");
+    expect(adapted.deck).toContain("additional 17-20 spacing 0.1 m");
+  });
+
+  it("defaults legacy multiband models without a saved stack spacing to 100 mm", () => {
+    const model = startingMultibandHexbeamModel(["20m", "17m", "6m"]);
+    delete model.stackSpacingM;
+    const generated = generateLoopBeamModel(model);
+    expect(generated.issues.filter((issue) => issue.severity === "error")).toEqual([]);
+    const heights = new Map(model.bands.map((band) => [band, generated.wires.find((wire) => wire.band === band)!.startM.z]));
+    expect(heights.get("6m")).toBeCloseTo(model.heightM, 10);
+    expect(heights.get("17m")).toBeCloseTo(model.heightM + 0.1, 10);
+    expect(heights.get("20m")).toBeCloseTo(model.heightM + 0.2 + 0.1, 10);
+  });
+
+  it("applies the configurable extra gap only at the 17–20 m transition", () => {
+    const model = startingMultibandHexbeamModel(["20m", "17m", "15m"]);
+    model.longestBandExtraSpacingM = 0.3;
+    const generated = generateLoopBeamModel(model);
+    const height = (band: string) => generated.wires.find((wire) => wire.band === band)!.startM.z;
+    expect(height("17m") - height("15m")).toBeCloseTo(0.1, 10);
+    expect(height("20m") - height("17m")).toBeCloseTo(0.4, 10);
   });
 
   it("uses an exact one-segment source, safe segmentation, NEC ground cards, and portable line lengths", () => {

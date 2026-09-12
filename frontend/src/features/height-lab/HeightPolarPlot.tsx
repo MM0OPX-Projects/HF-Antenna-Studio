@@ -25,6 +25,9 @@ interface HeightPolarPlotProps {
   series: PolarSeries[];
   svgRef?: RefObject<SVGSVGElement | null>;
   compactControls?: boolean;
+  /** Optional controlled bearing shared with a paired elevation cut. */
+  selectedAzimuthBearingDeg?: number;
+  onSelectedAzimuthBearingChange?: (value: number) => void;
 }
 
 const CX = 230;
@@ -56,10 +59,20 @@ function elevationPath(points: NormalizedPatternPoint[], mode: PatternDisplayMod
   }).join(" ");
 }
 
-export function HeightPolarPlot({ plane, mode, series, svgRef, compactControls = false }: HeightPolarPlotProps) {
+export function HeightPolarPlot({
+  plane,
+  mode,
+  series,
+  svgRef,
+  compactControls = false,
+  selectedAzimuthBearingDeg: controlledAzimuthBearingDeg,
+  onSelectedAzimuthBearingChange,
+}: HeightPolarPlotProps) {
   const [selectedElevationDeg, setSelectedElevationDeg] = useState(5);
-  const [selectedAzimuthBearingDeg, setSelectedAzimuthBearingDeg] = useState(0);
+  const [internalSelectedAzimuthBearingDeg, setInternalSelectedAzimuthBearingDeg] = useState(0);
   const [selectedAzimuthCutElevationDeg, setSelectedAzimuthCutElevationDeg] = useState<number | null>(null);
+  const selectedAzimuthBearingDeg = controlledAzimuthBearingDeg ?? internalSelectedAzimuthBearingDeg;
+  const setSelectedAzimuthBearingDeg = onSelectedAzimuthBearingChange ?? setInternalSelectedAzimuthBearingDeg;
   const rings = mode === "absolute" ? [-20, -10, 0, 10] : [-30, -20, -10, 0];
   const minimum = mode === "absolute" ? -30 : -40;
   const viewHeight = plane === "azimuth" ? AZIMUTH_VIEW_HEIGHT : ELEVATION_VIEW_HEIGHT;
@@ -79,6 +92,9 @@ export function HeightPolarPlot({ plane, mode, series, svgRef, compactControls =
     return cut ? [cut.actualElevationDeg] : [];
   }) : [];
   const uniqueActualAzimuthElevations = [...new Set(actualAzimuthElevations.map((value) => value.toFixed(1)))];
+  const primaryAzimuthCut = plane === "azimuth" && primaryPatternSeries?.pattern
+    ? azimuthCutFromPattern(primaryPatternSeries.pattern, selectedAzimuthCutElevationDeg ?? undefined, primaryPatternSeries.azimuthConvention)
+    : null;
   const selectedInspectorAngle = plane === "elevation" ? selectedElevationDeg : selectedAzimuthBearingDeg;
   const inspectorReadings = displayedSeries.map((item) => ({
     id: item.id,
@@ -234,10 +250,12 @@ export function HeightPolarPlot({ plane, mode, series, svgRef, compactControls =
             <span className="text-xs text-text-secondary">°</span>
           </span>
         </label>
-        <span className="text-[10px] text-text-secondary">Height above the horizon used for this complete 360° horizontal slice. The nearest solved NEC row is used.</span>
+        <span className="text-[10px] text-text-secondary">Height above the horizon used for this complete 360° horizontal slice. Explicit values are interpolated between adjacent NEC rows when needed.</span>
         <button type="button" onClick={() => setSelectedAzimuthCutElevationDeg(null)} className="rounded border border-border px-2 py-1 text-[10px] text-text-secondary hover:border-accent" data-testid="azimuth-cut-peak-row">Use elevation of maximum gain</button>
       </div>
-      <p className="mt-1 text-[10px] text-text-secondary" data-testid="azimuth-cut-actual-elevation">{selectedAzimuthCutElevationDeg === null ? "Automatic" : `Requested ${azimuthCutElevationDeg.toFixed(1)}°`} · NEC row {uniqueActualAzimuthElevations.join(" / ") || "unavailable"}°{selectedAzimuthCutElevationDeg !== null && uniqueActualAzimuthElevations.some((value) => Math.abs(Number(value) - azimuthCutElevationDeg) > 0.05) ? " (nearest grid sample)" : selectedAzimuthCutElevationDeg !== null ? " (exact grid sample)" : ""}{selectedAzimuthCutElevationDeg === null && automaticAzimuthCut?.peakBearingDeg != null ? ` · strongest bearing ${automaticAzimuthCut.peakBearingDeg.toFixed(1)}°` : ""}</p>
+      <p className="mt-1 text-[10px] text-text-secondary" data-testid="azimuth-cut-actual-elevation">{selectedAzimuthCutElevationDeg === null ? "Automatic" : `Requested ${azimuthCutElevationDeg.toFixed(1)}°`} · {primaryAzimuthCut?.method === "interpolated"
+        ? `interpolated between ${primaryAzimuthCut.lowerElevationDeg.toFixed(1)}° and ${primaryAzimuthCut.upperElevationDeg.toFixed(1)}° NEC rows`
+        : `NEC row ${uniqueActualAzimuthElevations.join(" / ") || "unavailable"}°${selectedAzimuthCutElevationDeg !== null ? " (exact grid sample)" : ""}`}{selectedAzimuthCutElevationDeg === null && automaticAzimuthCut?.peakBearingDeg != null ? ` · strongest bearing ${automaticAzimuthCut.peakBearingDeg.toFixed(1)}°` : ""}</p>
     </section>}
     <PatternAngleInspector
       angleDeg={selectedInspectorAngle}

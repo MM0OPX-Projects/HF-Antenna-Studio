@@ -18,6 +18,7 @@ import { GroundPlane } from "./GroundPlane";
 import { CompassRose } from "./CompassRose";
 import { AxesHelper } from "./AxesHelper";
 import { CameraControls } from "./CameraControls";
+import { preventViewportAutoScroll, preventViewportScroll } from "./viewportEvents";
 import { PostProcessing } from "./PostProcessing";
 import { EditorAntennaModel } from "./EditorAntennaModel";
 import { RadiationPattern3D } from "./RadiationPattern3D";
@@ -922,6 +923,8 @@ export function EditorScene({
     <div
       className="h-full w-full"
       data-testid="wire-editor-3d"
+      onWheel={preventViewportScroll}
+      onAuxClick={preventViewportAutoScroll}
       onContextMenu={(event) => {
         if (mode !== "add") return;
         event.preventDefault();

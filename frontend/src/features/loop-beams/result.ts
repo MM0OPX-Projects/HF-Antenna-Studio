@@ -49,7 +49,7 @@ export function validateLoopBeamResult(model: LoopBeamModel, adapted: AdaptedLoo
   if (![data.impedance.real, data.impedance.imag].every(Number.isFinite)) throw new Error("The solver returned invalid feed impedance.");
   if (!data.pattern) throw new Error("The solver result does not contain a radiation pattern.");
   const global = globalMetrics(data.pattern);
-  const directional = model.kind === "cubical-quad" || model.kind === "hexbeam" ? calculateYagiDirectionalMetrics(data.pattern) : null;
+  const directional = model.kind === "cubical-quad" || model.kind === "hexbeam" || model.kind === "multiband-hexbeam" ? calculateYagiDirectionalMetrics(data.pattern) : null;
   return {
     modelKey: loopBeamModelKey(model), resistanceOhm: data.impedance.real, reactanceOhm: data.impedance.imag,
     swr: computeSwr(data.impedance.real, data.impedance.imag, model.referenceImpedanceOhm), maximumGainDbi: global.maximumGainDbi,

@@ -1,4 +1,4 @@
-import type { PatternData } from "../../api/nec";
+import type { Impedance, PatternData } from "../../api/nec";
 import type { AnalyserSweep, SweepConfig } from "../frequency-analyser/types";
 import type { RadialWorkflowSettings } from "../ground-radials/workflow";
 
@@ -70,6 +70,8 @@ export interface ComparisonResult {
   savedConditionMode: SavedProjectConditionMode;
   sweepConfig: SweepConfig;
   metrics: ComparisonMetrics;
+  impedanceMode?: "single-segment" | "balanced-differential";
+  inputImpedances?: Impedance[];
   azimuthPattern: ComparisonPatternPoint[];
   elevationPattern: ComparisonPatternPoint[];
   radiationPattern: PatternData;

@@ -15,7 +15,7 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { OrbitControls } from "@react-three/drei";
 import { useThree, useFrame } from "@react-three/fiber";
-import { Vector3 } from "three";
+import { MOUSE, Vector3 } from "three";
 import type { Camera } from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import type { WireData } from "./types";
@@ -221,6 +221,9 @@ export function CameraControls({ enabled = true, wires = [], hasGround = true }:
       ref={controlsRef}
       enabled={enabled}
       enableDamping
+      enablePan
+      screenSpacePanning
+      mouseButtons={{ LEFT: MOUSE.ROTATE, MIDDLE: MOUSE.PAN, RIGHT: MOUSE.PAN }}
       dampingFactor={0.08}
       minDistance={Math.max(antennaSpan * 0.05, 1e-4)}
       maxDistance={Math.max(antennaSpan * 100, 10)}

@@ -253,6 +253,24 @@ describe("junction feed representation", () => {
     expect(result.ok).toBe(false);
     expect(useEditorStore.getState().excitations[0]?.feed_mode).toBeUndefined();
   });
+
+  it("toggles a balanced junction back to the same ordinary endpoint feed", () => {
+    useEditorStore.setState({
+      wires: [
+        { ...base, segments: 5, x1: 0, y1: 0, z1: 0, x2: 0, y2: 0, z2: 5 },
+        { ...base, tag: 2, segments: 5, x1: 0, y1: 0, z1: 0, x2: 0, y2: 0, z2: -5 },
+      ],
+      excitations: [{ wire_tag: 1, segment: 1, voltage_real: 1, voltage_imag: 0, position_ratio: 0 }],
+      junctions: [{ id: 1, endpoints: [{ wireTag: 1, endpoint: "start" }, { wireTag: 2, endpoint: "start" }] }],
+      nextTag: 3,
+      nextJunctionId: 2,
+    });
+    expect(useEditorStore.getState().setExcitationJunctionFeed(1).ok).toBe(true);
+    const result = useEditorStore.getState().clearExcitationJunctionFeed(1);
+    expect(result.ok).toBe(true);
+    expect(useEditorStore.getState().excitations).toEqual([{ wire_tag: 1, segment: 1, voltage_real: 1, voltage_imag: 0, position_ratio: 0, feed_mode: undefined, junction_endpoints: undefined }]);
+    expect(useEditorStore.getState().undoStack).toHaveLength(2);
+  });
 });
 
 describe("reviewed module transfers", () => {

@@ -24,4 +24,10 @@ describe("comparison solver plans", () => {
     expect(request.deck.trimEnd().endsWith("EN")).toBe(true);
     expect(maximumSegmentWavelengthsAtFrequency(request.deck, 14.2)).toBeCloseTo((10 / 11) / (299_792_458 / 14_200_000), 12);
   });
+
+  it("carries the balanced differential interpretation into impedance sweeps", () => {
+    const source = "CM test\nCE\nGW 1 11 -5 0 10 5 0 10 0.001\nEX 0 1 1 0 0.5 0\nEX 0 1 6 0 -0.5 0\nFR 0 1 0 0 14.1 0\nEN\n";
+    const request = buildComparisonSweepRequest(source, 11, { mode: "start-stop", startMhz: 14, stopMhz: 14.2, points: 3, referenceOhms: 50 }, "balanced-differential");
+    expect(request.parse.impedanceMode).toBe("balanced-differential");
+  });
 });

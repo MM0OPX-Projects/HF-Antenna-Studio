@@ -10,6 +10,8 @@ export interface G3txqHexbeamDimensions {
   endSpacingM: number;
   feedGapM: number;
   heightM: number;
+  /** Omit the driven feed bridge when this band is passive in a multiband model. */
+  includeFeedBridge?: boolean;
 }
 
 export type G3txqHexbeamConductorFamily = "driven" | "reflector";
@@ -103,8 +105,9 @@ export function buildG3txqBroadbandHexbeam(dimensions: G3txqHexbeamDimensions): 
   const reflectorLeftTip = pointAlong(frontLeft, left, reflectorTipOffsetM);
   const reflectorRightTip = pointAlong(frontRight, right, reflectorTipOffsetM);
 
-  const sections: G3txqHexbeamSection[] = [
-    { id: "driven-feed", family: "driven", startM: feedLeft, endM: feedRight, source: true },
+  const sections: G3txqHexbeamSection[] = [];
+  if (dimensions.includeFeedBridge !== false) sections.push({ id: "driven-feed", family: "driven", startM: feedLeft, endM: feedRight, source: true });
+  sections.push(
     { id: "driven-left-inner", family: "driven", startM: feedLeft, endM: frontLeft },
     { id: "driven-left-outer", family: "driven", startM: frontLeft, endM: driverLeftTip },
     { id: "driven-right-inner", family: "driven", startM: feedRight, endM: frontRight },
@@ -114,7 +117,7 @@ export function buildG3txqBroadbandHexbeam(dimensions: G3txqHexbeamDimensions): 
     { id: "reflector-rear", family: "reflector", startM: rearLeft, endM: rearRight },
     { id: "reflector-right-side", family: "reflector", startM: rearRight, endM: right },
     { id: "reflector-right-tip", family: "reflector", startM: right, endM: reflectorRightTip },
-  ];
+  );
 
   const vertices = [frontRight, frontLeft, left, rearLeft, rearRight, right];
   const supports: G3txqHexbeamSupport[] = [

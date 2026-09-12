@@ -8,11 +8,45 @@
 
 import type {
   Impedance,
+  ImpedanceMode,
   PatternData,
   FrequencyResult,
   SegmentCurrent,
   NearFieldResult,
 } from "../../api/nec";
+
+interface ParsedInputRow {
+  voltage: Impedance;
+  current: Impedance;
+  impedance: Impedance;
+}
+
+function divideComplex(a: Impedance, b: Impedance): Impedance {
+  const denominator = b.real * b.real + b.imag * b.imag;
+  if (denominator < 1e-30) throw new Error("NEC returned a zero balanced-feed current.");
+  return {
+    real: (a.real * b.real + a.imag * b.imag) / denominator,
+    imag: (a.imag * b.real - a.real * b.imag) / denominator,
+  };
+}
+
+function resolveInputImpedance(rows: ParsedInputRow[], mode: ImpedanceMode): { impedance: Impedance; inputImpedances?: Impedance[] } {
+  if (rows.length === 0) throw new Error("NEC returned no antenna input rows.");
+  if (mode !== "balanced-differential") {
+    return { impedance: rows[0]!.impedance };
+  }
+  if (rows.length !== 2) throw new Error(`Balanced junction feed expected two NEC input rows, received ${rows.length}.`);
+  const positive = rows[0]!;
+  const negative = rows[1]!;
+  const currentError = Math.hypot(positive.current.real + negative.current.real, positive.current.imag + negative.current.imag);
+  const currentScale = Math.max(1e-12, Math.hypot(positive.current.real, positive.current.imag), Math.hypot(negative.current.real, negative.current.imag));
+  if (currentError / currentScale > 1e-3) throw new Error("Balanced junction feed returned non-opposite NEC source currents.");
+  const voltageDifference: Impedance = { real: positive.voltage.real - negative.voltage.real, imag: positive.voltage.imag - negative.voltage.imag };
+  return {
+    impedance: divideComplex(voltageDifference, positive.current),
+    inputImpedances: rows.map((row) => row.impedance),
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Regex patterns
@@ -410,7 +444,8 @@ function computeBeamwidth(
 
 function buildFrequencyResult(
   freqMhz: number,
-  impedance: Impedance,
+  inputRows: ParsedInputRow[],
+  impedanceMode: ImpedanceMode,
   patternData: Array<[number, number, number]>,
   nTheta: number,
   nPhi: number,
@@ -422,6 +457,8 @@ function buildFrequencyResult(
   powerInput: number | null,
   currents: SegmentCurrent[] | null,
 ): FrequencyResult {
+  const resolved = resolveInputImpedance(inputRows, impedanceMode);
+  const impedance = resolved.impedance;
   const swr = computeSwr(impedance.real, impedance.imag);
 
   let pattern: PatternData | null = null;
@@ -528,6 +565,8 @@ function buildFrequencyResult(
   return {
     frequency_mhz: round(freqMhz, 6),
     impedance,
+    impedance_mode: impedanceMode,
+    ...(resolved.inputImpedances ? { input_impedances: resolved.inputImpedances } : {}),
     swr_50: swr,
     gain_max_dbi:
       gainMaxDbi > -999.0 ? round(gainMaxDbi, 2) : -999.99,
@@ -564,12 +603,13 @@ export function parseNecOutput(
   phiStart: number,
   phiStep: number,
   computeCurrents: boolean = false,
+  impedanceMode: ImpedanceMode = "single-segment",
 ): FrequencyResult[] {
   const results: FrequencyResult[] = [];
   const lines = output.split("\n");
 
   let currentFreq: number | null = null;
-  let currentImpedance: Impedance | null = null;
+  let currentInputRows: ParsedInputRow[] = [];
   let currentPatternData: Array<[number, number, number]> = [];
   let currentPowerRadiated: number | null = null;
   let currentPowerInput: number | null = null;
@@ -584,10 +624,11 @@ export function parseNecOutput(
     const freqMatch = FREQUENCY_RE.exec(line);
     if (freqMatch) {
       // Save previous frequency data
-      if (currentFreq !== null && currentImpedance !== null) {
+      if (currentFreq !== null && currentInputRows.length > 0) {
         const result = buildFrequencyResult(
           currentFreq,
-          currentImpedance,
+          currentInputRows,
+          impedanceMode,
           currentPatternData,
           nTheta,
           nPhi,
@@ -603,7 +644,7 @@ export function parseNecOutput(
       }
 
       currentFreq = parseFloat(freqMatch[1]!);
-      currentImpedance = null;
+      currentInputRows = [];
       currentPatternData = [];
       currentPowerRadiated = null;
       currentPowerInput = null;
@@ -631,13 +672,15 @@ export function parseNecOutput(
       }
       const impMatch = IMPEDANCE_RE.exec(line);
       if (impMatch) {
+        const voltage = { real: parseFloat(impMatch[3]!), imag: parseFloat(impMatch[4]!) };
+        const current = { real: parseFloat(impMatch[5]!), imag: parseFloat(impMatch[6]!) };
         const zReal = parseFloat(impMatch[7]!);
         const zImag = parseFloat(impMatch[8]!);
-        currentImpedance = {
-          real: round(zReal, 4),
-          imag: round(zImag, 4),
-        };
-        inInputParams = false;
+        currentInputRows.push({
+          voltage,
+          current,
+          impedance: { real: round(zReal, 4), imag: round(zImag, 4) },
+        });
         continue;
       }
       // If we hit a blank line, just skip it (keep looking)
@@ -744,10 +787,11 @@ export function parseNecOutput(
   }
 
   // Don't forget the last frequency
-  if (currentFreq !== null && currentImpedance !== null) {
+  if (currentFreq !== null && currentInputRows.length > 0) {
     const result = buildFrequencyResult(
       currentFreq,
-      currentImpedance,
+      currentInputRows,
+      impedanceMode,
       currentPatternData,
       nTheta,
       nPhi,

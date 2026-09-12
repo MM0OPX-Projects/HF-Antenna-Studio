@@ -2,7 +2,7 @@ import type { ValidationResult } from "../../engine/validation";
 import type { FrequencyRange, GroundConfig } from "../../templates/types";
 import { useSimulationStore, type SimulationStatus } from "../../stores/simulationStore";
 import { useUIStore } from "../../stores/uiStore";
-import { applyMatching, formatGain, formatSwr, swrColorClass } from "../../utils/units";
+import { applyMatching, computeSwr, formatGain, formatSwr, swrColorClass } from "../../utils/units";
 import { HelpTip } from "./HelpTip";
 
 const STATUS_COPY: Record<SimulationStatus, { label: string; detail: string; className: string }> = {
@@ -58,6 +58,9 @@ export function EngineeringSummaryPanel({ templateName, frequencyRange, ground, 
   const selected = useSimulationStore((state) => state.getSelectedFrequencyResult());
   const matching = useUIStore((state) => state.matching);
   const matched = selected ? applyMatching(selected.impedance.real, selected.impedance.imag, matching) : null;
+  const rawBalancedSwr = selected?.impedance_mode === "balanced-differential"
+    ? computeSwr(selected.impedance.real, selected.impedance.imag, matching.feedlineZ0)
+    : null;
   const issues = validation.issues;
 
   return (
@@ -103,6 +106,12 @@ export function EngineeringSummaryPanel({ templateName, frequencyRange, ground, 
                   {matched.real.toFixed(1)} {matched.imag >= 0 ? "+" : "-"} j{Math.abs(matched.imag).toFixed(1)} Ω
                 </dd>
               </div>
+              {selected.impedance_mode === "balanced-differential" && rawBalancedSwr !== null && <div className="col-span-2 rounded-lg border border-cyan-500/30 bg-cyan-500/5 p-3 text-xs">
+                <dt className="font-semibold uppercase tracking-[0.12em] text-cyan-300">Balanced junction feed · 1 differential port</dt>
+                <dd className="mt-1 leading-5 text-text-secondary">Raw antenna: <span className="font-mono text-text-primary">{selected.impedance.real.toFixed(1)} {selected.impedance.imag >= 0 ? "+" : "-"} j{Math.abs(selected.impedance.imag).toFixed(1)} Ω</span> · SWR {formatSwr(rawBalancedSwr)} at {matching.feedlineZ0} Ω</dd>
+                {matching.ratio !== 1 && <dd className="leading-5 text-text-secondary">After {matching.ratio}:1 {matching.type}: <span className="font-mono text-text-primary">{matched.real.toFixed(1)} {matched.imag >= 0 ? "+" : "-"} j{Math.abs(matched.imag).toFixed(1)} Ω</span> · feedline SWR {formatSwr(matched.swr)}</dd>}
+                <dd className="mt-1 text-[10px] text-text-secondary">NEC representation: two equal-and-opposite segment-centre sources.</dd>
+              </div>}
               <div className="col-span-2 rounded-lg border border-border/70 bg-background/60 p-3">
                 <dt className="text-[10px] font-semibold uppercase tracking-[0.12em] text-text-secondary">Peak direction</dt>
                 <dd className="mt-1 font-mono text-sm">θ {selected.gain_max_theta.toFixed(1)}° · φ {selected.gain_max_phi.toFixed(1)}°</dd>
