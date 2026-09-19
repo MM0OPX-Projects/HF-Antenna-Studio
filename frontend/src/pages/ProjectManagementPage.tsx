@@ -32,7 +32,10 @@ export function ProjectManagementPage() {
   const session = useProjectSession();
   const navigate = useNavigate();
   const location = useLocation();
-  const saveAsMode = new URLSearchParams(location.search).get("intent") === "save-as";
+  // Keep the UI guard tied to the session transaction as well as the URL. A
+  // pending Save As can briefly outlive navigation (for example when the
+  // Projects navbar link is used), so query-string state alone is unsafe.
+  const saveAsMode = new URLSearchParams(location.search).get("intent") === "save-as" || session.saveAsPending;
   const [name, setName] = useState("");
   const [renameId, setRenameId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
@@ -85,6 +88,7 @@ export function ProjectManagementPage() {
               disabled={!session.currentRoute}
               onClick={() => {
                 const destination = session.currentRoute ?? (session.current ? routeForProject(session.current.project) : null);
+                if (saveAsMode) session.cancelSaveAs();
                 if (destination) navigate(destination);
               }}
               className="rounded-md border border-border px-3 py-2 text-sm hover:border-accent disabled:cursor-not-allowed disabled:opacity-50"
@@ -135,10 +139,14 @@ export function ProjectManagementPage() {
             <input id="project-name" value={name} maxLength={80} onChange={(event) => setName(event.target.value)} placeholder={session.current?.name ?? "My antenna project"} className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent" />
             <div className="mt-4 flex flex-wrap gap-2">
               <button type="button" data-testid="project-save" disabled={saveAsMode} title={saveAsMode ? "Save is disabled while Save As mode is active." : undefined} onClick={() => run(() => {
+                if (session.current && !window.confirm(`Are you sure you want to save project "${session.current.name}"? Any changes will overwrite the existing local project.`)) return;
                 const record = session.save(session.current ? undefined : name);
                 setName(record.name);
               }, "Project saved locally.")} className="rounded-md bg-accent px-3 py-2 text-sm font-semibold text-slate-950 disabled:cursor-not-allowed disabled:opacity-50">Save</button>
               <button type="button" data-testid="project-save-as" onClick={() => run(() => {
+                const requestedName = name.trim();
+                const duplicate = requestedName.length > 0 && session.projects.some((project) => project.name.localeCompare(requestedName, undefined, { sensitivity: "accent" }) === 0);
+                if (duplicate && !window.confirm(`A project named "${requestedName}" already exists. Save As will create a separate project and will not overwrite it. Continue?`)) return;
                 const record = session.saveAs(name);
                 setName(record.name);
                 if (saveAsMode) navigate("/projects", { replace: true });

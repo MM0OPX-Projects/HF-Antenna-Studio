@@ -360,3 +360,58 @@ test("workspace Save As cannot fall through to an overwrite in Project Managemen
     return library.projects?.filter((project: { name: string }) => ["Original wire model", "Copied wire model"].includes(project.name)).length ?? 0;
   })).toBe(2);
 });
+
+test("opening another project cancels a staged Save As transaction", async ({ page }) => {
+  await openProjects(page);
+
+  // Create two independent wire projects so the second can be opened while
+  // the first project's Save As flow is still on the management page.
+  await page.getByRole("button", { name: "New wire project" }).click();
+  await page.locator('button[title^="Save project"]').first().click();
+  await page.getByLabel("Project name").fill("Save As source");
+  await page.getByTestId("project-save").click();
+  await expect(page.getByText("Project saved locally.")).toBeVisible();
+
+  await page.getByRole("button", { name: "New wire project" }).click();
+  await page.locator('button[title^="Save project"]').first().click();
+  await page.getByLabel("Project name").fill("Save As destination");
+  await page.getByTestId("project-save").click();
+  await expect(page.getByText("Project saved locally.")).toBeVisible();
+
+  await page.getByRole("article").filter({ has: page.getByRole("heading", { name: "Save As source" }) }).getByRole("button", { name: "Open" }).click();
+  await expect(page).toHaveURL(/\/editor$/);
+  await page.getByRole("button", { name: "Save As", exact: true }).click();
+  await expect(page).toHaveURL(/\/projects\?intent=save-as$/);
+  await expect(page.getByTestId("project-save")).toBeDisabled();
+
+  // Opening a different record must abandon the staged source snapshot.
+  await page.getByRole("article").filter({ has: page.getByRole("heading", { name: "Save As destination" }) }).getByRole("button", { name: "Open" }).click();
+  await expect(page).toHaveURL(/\/editor$/);
+
+  // Returning to management now presents normal Save, proving the pending
+  // Save As state did not survive the project switch.
+  await page.getByRole("link", { name: "Projects" }).click();
+  await expect(page).toHaveURL(/\/projects$/);
+  await expect(page.getByTestId("project-save")).toBeEnabled();
+  await expect(page.getByLabel("Project name")).toHaveAttribute("placeholder", "Save As destination");
+});
+
+test("Project Management warns before an existing save or duplicate Save As name", async ({ page }) => {
+  await openProjects(page);
+  await page.getByRole("button", { name: "New wire project" }).click();
+  await page.locator('button[title^="Save project"]').first().click();
+  await page.getByLabel("Project name").fill("Named wire project");
+  await page.getByTestId("project-save").click();
+  await expect(page.getByText("Project saved locally.")).toBeVisible();
+
+  // Save on the management page is an overwrite and must be confirmed.
+  let savePrompt = "";
+  page.once("dialog", async (dialog) => { savePrompt = dialog.message(); await dialog.dismiss(); });
+  await page.getByTestId("project-save").click();
+  await expect.poll(() => savePrompt).toContain('save project "Named wire project"');
+
+  // Save As remains non-destructive, but a duplicate name is made explicit.
+  page.once("dialog", async (dialog) => { await dialog.dismiss(); });
+  await page.getByTestId("project-save-as").click();
+  await expect(page.getByRole("heading", { name: "Named wire project" })).toHaveCount(1);
+});

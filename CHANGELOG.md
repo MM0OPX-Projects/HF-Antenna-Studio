@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.0.9] - 2026-09-19
+
+### Fixed
+
+- Protected workspace Save As from stale project identity and snapshot state when opening another project, cancelling, starting a new document, importing, or recovering.
+- Detached Wire Editor template and file replacements from previously saved projects so autosave cannot overwrite the wrong antenna.
+- Added explicit overwrite confirmation for Save in Project Management and duplicate-name warnings for Save As.
+- Added browser regression coverage for Save As transaction cancellation, project switching, and duplicate-name safety.
+
 ## [1.0.8] - 2026-09-12
 
 ### Added

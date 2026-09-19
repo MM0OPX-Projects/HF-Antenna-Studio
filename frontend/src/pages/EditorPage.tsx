@@ -421,9 +421,13 @@ export function EditorPage() {
     setGround(selectedTemplate.defaultGround);
     setMatching(selectedTemplate.defaultMatching ?? { type: "none", ratio: 1, feedlineZ0: 50 });
 
+    // A template replaces the live document. Detach it from any previously
+    // opened project so a later Save/autosave cannot overwrite that project.
+    projectSession.detachCurrent();
+
     // Switch to wires section after loading
     setEditorSection("wires");
-  }, [selectedTemplate, templateParams, templateValidation.valid, clearAll, setWires, addLoad, addTransmissionLine, setDesignFrequency, setFrequencyRange, setGround, setMatching, setEditorSection]);
+  }, [selectedTemplate, templateParams, templateValidation.valid, clearAll, setWires, addLoad, addTransmissionLine, setDesignFrequency, setFrequencyRange, setGround, setMatching, projectSession, setEditorSection]);
 
   const handleBandSelect = useCallback(
     (range: FrequencyRange, _band: HamBand) => {

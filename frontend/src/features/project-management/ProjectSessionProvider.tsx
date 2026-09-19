@@ -51,6 +51,10 @@ interface ProjectSessionValue {
   newProject: (mode: ManagedProjectMode) => void;
   /** Stage the exact live workspace snapshot for the next Save As action. */
   stageSaveAs: (project: ProjectFile) => void;
+  /** Whether a workspace Save As operation is awaiting completion. */
+  saveAsPending: boolean;
+  /** Abandon a staged Save As without changing the current project identity. */
+  cancelSaveAs: () => void;
   save: (nameIfNew?: string) => LocalProjectRecord;
   saveAs: (name: string) => LocalProjectRecord;
   saveExternal: (project: ProjectFile) => LocalProjectRecord;
@@ -87,6 +91,7 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<ProjectSaveStatus>("idle");
   const [error, setError] = useState<string | null>(null);
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
+  const [saveAsPending, setSaveAsPending] = useState(false);
   const [currentRoute, setCurrentRoute] = useState<string | null>(null);
   const currentRef = useRef<LocalProjectRecord | null>(null);
   const modeRef = useRef<ManagedProjectMode>(projectModeForRoute(location.pathname));
@@ -94,6 +99,13 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
   const fingerprintRef = useRef("");
   const restoringRef = useRef(false);
   const saveAsProjectRef = useRef<ProjectFile | null>(null);
+  const saveAsPendingRef = useRef(false);
+
+  const clearSaveAsPending = useCallback(() => {
+    saveAsProjectRef.current = null;
+    saveAsPendingRef.current = false;
+    setSaveAsPending(false);
+  }, []);
 
   const refresh = useCallback(() => {
     try {
@@ -121,7 +133,7 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     routeRef.current = location.pathname;
     const saveAsIntent = location.pathname === "/projects" && new URLSearchParams(location.search).get("intent") === "save-as";
-    if (!saveAsIntent) saveAsProjectRef.current = null;
+    if (!saveAsIntent && saveAsPendingRef.current) clearSaveAsPending();
     if (location.pathname !== "/projects") setCurrentRoute(location.pathname);
     if (isManagedProjectRoute(location.pathname)) {
       const nextMode = projectModeForRoute(location.pathname);
@@ -135,7 +147,7 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
         });
       }
     }
-  }, [location.pathname, location.search]);
+  }, [clearSaveAsPending, location.pathname, location.search]);
 
   useEffect(() => {
     fingerprintRef.current = projectFingerprint(captureProject(modeRef.current));
@@ -250,6 +262,7 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
       setCurrentRoute(routeForProjectMode(mode));
       currentRef.current = null;
       setCurrent(null);
+      clearSaveAsPending();
       fingerprintRef.current = projectFingerprint(project);
       const recovered: RecoveryRecord = {
         schemaVersion: 1,
@@ -268,10 +281,12 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
     } finally {
       restoringRef.current = false;
     }
-  }, [navigate]);
+  }, [clearSaveAsPending, navigate]);
 
   const stageSaveAs = useCallback((project: ProjectFile) => {
     saveAsProjectRef.current = structuredClone(project);
+    saveAsPendingRef.current = true;
+    setSaveAsPending(true);
   }, []);
 
   const saveAs = useCallback((name: string): LocalProjectRecord => {
@@ -285,7 +300,7 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
       ? structuredClone(saveAsProjectRef.current)
       : snapshotForSave(active?.project ?? null, modeRef.current);
     const record = library.create(name, snapshot);
-    saveAsProjectRef.current = null;
+    clearSaveAsPending();
     currentRef.current = record;
     setCurrent(record);
     setProjects(library.list());
@@ -296,7 +311,7 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
     setError(null);
     fingerprintRef.current = projectFingerprint(snapshot);
     return record;
-  }, [library]);
+  }, [clearSaveAsPending, library]);
 
   const saveExternal = useCallback((project: ProjectFile): LocalProjectRecord => {
     const active = currentRef.current;
@@ -330,6 +345,7 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
   const detachCurrent = useCallback(() => {
     currentRef.current = null;
     setCurrent(null);
+    clearSaveAsPending();
     clearRecovery(window.localStorage);
     setRecovery(null);
     setStatus("dirty");
@@ -338,9 +354,12 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
     // Capture the now-detached document as the new autosave baseline. The
     // next edit is therefore never written back to the previously saved file.
     fingerprintRef.current = projectFingerprint(captureProject(modeRef.current));
-  }, []);
+  }, [clearSaveAsPending]);
 
   const save = useCallback((nameIfNew?: string): LocalProjectRecord => {
+    if (saveAsPendingRef.current) {
+      throw new Error("Save As is pending. Complete or cancel Save As before saving this project.");
+    }
     const active = currentRef.current;
     if (!active) {
       if (!nameIfNew) throw new Error("Choose a project name before the first save.");
@@ -361,6 +380,9 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
   }, [library, saveAs]);
 
   const open = useCallback((id: string) => {
+    // Opening a project abandons any staged Save As snapshot before restoring
+    // the selected record, so a later Save can never consume the old snapshot.
+    clearSaveAsPending();
     const record = library.markOpened(id);
     beginRestore(record.project);
     currentRef.current = record;
@@ -374,7 +396,7 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
     setStatus("saved");
     setError(null);
     navigate(routeForProject(record.project));
-  }, [beginRestore, library, navigate]);
+  }, [beginRestore, clearSaveAsPending, library, navigate]);
 
   const rename = useCallback((id: string, name: string) => {
     const record = library.get(id);
@@ -443,6 +465,7 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
   }, [library]);
 
   const recover = useCallback(() => {
+    clearSaveAsPending();
     const recovered = readRecovery(window.localStorage);
     if (!recovered) throw new Error("No recovery copy is available.");
     beginRestore(recovered.project);
@@ -453,7 +476,7 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
     setStatus("dirty");
     setError(null);
     navigate(routeForProject(recovered.project));
-  }, [beginRestore, library, navigate]);
+  }, [beginRestore, clearSaveAsPending, library, navigate]);
 
   const discardRecovery = useCallback(() => {
     clearRecovery(window.localStorage);
@@ -467,6 +490,8 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
     status,
     error,
     lastSavedAt,
+    saveAsPending,
+    cancelSaveAs: clearSaveAsPending,
     currentRoute,
     refresh,
     newProject,
@@ -484,7 +509,7 @@ export function ProjectSessionProvider({ children }: { children: ReactNode }) {
     importProject,
     recover,
     discardRecovery,
-  }), [projects, current, currentRoute, recovery, status, error, lastSavedAt, refresh, newProject, stageSaveAs, save, saveAs, saveExternal, detachCurrent, open, rename, duplicate, deleteProject, exportProject, inspectImport, importProject, recover, discardRecovery]);
+  }), [projects, current, currentRoute, recovery, status, error, lastSavedAt, saveAsPending, refresh, newProject, stageSaveAs, save, saveAs, saveExternal, detachCurrent, open, rename, duplicate, deleteProject, exportProject, inspectImport, importProject, recover, discardRecovery, clearSaveAsPending]);
 
   return <ProjectSessionContext.Provider value={value}>{children}</ProjectSessionContext.Provider>;
 }

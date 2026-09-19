@@ -22,6 +22,7 @@ import { editorModelFingerprint } from "../../features/wire-editor/model-fingerp
 import { resolveGeometryGroundFlag } from "../../engine/geometry-ground";
 import { conductorFromLoads } from "../../engine/conductor";
 import { useUIStore } from "../../stores/uiStore";
+import { useProjectSession } from "../../features/project-management/ProjectSessionProvider";
 
 interface ImportExportPanelProps {
   className?: string;
@@ -48,6 +49,7 @@ function mapGroundType(type: string): GroundConfig {
 
 export function ImportExportPanel({ className = "" }: ImportExportPanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const projectSession = useProjectSession();
 
   // Editor store actions
   const clearAll = useEditorStore((s) => s.clearAll);
@@ -128,6 +130,7 @@ export function ImportExportPanel({ className = "" }: ImportExportPanelProps) {
           }
           if (data.frequency) setFrequencyRange(data.frequency);
           setNecImport(null);
+          projectSession.detachCurrent();
           setMessage({ kind: "success", text: `Imported ${data.wires.length} wires from JSON.` });
         } else if (ext === "nec") {
           const response = parseNecFile(content);
@@ -171,6 +174,7 @@ export function ImportExportPanel({ className = "" }: ImportExportPanelProps) {
               },
             });
             setConductor(conductorFromLoads(response.loads ?? []));
+            projectSession.detachCurrent();
             const warnings = document.diagnostics.filter((item) => item.severity === "warning").length;
             setMessage({
               kind: warnings > 0 ? "warning" : "success",
@@ -193,6 +197,7 @@ export function ImportExportPanel({ className = "" }: ImportExportPanelProps) {
           });
           setFrequencySegments([]);
           setNecImport(null);
+          projectSession.detachCurrent();
           setMessage({ kind: "success", text: `Imported ${resp.wires.length} wires from MMANA format.` });
         } else {
           throw new Error("Choose a .nec, .maa, or .json file.");
@@ -203,7 +208,7 @@ export function ImportExportPanel({ className = "" }: ImportExportPanelProps) {
         e.target.value = "";
       }
     },
-    [clearAll, setWires, addLoad, addTransmissionLine, setGround, setGeometryGroundFlag, setFrequencyRange, setFrequencySegments, setNecImport, setBlockedNecImport, loadImportedModel, setConductor]
+    [clearAll, setWires, addLoad, addTransmissionLine, setGround, setGeometryGroundFlag, setFrequencyRange, setFrequencySegments, setNecImport, setBlockedNecImport, loadImportedModel, setConductor, projectSession]
   );
 
   const handleExportJSON = useCallback(() => {
